@@ -1,9 +1,9 @@
 # Full Pipeline ----
 #
 # Either use the Fishboost data set or simulate a new data set, and then send it
-# to SIRE 2.1 for parameter inference.
+# to SIRE 2.2 for parameter inference.
 #
-# SIRE 2.1 (modified from Chris Pooley's original)
+# SIRE 2.2 (modified from Chris Pooley's original)
 
 ## Load libraries and source files ----
 
