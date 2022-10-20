@@ -1,0 +1,134 @@
+---
+title: "Validating Models and Traits"
+author: "Jamie Prentice"
+date: "9 Dec 2021"
+output: pdf_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#knitr::opts_chunk$set(results = "hide")
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+```{r, results = "hide", echo = FALSE}
+source("libraries.R")
+source("source_files.R")
+set.seed(0)
+```
+
+# Simulating test data
+
+We simulate an SIDR epidemic with the Fishboost demography and groups. We assume genetic variation in susceptibility, infectivity, and recoverability only, not time to detection.
+
+```{r, results = "hide", cache = TRUE}
+params <- make_parameters(
+    model_type = "SIDR",
+    setup = "fishboost",
+    cov = "sir_only",
+    group_layout = "fishboost"
+)
+
+pedigree <- make_pedigree(params)
+traits <- make_traits_from_pedigree(pedigree, params)
+traits <- set_groups(traits, params)
+pop <- simulate_epidemic(traits, params)
+```
+
+Plot the results to check things have worked okay:
+
+```{r, results = "hide", echo = FALSE, fig.width = 7, out.width = "100%"}
+plt <- plot_model(pop, params)
+```
+
+## Validation
+
+### Test times ~ traits
+
+We test if phenotypic recoverability matches the time $t(T_\text{sym} \to T_\text{rec})$. This would be a huge cause for concern if it didn't match.
+
+```{r}
+with(pop, cor.test(Trec - Tsym, recoverability_ln,
+                   method = "spearman"))
+
+with(pop, cor.test(Trec - Tsym, recoverability_ln,
+                   method = "pearson"))
+```
+
+I tried Anova too, just in case.
+
+```{r}
+anova(lm(Trec - Tsym ~ recoverability_ln, data = pop))
+```
+
+Do the same for susceptibility, although this time we remove the donors, since their susceptibility didn't matter.
+
+```{r}
+pop2 <- pop[donor == 0]
+with(pop2, cor.test(Tinf, susceptibility_ln,
+                   method = "spearman"))
+
+with(pop2, cor.test(Tinf, susceptibility_ln,
+                    method = "pearson"))
+
+anova(lm(Tinf ~ susceptibility_ln, data = pop2))
+```
+
+## Check heritability
+
+We check that the offspring traits correlate with that of their parents by taking the mean trait values for the progeny of each sire / dam.
+
+```{r}
+traitnames    <- c("susceptibility", "infectivity", "recoverability")
+traitnames_BV <- paste0(traitnames, "_BV")
+traitnames_m  <- paste0(traitnames, "_m")
+
+sire_BVs <- pop[sdp == "sire", ..traitnames_BV]
+dam_BVs  <- pop[sdp == "dam",  ..traitnames_BV]
+
+for (sire_id in pop[sdp == "sire", id]) {
+    sire_means <- pop[sire == sire_id,
+                      lapply(.SD, mean),
+                      .SDcols = traitnames_BV]
+    pop[id == sire_id, (traitnames_m)] <- sire_means
+}
+
+for (dam_id in pop[sdp == "dam", id]) {
+    dam_means <- pop[dam == dam_id,
+                     lapply(.SD, mean),
+                     .SDcols = traitnames_BV]
+    pop[id == dam_id, (traitnames_m)] <- dam_means
+}
+
+with(pop, cor.test(susceptibility_m, susceptibility_BV))
+with(pop, cor.test(infectivity_m, infectivity_BV))
+with(pop, cor.test(recoverability_m, recoverability_BV))
+```
+
+Time to infection and recovery periods depend _indirectly_ on the susceptibility and recovery traits, so visually check that these match up, along with the parent-offspring trait correlations. Note that SIRE needs to go from $T_\text{sym}$ / $T_\text{rec}$ to offspring traits to parent traits, so that's twice separated.
+
+```{r, results = "hide", echo = FALSE, fig.dim = c(12, 8), out.width="100%"}
+library(cowplot)
+
+plt_TTI <- ggplot(pop2, aes(x = susceptibility, y = Tinf)) +
+    geom_point() + geom_smooth(method = "lm") +
+    labs(x = "Susceptibility", y = "Time to infection (days)")
+
+plt_RP <- ggplot(pop, aes(x = recoverability, y = Trec - Tsym)) +
+    geom_point() + geom_smooth(method = "lm") +
+    labs(x = "Recoverability", y = "Recovery period (days)")
+    
+
+plt_sus <- ggplot(pop, aes(x = susceptibility_m, y = susceptibility_BV)) +
+    geom_point() + geom_smooth(method = "lm") +
+    labs(x = "Mean progeny susceptibility", y = "Parent susceptibility")
+plt_inf <- ggplot(pop, aes(x = infectivity_m, y = infectivity_BV)) +
+    geom_point() + geom_smooth(method = "lm") +
+    labs(x = "Mean progeny infectivity", y = "Parent infectivity")
+plt_rec <- ggplot(pop, aes(x = recoverability_m, y = recoverability_BV)) +
+    geom_point() + geom_smooth(method = "lm") +
+    labs(x = "Mean progeny recoverability", y = "Parent recoverability")
+
+plot_grid(plotlist = list(plt_sus, plt_inf, plt_rec, plt_TTI, plt_RP))
+```

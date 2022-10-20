@@ -1,0 +1,103 @@
+---
+title: "Full Pipeline"
+author: "Jamie Prentice"
+date: '2021-03-02'
+output:
+  html_document: default
+  pdf_document: default
+editor_options:
+  chunk_output_type: inline
+---
+
+## Overview
+
+Create simulated epidemic data and send to SIRE 2.0. The intention is to replace simulated data with Turbot data.
+
+R functions based on Richard Bailey's originals. [SIRE 2.0](https://github.com/theITEAM/SIRE2.0/) modified from Chris Pooley's original.
+
+
+## Load Libraries and source files
+```{r include = FALSE}
+library(data.table) # used for all data table manipulations
+library(Matrix)     # allows Matrix
+library(xml2)       # used to generate XML file
+# library(corpcor)    # efficient estimation of Cov and (partial) Corr
+library(MASS)       # needed for mvnorm
+# library(MCMCglmm)
+library(ggplot2)    # plotting
+library(tictoc)     # check performance
+library(codetools)  # check for global variables
+library(here)       # useful according to Hadley Wickham
+
+source("make_parameters.R")
+source("get_R0.R")
+source("make_pedigree.R")
+source("make_grm.R")
+source("make_traits_from_grm.R")
+source("make_traits_from_pedigree.R")
+source("set_groups.R")
+source("simulate_epidemic.R")
+source("init_populations.R")
+source("prepare_data.R")
+source("data_table_to_tsv_string.R")
+source("generate_sire_xml.R")
+source("make_plots.R")
+source("utils.R")
+# source("sire_data.R")
+```
+
+## Generate pedigree, GRM, and traits
+Given a set of initial parameters, first generate a pedigree with the required structure, and from that generate the corresponding *A matrix*. Then generate a population with appropriate traits, either using the pedigree or the A matrix (since we may want to be able to use a GRM later).
+```{r}
+    # params <- make_parameters(epi_type = "SEIR", name = "seir1", cov = TRUE, setup = "")
+    params <- make_parameters(epi_type = "SIR", name = "sir1", cov = TRUE, setup = "")
+
+    pedigree <- make_pedigree(params)
+    # this is an A-matrix, not actually a GRM
+    GRM <- make_grm(pedigree)
+
+    # traits <- make_traits_from_grm(GRM, pedigree, params)
+    traits <- make_traits_from_pedigree(pedigree, params)
+
+    # check_cov(traits2, params)
+```
+
+## Simulate an epidemic and plot the results
+```{r}
+traits <- set_groups(traits, params)
+pop    <- simulate_epidemic(traits, params)
+get_R0(pop)
+
+# Plot the epidemic ----
+plot_model(pop, params)
+```
+
+## Generate the XML file for SIRE 2.0
+```{r}
+# Discretised version of pop (Tinf, Trec -> "[S,1][I,2][R,3]")
+# dpop <- discretise(pop, params)
+
+
+# pop is offspring only, so need to recombine parent data
+# Tidy up ready for saving data to XML file
+# Handy to have tmax stored here, because it's harder to get afterwards
+data_and_tmax <- prepare_data(pop, params)
+
+
+# Generate the XML file for SIRE 2.0
+generate_sire_xml(data_and_tmax, GRM, params)
+
+# copy the XML file to the SIRE 2.0 folder to run
+system(paste("cp", params$filename, "../sire2/"))
+
+## Run SIRE 2.0 ----
+cmd <- paste0("../sire2/sire ", params$filename, " 0")
+message("Running SIRE 2.0 ...")
+
+# message(paste0("> system(\"", cmd, "\")"))
+system(cmd)
+
+# In case we need to test if the output is unchanged from the unmodified SIRE 2.0
+# system("../SIRE2.0/Execute/sire foo.xml 0")
+```
+
