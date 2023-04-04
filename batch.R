@@ -1,9 +1,9 @@
 # Full Pipeline ----
 #
-# Send simulated data to SIRE 2.0 / 2.1
+# Send simulated data to SIRE 2.x
 # Eventually intend to replace simulated data with Turbot data
 #
-# SIRE 2.0 / 2.1 modified from Chris Pooley's original
+# SIRE 2.x modified from Chris Pooley's original
 
 ## Load libraries and source files ----
 source("libraries.R")
@@ -19,15 +19,15 @@ if (length(cmd_args) == 2) {
     protocol_file <- glue("param_sets/{cmd_args[1]}.rds")
     row_no <- as.integer(cmd_args[2])
 } else {
-    row_no <- 3L
-    protocol_file <- "param_sets/fb-mpi.rds"
+    row_no <- 1L
+    protocol_file <- "param_sets/sim-patch-fb-1.rds"
 }
 
 {
     # grab row_no from protocol file
     message(glue("Running {protocol_file} / scenario {row_no}"))
     protocol <- readRDS(protocol_file)$protocol[row_no]
-
+    
     # create params as usual
     params <- with(protocol,
                    make_parameters(
@@ -42,18 +42,18 @@ if (length(cmd_args) == 2) {
                        trial_fe = trial_fe,
                        donor_fe = donor_fe,
                        txd_fe = txd_fe))
-
+    
     message("Copying parameters ...")
-
+    
     # patch params from protocol file
     for (param in names(protocol)) {
         tmp <- protocol[[param]]
-
+        
         # skip NAs
         if (is.na(tmp)) next
-
+        
         message(" - ", param, " = ", tmp)
-
+        
         # handle special cases first
         if (param == "Sigma") {
             tmp <- eval(parse(text = tmp))
@@ -75,9 +75,9 @@ if (length(cmd_args) == 2) {
             params$r_gamma_shape <- 1.0 # 10.0
             params$r_gamma_rate <- params$r_gamma * params$r_gamma_shape
         } else if (startsWith(param, "prior")) {
-            # "prior__abc_xyz__1" -> "abc_xyz"
-            p1 <- unlist(strsplit(param, "__"))[2:3]
-            params$priors[parameter == p1[1], paste0("val", p1[2]) := tmp]
+            # "prior__abc_xyz__val1" -> "abc_xyz, val1"
+            p1 <- unlist(strsplit(param, "__"))[-1]
+            params$priors[parameter == p1[1], (p1[2]) := tmp]
         } else if (param == "group_effect") {
             params[param] <- tmp
             params$priors[parameter == "sigma", `:=`(
@@ -85,10 +85,10 @@ if (length(cmd_args) == 2) {
                 true_val = max(tmp, 0))]
         } else if (startsWith(param, "fe_")) {
             # fe_trial_infectivity -> "trial", "infectivity"
-            p1 <- unlist(strsplit(param, "_"))[2:3]
-            td <- p1[1]; tr <- p1[2]
+            p1 <- unlist(strsplit(param, "_"))[-1]
+            td <- p1[1]; tr <- p1[2]; tr1 <- substr(p1[2], 1, 1)
             params$fe_vals[td, tr] <- tmp
-            params$priors[parameter == paste0(td, "_", substr(tr, 1, 1)), `:=`(
+            params$priors[parameter == paste0(td, "_", tr1), `:=`(
                 val1 = min(tmp - 2, val1),
                 val2 = max(tmp + 2, val2),
                 true_val = tmp)]
@@ -101,7 +101,7 @@ if (length(cmd_args) == 2) {
             params[param] <- tmp
         }
     }
-
+    
     # tidy up numbers (only in balanced / non-Fishboost cases)
     if (!params$setup %in% c("fishboost", "fb1", "fb2")) {
         params$ndams      <- with(params, nsires * dpsire)
@@ -111,47 +111,61 @@ if (length(cmd_args) == 2) {
         params$group_size <- with(params, nprogeny / ngroups)
     }
     params$R0 <- with(params, r_beta / r_gamma)
-
+    
     # ensure these are integers!
-    params$nsample <- as.integer(params$nsample)
-    params$burnin  <- as.integer(params$burnin)
-    params$thin    <- as.integer(params$thin)
+    params$nsample  <- as.integer(params$nsample)
+    params$burnin   <- as.integer(params$burnin)
+    params$thin     <- as.integer(params$thin)
+    # overrule whatever is in the protocol and just take it from qsub
+    params$nthreads <- as.integer(Sys.getenv("NUM_SLOTS"))
     
     # This can go awry
     if (is.na(params$group_effect)) {
         params$group_effect <- -1
     }
-
+    
+    # Patch params with posterior mean values from data set/scenario
+    params <- patch_params(params)
+    
     # fix any traits that need to be linked
     params <- apply_links(params)
+    
+    # Quick check of how things are looking
+    summarise_params(params)
 }
 
-summarise_params(params)
 
 ## Generate pedigree and traits ----
 
 if (params$use_fb_data) {
     # Load pop, pedigree, and GRM
-    switch(params$setup,
-           "fishboost" = load("fb_data/fb_traits.RData"),
-           "fb1" = load("fb_data/fb_traits1.RData"),
-           "fb2" = load("fb_data/fb_traits2.RData"),
-           stop("Not a fishboost data set"))
+    pop <- switch(params$setup,
+                  "fishboost" = readRDS("fb_data/fb_data12.rds"),
+                  "fb1"       = readRDS("fb_data/fb_data1.rds"),
+                  "fb2"       = readRDS("fb_data/fb_data2.rds"),
+                  stop("Not a fishboost data set"))
+    
+    pedigree <- NULL
+    GRM <- NULL
     
     # FB only has the last 2 events
     params$pass_events <- 2
 } else {
     pedigree <- make_pedigree(params)
-
+    
     # this is an A-matrix, not actually a GRM
-    GRM <- make_grm(pedigree)
-
+    GRM <- NULL #make_grm(pedigree)
+    
     # traits <- make_traits_from_grm(GRM, pedigree, params)
-    traits <- make_traits_from_pedigree(pedigree, params)
-
+    if (params$patch_traits) {
+        traits <- patch_in_traits(pedigree, params)
+    } else {
+        traits <- make_traits_from_pedigree(pedigree, params)
+    }
+    
     # set groups and donors
     traits <- set_groups(traits, params)
-
+    
     # Set donor and trial effects
     traits <- apply_fixed_effects(traits, params)
 }
@@ -161,9 +175,12 @@ if (params$use_fb_data) {
 
 if (params$use_fb_data) {
     # If we were plotting we might add missing timings here
+    params$tmax <- get_tmax(pop, params)
 } else {
     pop <- simulate_epidemic(traits, params)
+    pop[sdp == "progeny", parasites := !is.na(Tinf)]
     params$estimated_R0 <- get_R0(pop)
+    params$tmax <- get_tmax(pop, params)
 }
 
 
@@ -173,23 +190,19 @@ if (params$use_fb_data) {
     if (!dir.exists(params$data_dir)) {
         dir.create(params$data_dir)
     }
-
+    
     # Tidy up ready for saving data to XML file
     data <- prepare_data(pop, params)
-
-    # Generate the XML file
-    if (params$sire_version == "2.2") {
-        x_xml <- generate_sire22_xml(data, GRM, params)
-        # do we need --oversubscribe here?1
-        cmd <- with(params, glue("mpirun -n {nthreads} --oversubscribe ../sire22/sire {data_dir}/{name}.xml {replicate}"))
-        message("Running SIRE 2.2 ...")
-    } else {
-        x_xml <- generate_sire21_xml(data, GRM, params)
-        cmd <- with(params, glue("../sire21/sire {data_dir}/{name}.xml {replicate}"))
-        message("Running SIRE 2.1 ...")
+    # generate_sire2x_xml(data, params, GRM)
+    get(glue("generate_{params$sire_version}_xml"))(data, params, GRM)
+    
+    cmd <- with(params, glue("../{sire_version}/sire {data_dir}/{name}.xml 0"))
+    if (params$algorithm == "pas") {
+        cmd <- glue("mpirun -n {params$nchains} --oversubscribe {cmd}")
     }
-
+    
     # Run SIRE
+    message(glue("Running {params$sire_version} ..."))
     time_taken <- system.time(system(cmd))
 }
 
@@ -198,13 +211,12 @@ if (params$use_fb_data) {
 
 {
     message("Retrieving results ...")
-
-    # note: sire 2.0 needs "data_dir/name-", instead of "name_out/"
+    
     file_prefix <- with(params, glue("{data_dir}/{name}_out"))
-
-    if (params$sire_version == "2.2") {
+    
+    if (params$sire_version == "sire22") {
         parameter_estimates <- fread(glue("{file_prefix}/posterior.csv"))
-        file_name <- glue("{file_prefix}/ebvs.csv")
+        file_name           <- glue("{file_prefix}/ebvs.csv")
         estimated_BVs       <- if (file.exists(file_name)) fread(file_name) else NULL
         pred_accs           <- fread(glue("{file_prefix}/pred_accs.csv"))
     } else {
@@ -212,13 +224,15 @@ if (params$use_fb_data) {
         estimated_BVs       <- fread(glue("{file_prefix}/estimated_bvs.csv"))
         pred_accs           <- fread(glue("{file_prefix}/pred_accs.csv"))
     }
-
+    
     # ranks <- get_ranks(pop, estimated_BVs, params)
-
+    message("parameter estimates:")
+    msg_pars(parameter_estimates)
+    
     if (!dir.exists(params$results_dir)) {
         dir.create(params$results_dir)
     }
-
+    
     save(params, pop, parameter_estimates, estimated_BVs, pred_accs, time_taken, # ranks
          file = with(params, glue("{results_dir}/{name}.RData")))
 }

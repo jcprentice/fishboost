@@ -158,7 +158,7 @@ make_parameters <- function(
     traitnames <- switch(
         use_traits,
         "all" = all_traitnames,
-        "none" = c(),
+        "none" = NULL,
         "seir" = c("susceptibility", "latency", "infectivity", "recoverability"),
         "sidr" = c("susceptibility", "infectivity", "detectibility", "recoverability"),
         "sir" = c("susceptibility", "infectivity", "recoverability"),
@@ -412,8 +412,6 @@ make_parameters <- function(
     # "estimated_Tinf_per_individual": Tsym with all gaps covered
     pass_Tsym <- "Tsym"
 
-    # Do we clear Tsym times so SIRE has to guess them?
-    clear_Tsym <- FALSE
 
     # Show details
     DEBUG <- FALSE
@@ -441,7 +439,7 @@ make_parameters <- function(
           # mcmc & extra
           "t_end", "tmax", "t_gap",
           "nsample", "burnin", "thin", "priors",
-          "use_sire_21", "pass_Tsym", "clear_Tsym", "DEBUG"))
+          "use_sire_21", "pass_Tsym", "DEBUG"))
 
     params
 }

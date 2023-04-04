@@ -10,7 +10,7 @@ get_sir_infectives <- function(pop) {
 generate_sir_path <- function(epi_time, pop, id, params) {
     with(params, {
         Tinf <- epi_time
-        Trec <- Tinf + rgamma(1L, r_gamma_shape, r_gamma_rate) * pop[id, recoverability]
+        Trec <- Tinf + rgamma(1L, r_gamma_shape, r_gamma_rate) * pop$recoverability[id]
 
         list("I", Tinf, Trec)
     })
@@ -57,7 +57,7 @@ model_SIR <- function(traits, params) {
 
 
         # generate random timestep ----
-        total_event_rate <- pop[, sum(event_rate)]
+        total_event_rate <- sum(pop$event_rate)
 
         # calculate dt if infections event rate > 0
         if (total_event_rate > 0.0) {
@@ -78,11 +78,11 @@ model_SIR <- function(traits, params) {
                                     size = 1L,
                                     prob = pop$event_rate)
 
-            group_id <- pop[id_next_event, group]
+            group_id <- pop$group[id_next_event]
             infectives <- pop[, .(.I, group, status, infectivity)][group == group_id & status == "I"]
             infd_by <- safe_sample(x = infectives$I,
-                                       size = 1L,
-                                       prob = infectives$infectivity)
+                                   size = 1L,
+                                   prob = infectives$infectivity)
             next_gen <- pop[infd_by, generation + 1L]
 
             set(pop, id_next_event, c("status", "Tinf", "Trec"),

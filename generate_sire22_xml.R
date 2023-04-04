@@ -3,7 +3,7 @@
 # sire_ex <- read_xml("example.xml")
 # sire_ex_list <- as_list(sire_ex)
 
-generate_sire22_xml <- function(data, GRM, params) {
+generate_sire22_xml <- function(data, params, GRM = NULL) {
     {
         name            <- params$name
         nsires          <- params$nsires
@@ -21,12 +21,12 @@ generate_sire22_xml <- function(data, GRM, params) {
         priors          <- params$priors
         time_step       <- params$time_step
         algorithm       <- params$algorithm
-        quench          <- params$quench
+        anneal          <- params$anneal
+        anneal_power    <- params$anneal_power
         nsample_per_gen <- params$nsample_per_gen
         nsample         <- params$nsample
         burnin          <- params$burnin
         thin            <- params$thin
-        quench_power    <- params$quench_power
         phi             <- params$phi
         data_dir        <- params$data_dir
         trial_fe        <- params$trial_fe
@@ -40,6 +40,8 @@ generate_sire22_xml <- function(data, GRM, params) {
         setup           <- params$setup
         use_fb_data     <- params$use_fb_data
         pass_events     <- params$pass_events
+        tmax            <- params$tmax
+        censor          <- params$censor
     }
     
     message(glue("Generating SIRE 2.2 XML file {data_dir}/{name}.xml ..."))
@@ -58,7 +60,7 @@ generate_sire22_xml <- function(data, GRM, params) {
         xml_add_child(x, "mcmc", output_dir = glue("{data_dir}/{name}_out"),
                       nsample_per_gen = nsample_per_gen, phi_final = phi,
                       nsample = nsample, burnin = burnin, thin = thin,
-                      quench = quench, quench_power = quench_power)
+                      anneal = anneal, anneal_power = anneal_power)
     }
     
     
@@ -69,7 +71,7 @@ generate_sire22_xml <- function(data, GRM, params) {
     
     ### Compartments ----
     
-    # save pointer to compartment X tag as `cx` for adding fixed effects
+    # save pointer to compartment X tag as `cx` for adding fixed effects later
     
     xml_add_child(x, xml_comment("Model compartments"))
     if (grepl("S", model_type)) cs <- xml_add_child(x, "comp", name = "S")
@@ -79,10 +81,12 @@ generate_sire22_xml <- function(data, GRM, params) {
     if (grepl("R", model_type)) cr <- xml_add_child(x, "comp", name = "R")
     
     
+    
     ### Transitions ----
     
     # link_shapes = "lll" means use "lat_shape" for det and rec
     shapes <- list(l = "eta_shape", d = "rho_shape", r = "gamma_shape")
+    
     shape <- list(lat = shapes[[substr(link_shapes, 1, 1)]],
                   det = shapes[[substr(link_shapes, 2, 2)]],
                   rec = shapes[[substr(link_shapes, 3, 3)]])
@@ -91,56 +95,46 @@ generate_sire22_xml <- function(data, GRM, params) {
     
     xml_add_child(x, xml_comment("Model transitions"))
     
-    message("time_step = ", time_step)
-    
-    switch(
-        model_type,
-        "SIR" = {
-            ts <- xml_add_child(x, "trans", from = "S", to = "I", type = "infection", beta = "beta", inf_model = "frequency dependent")
-            tr <- xml_add_child(x, "trans", from = "I", to = "R", type = gamma_type, mean = "recovery_period", shape = shape$rec)
-            if (time_step == 0) {
-                xml_set_attr(ts, "data_column", 4)
-                xml_set_attr(tr, "data_column", 5)
-            }
-        },
-        "SEIR" = {
-            ts <- xml_add_child(x, "trans", from = "S", to = "E", type = "infection", beta = "beta", inf_model = "frequency dependent")
-            tl <- xml_add_child(x, "trans", from = "E", to = "I", type = eta_type, mean = "latent_period", shape = shape$lat)
-            tr <- xml_add_child(x, "trans", from = "I", to = "R", type = gamma_type, mean = "recovery_period", shape = shape$rec)
-            if (time_step == 0) {
-                pass_events <- clamp(pass_events, 2, 3)
-                if (pass_events == 3) xml_set_attr(ts, "data_column", pass_events + 1)
-                xml_set_attr(tl, "data_column", pass_events + 2)
-                xml_set_attr(tr, "data_column", pass_events + 3)
-            }
-        },
-        "SIDR" = {
-            ts <- xml_add_child(x, "trans", from = "S", to = "I", type = "infection", beta = "beta", inf_model = "frequency dependent")
-            td <- xml_add_child(x, "trans", from = "I", to = "D", type = rho_type, mean = "detection_period", shape = shape$det)
-            tr <- xml_add_child(x, "trans", from = "D", to = "R", type = gamma_type, mean = "recovery_period", shape = shape$rec)
-            if (time_step == 0) {
-                pass_events <- clamp(pass_events, 2, 3)
-                if (pass_events >= 3) xml_set_attr(ts, "data_column", pass_events + 1)
-                xml_set_attr(td, "data_column", pass_events + 2)
-                xml_set_attr(tr, "data_column", pass_events + 3)
-            }
-        },
-        "SEIDR" = {
-            ts <- xml_add_child(x, "trans", from = "S", to = "E", type = "infection", beta = "beta", inf_model = "frequency dependent")
-            tl <- xml_add_child(x, "trans", from = "E", to = "I", type = eta_type, mean = "latent_period", shape = shape$lat)
-            td <- xml_add_child(x, "trans", from = "I", to = "D", type = rho_type, mean = "detection_period", shape = shape$det)
-            tr <- xml_add_child(x, "trans", from = "D", to = "R", type = gamma_type, mean = "recovery_period", shape = shape$rec)
-            if (time_step == 0) {
-                pass_events <- clamp(pass_events, 2, 4)
-                if (pass_events >= 4) xml_set_attr(ts, "data_column", pass_events)
-                if (pass_events >= 3) xml_set_attr(tl, "data_column", pass_events + 1)
-                xml_set_attr(td, "data_column", pass_events + 2)
-                xml_set_attr(tr, "data_column", pass_events + 3)
-            }
+    if (model_type == "SIR") {
+        ts <- xml_add_child(x, "trans", from = "S", to = "I", type = "infection",beta = "beta", inf_model = "frequency dependent")
+        tr <- xml_add_child(x, "trans", from = "I", to = "R", type = gamma_type, mean = "recovery_period", shape = shape$rec)
+        if (time_step == 0) {
+            xml_set_attr(ts, "data_column", "Tsym")
+            xml_set_attr(tr, "data_column", "Trec")
         }
-    )
+    } else if (model_type == "SEIR") {
+        ts <- xml_add_child(x, "trans", from = "S", to = "E", type = "infection", beta = "beta", inf_model = "frequency dependent")
+        tl <- xml_add_child(x, "trans", from = "E", to = "I", type = eta_type, mean = "latent_period", shape = shape$lat)
+        tr <- xml_add_child(x, "trans", from = "I", to = "R", type = gamma_type, mean = "recovery_period", shape = shape$rec)
+        if (time_step == 0) {
+            if (pass_events == 3) xml_set_attr(ts, "data_column", "Tinf")
+            xml_set_attr(tl, "data_column", "Tsym")
+            xml_set_attr(tr, "data_column", "Trec")
+        }
+    } else if (model_type == "SIDR") {
+        ts <- xml_add_child(x, "trans", from = "S", to = "I", type = "infection", beta = "beta", inf_model = "frequency dependent")
+        td <- xml_add_child(x, "trans", from = "I", to = "D", type = rho_type, mean = "detection_period", shape = shape$det)
+        tr <- xml_add_child(x, "trans", from = "D", to = "R", type = gamma_type, mean = "recovery_period", shape = shape$rec)
+        if (time_step == 0) {
+            if (pass_events >= 3) xml_set_attr(ts, "data_column", "Tinf")
+            xml_set_attr(td, "data_column", "Tsym")
+            xml_set_attr(tr, "data_column", "Trec")
+        }
+    } else if (model_type == "SEIDR") {
+        ts <- xml_add_child(x, "trans", from = "S", to = "E", type = "infection", beta = "beta", inf_model = "frequency dependent")
+        tl <- xml_add_child(x, "trans", from = "E", to = "I", type = eta_type, mean = "latent_period", shape = shape$lat)
+        td <- xml_add_child(x, "trans", from = "I", to = "D", type = rho_type, mean = "detection_period", shape = shape$det)
+        tr <- xml_add_child(x, "trans", from = "D", to = "R", type = gamma_type, mean = "recovery_period", shape = shape$rec)
+        if (time_step == 0) {
+            if (pass_events >= 4) xml_set_attr(ts, "data_column", "Tinf")
+            if (pass_events >= 3) xml_set_attr(tl, "data_column", "Tinc")
+            xml_set_attr(td, "data_column", "Tsym")
+            xml_set_attr(tr, "data_column", "Trec")
+        }
+    }
+
+    # Remove shape parameters when type is "exp"
     
-    # remove shape parameters when type is "exp"
     if (exists("tl") && eta_type == "exp") {
         xml_set_attr(tl, "shape", NULL)
         priors[parameter == "eta_shape", use := FALSE]
@@ -156,32 +150,28 @@ generate_sire22_xml <- function(data, GRM, params) {
     
     
     ### Add individual effects ----
-    slidr <- c("s", "l", "i", "d", "r")
-    slidr_ie <- paste0(slidr, "_a,", slidr, "_e")
-    names(slidr_ie) <- slidr
     
     if ("susceptibility" %in% traitnames) {
-        xml_set_attr(ts, "individual_effect", slidr_ie[["s"]])
+        xml_set_attr(ts, "individual_effect", "s_a,s_e")
     }
-    
     
     xml_add_child(x, xml_comment("Add FEs or IEs to infectivity here"))
     
     inf_node <- xml_add_child(x, "infectivity")
     if ("infectivity" %in% traitnames) {
-        xml_set_attr(inf_node, "individual_effect", slidr_ie[["i"]])
+        xml_set_attr(inf_node, "individual_effect", "i_a,i_e")
     }
     
     if ("recoverability" %in% traitnames) {
-        xml_set_attr(tr, "individual_effect", slidr_ie[["r"]])
+        xml_set_attr(tr, "individual_effect", "r_a,r_e")
         
         # link latency and detectability
         if ("latency" %in% traitnames && substr(link_traits, 2, 2) == "r") {
-            xml_set_attr(tl, "individual_effect", slidr_ie[["r"]])
+            xml_set_attr(tl, "individual_effect", "r_a,r_e")
         }
         
         if ("detectability" %in% traitnames && substr(link_traits, 4, 4) == "r") {
-            xml_set_attr(td, "individual_effect", slidr_ie[["r"]])
+            xml_set_attr(td, "individual_effect", "r_a,r_e")
         }
     }
     
@@ -189,6 +179,8 @@ generate_sire22_xml <- function(data, GRM, params) {
     
     
     ### Add fixed effects ----
+    
+    # Want to create vectors c(s="trial_s", ...) where the values may be linked
     all_traits1 <- substr(all_traitnames, 1, 1)
     
     trial_names <- paste0("trial_", all_traits1)
@@ -217,29 +209,19 @@ generate_sire22_xml <- function(data, GRM, params) {
     }
     
     fex <- fe_str("s")
-    if (fex != "") {
-        xml_set_attr(ts, "fixed_effect", fex)
-    }
+    if (fex != "") xml_set_attr(ts, "fixed_effect", fex)
     
     fex <- fe_str("l")
-    if (fex != "") {
-        xml_set_attr(tl, "fixed_effect", fex)
-    }
+    if (fex != "") xml_set_attr(tl, "fixed_effect", fex)
     
     fex <- fe_str("i")
-    if (fex != "") {
-        xml_set_attr(inf_node, "fixed_effect", fex)
-    }
+    if (fex != "") xml_set_attr(inf_node, "fixed_effect", fex)
     
     fex <- fe_str("d")
-    if (fex != "") {
-        xml_set_attr(td, "fixed_effect", fex)
-    }
+    if (fex != "") xml_set_attr(td, "fixed_effect", fex)
     
     fex <- fe_str("r")
-    if (fex != "") {
-        xml_set_attr(tr, "fixed_effect", fex)
-    }
+    if (fex != "") xml_set_attr(tr, "fixed_effect", fex)
     
     
     ### Group effect ----
@@ -254,28 +236,28 @@ generate_sire22_xml <- function(data, GRM, params) {
     
     ## Covariance ----
     
-    # Note that we have two child nodes both called "covariance", so
-    # xml_add_child() fails when we add to the second one. Instead we use
-    # the position which is also the length of `x`.
-    
-    
-    sir <- c("susceptibility", "infectivity", "recoverability")
-    used_traits <- sir %in% traitnames
+    sir <- c("s", "i", "r")
+    used_traits <- sir %in% substr(traitnames, 1, 1)
+    names(used_traits) <- sir
     n_used <- sum(used_traits)
     use_cov <- any(used_traits)
     
+    # Note that we have two child nodes both called "covariance", so need to
+    # store the pointer, otherwise xml_add_child(x, "covariance") fails when we
+    # try to add to the second one.
+    
     if (use_cov) {
         # generate a string like "s_a,i_a" depending on which traits are used
-        ie_a_str <- paste0(c("s", "i", "r")[used_traits], "_a", collapse = ",")
+        ie_a_str <- paste0(sir[used_traits], "_a", collapse = ",")
         ie_e_str <- gsub("a", "e", ie_a_str)
         
         cov_G_mat <- matrix(paste0("cov_G_", c("ss", "ii", "rr")[used_traits]), ncol = 1)
         cov_E_mat <- sub("G", "E", cov_G_mat)
         
         cor_G_mat <- diag(1, n_used, n_used)
-        cors <- c(if (all(used_traits[c(1, 2)])) "r_G_si",
-                  if (all(used_traits[c(1, 3)])) "r_G_sr",
-                  if (all(used_traits[c(2, 3)])) "r_G_ir")
+        cors <- c(if (all(used_traits[c("s", "i")])) "r_G_si",
+                  if (all(used_traits[c("s", "r")])) "r_G_sr",
+                  if (all(used_traits[c("i", "r")])) "r_G_ir")
         cor_G_mat[upper.tri(cor_G_mat)] <- cors
         cor_G_mat[lower.tri(cor_G_mat)] <- t(cor_G_mat)[lower.tri(cor_G_mat)]
         cor_E_mat <- sub("G", "E", cor_G_mat)
@@ -283,54 +265,34 @@ generate_sire22_xml <- function(data, GRM, params) {
         
         # Genetic Covariance
         xml_add_child(x, xml_comment("Genetic covariance between different individual effects"))
-        xml_add_child(x, "covariance",
-                      individual_effect = ie_a_str,
-                      relationship_matrix = "A")
-        xml_add_child(xml_child(x, length(xml_children(x))),
-                      "variance",
-                      data_table_to_tsv_string(cov_G_mat))
-        xml_add_child(xml_child(x, length(xml_children(x))),
-                      "correlation",
-                      data_table_to_tsv_string(cor_G_mat))
+        xcg <- xml_add_child(x, "covariance",
+                             individual_effect = ie_a_str,
+                             relationship_matrix = "A")
+        xml_add_child(xcg, "variance", table_to_tsv_string(cov_G_mat))
+        xml_add_child(xcg, "correlation", table_to_tsv_string(cor_G_mat))
         
         # Environmental Covariance
         xml_add_child(x, xml_comment("Environmental covariance between different individual effects"))
-        xml_add_child(x, "covariance",
-                      individual_effect = ie_e_str,
-                      relationship_matrix = "I")
-        xml_add_child(xml_child(x, length(xml_children(x))),
-                      "variance",
-                      data_table_to_tsv_string(cov_E_mat))
-        xml_add_child(xml_child(x, length(xml_children(x))),
-                      "correlation",
-                      data_table_to_tsv_string(cor_E_mat))
+        xce <- xml_add_child(x, "covariance",
+                             individual_effect = ie_e_str,
+                             relationship_matrix = "I")
+        xml_add_child(xce, "variance", table_to_tsv_string(cov_E_mat))
+        xml_add_child(xce, "correlation", table_to_tsv_string(cor_E_mat))
     }
-    
-    ## Demography ----
-    xml_add_child(x, xml_comment("No. of sires + progeny, no. of groups"))
-    xml_add_child(x, "data", N = nsires + nprogeny)
-    xml_add_child(x, "data", Z = ngroups)
     
     
     ## Observation and Inference periods ----
     xml_add_child(x, xml_comment("Inference and observation periods"))
-    if (use_fb_data) {
-        if (setup == "fishboost") {
-            for (i in 1:72) {
-                tmax_val <- if (i <= 36) 104 else 160
-                xml_add_child(x, "inference", group = i, tmin = 0, tmax = tmax_val)
-                xml_add_child(x, "observation", group = i, tmin = 0, tmax = tmax_val)
-            }
-        } else if (setup == "fb1") {
-            xml_add_child(x, "inference", tmin = 0, tmax = 104)
-            xml_add_child(x, "observation", tmin = 0, tmax = 104)
-        } else {
-            xml_add_child(x, "inference", tmin = 0, tmax = 160)
-            xml_add_child(x, "observation", tmin = 0, tmax = 160)
+    
+    trials <- data[sdp == "progeny", unique(trial)]
+    ntrials <- max(length(trials), 1L)
+    for (i in seq_len(ntrials)) {
+        groups <- data[trial == trials[i], mixedsort(unique(group))]
+        trial_tmax <- if (use_fb_data | censor < 1) as.character(tmax[i]) else "infinity"
+        
+        for (tag in c("inference", "observation")) {
+            xml_add_child(x, tag, group = paste(groups, collapse = ","), tmin = 0, tmax = trial_tmax)
         }
-    } else {
-        xml_add_child(x, "inference", tmin = 0, tmax = "infinity")
-        xml_add_child(x, "observation", tmin = 0, tmax = "infinity")
     }
     
     
@@ -343,48 +305,65 @@ generate_sire22_xml <- function(data, GRM, params) {
         # skip over unused parameters
         if (ppi$use == FALSE) next
         
-        xml_add_child(x, "prior",
-                      parameter = ppi$parameter,
-                      type = "Flat", val1 = ppi$val1, val2 = ppi$val2)
+        xp <- xml_add_child(x, "prior")
+        if (ppi$type == "Flat") {
+            xml_set_attrs(xp, c(parameter = ppi$parameter, type = ppi$type, val1 = ppi$val1, val2 = ppi$val2))
+        } else if (ppi$type == "Fixed") {
+            xml_set_attrs(xp, c(parameter = ppi$parameter, type = ppi$type, val = ppi$val1))
+        }
+        # xml_add_child(x, "prior", parameter = ppi$parameter,
+        #               type = "Flat", val1 = ppi$val1, val2 = ppi$val2)
     }
     
     
-    ## Event times ----
+    ## Add the data table ----
     
     xml_add_child(x, xml_comment("Information about individuals"))
     
-    if (time_step == 0) {
-        xdt <- xml_add_child(x, "datatable",
-                             id = 1, group = 2, initial_comp = 3, #s_a = 6, i_a = 7, r_a = 8,
-                             "\nREPLACE_WITH_DATA\n")
-    } else {
-        xdt <- xml_add_child(x, "datatable",
-                             id = 1, group = 2, initial_comp = 3, comp_status = 4,
-                             #s_a = 5, i_a = 6, r_a = 7,
-                             "\nREPLACE_WITH_DATA\n")
+    dt <- glue("{data_dir}/{name}-data.tsv")
+    write.table(data, file = dt, sep = "\t", quote = FALSE,
+                row.names = FALSE, col.names = TRUE)
+    
+    xdt <- xml_add_child(x, "datatable", file = dt,
+                         id = "id", sire = "sire", dam = "dam", group = "group",
+                         initial_comp = "initial_comp", prediction_accuracy = "sdp")
+    if (time_step > 0) {
+        xml_set_attr(xdt, "comp_status", "comp_status")
     }
+    
+    # Write the data to a TSV file, then use sed to replace the string
+    # "REPLACE_WITH_DATA". This is trickier, but *much* faster than trying
+    # to generate a huge string in the XML stream.
+    
+    
     
     
     ## DT col names ----
     if (!use_fb_data) {
-        if (used_traits[1]) xml_set_attr(xdt, "s_a", which(names(data) == "susceptibility_BV"))
-        if (used_traits[2]) xml_set_attr(xdt, "i_a", which(names(data) == "infectivity_BV"))
-        if (used_traits[3]) xml_set_attr(xdt, "r_a", which(names(data) == "recoverability_BV"))
+        # for (x in c("s", "i", "r")) {
+        #     if (x %in% substr(traitnames, 1, 1)) {
+        #         xa = paste(x, "_a")
+        #         xml_set_attr(xdt, xa, xa)
+        #     }
+        # }
+        if (used_traits["s"]) xml_set_attr(xdt, "s_a", "s_a")
+        if (used_traits["i"]) xml_set_attr(xdt, "i_a", "i_a")
+        if (used_traits["r"]) xml_set_attr(xdt, "r_a", "r_a")
     }
     
     # add <datatable ... trial_r="9", donor_i="10", txd_i="11"> etc.
     
     
     for (str in unique(trial_names[strsplit(trial_fe, "")[[1]]])) {
-        xml_set_attr(xdt, str, which(names(data) == "trial_fe"))
+        xml_set_attr(xdt, str, "trial_fe")
     }
     
     for (str in unique(donor_names[strsplit(donor_fe, "")[[1]]])) {
-        xml_set_attr(xdt, str, which(names(data) == "donor_fe"))
+        xml_set_attr(xdt, str, "donor_fe")
     }
     
     for (str in unique(txd_names[strsplit(txd_fe, "")[[1]]])) {
-        xml_set_attr(xdt, str, which(names(data) == "txd_fe"))
+        xml_set_attr(xdt, str, "txd_fe")
     }
     
     # for (i in strsplit(trial_fe, "")[[1]])
@@ -395,56 +374,45 @@ generate_sire22_xml <- function(data, GRM, params) {
     # xml_set_attr(xdt, paste0("txd_", i), which(names(data) == "txd_fe"))
     
     
-    # Write the data to a TSV file, then use sed to replace the string
-    # "REPLACE_WITH_DATA". This is trickier, but *much* faster than trying
-    # to generate a huge string in the XML stream.
+    ## Relationship matrix ----
     
-    data_file <- glue("{data_dir}/{name}-data.tsv")
-    write.table(data, file = data_file, sep = "\t", quote = FALSE,
-                row.names = FALSE, col.names = FALSE)
-    
-    
-    ## GRM ----
-    
-    # Clip out the dams
-    nondams <- c(seq.int(nsires), seq.int(nparents + 1L, ntotal))
-    GRM_nd <- GRM[nondams, nondams]
-    
-    # Convert the GRM into a sparse matrix, use `summary` to extract values,
-    # then convert that into a data table
-    
-    GRM_nd_dt <- as.data.table(summary(Matrix(GRM_nd, sparse = TRUE)))
-    
-    # Use the DT to make 0-based indices
-    GRM_nd_dt[, `:=`(i = i - 1L, j = j - 1L)]
-    
-    # Account for summary only giving UT matrix, and SIRE wanting access to
-    # both the LT and UT parts
-    GRM_nd_dt <- rbind(GRM_nd_dt, GRM_nd_dt[i != j, .(i = j, j = i, x)])
-    setkey(GRM_nd_dt, j, i)
-    
-    
-    # write the DT as a TSV file
-    A_file <- glue("{data_dir}/{name}-A.tsv")
-    write.table(GRM_nd_dt, file = A_file, sep = "\t", quote = FALSE,
-                row.names = FALSE, col.names = FALSE)
-    
-    xml_add_child(x, xml_comment("A-matrix or GRM"))
-    xml_add_child(x, "A_nonzero", name = "A", "\nREPLACE_WITH_A\n")
-    
+    if (FALSE && !is.null(GRM)) {
+        # Clip out the dams
+        nondams <- c(seq.int(nsires), seq.int(nparents + 1L, ntotal))
+        GRM2 <- GRM[nondams, nondams]
+        
+        # Convert the GRM into a sparse matrix, use `summary` to extract values,
+        # then convert that into a data table
+        
+        GRM_dt <- as.data.table(summary(Matrix(GRM2, sparse = TRUE)))
+        
+        # Use the DT to make 0-based indices
+        GRM_dt[, `:=`(i = i - 1L, j = j - 1L)]
+        
+        # Account for summary only giving UT matrix, and SIRE wanting access to
+        # both the LT and UT parts
+        GRM_dt <- rbind(GRM_dt, GRM_dt[i != j, .(i = j, j = i, x)])
+        setkey(GRM_dt, j, i)
+        
+        
+        # Write the DT as a TSV file
+        A_file <- glue("{data_dir}/{name}-A.tsv")
+        write.table(GRM_dt, file = A_file, sep = "\t", quote = FALSE,
+                    row.names = FALSE, col.names = FALSE)
+
+        xml_add_child(x, xml_comment("Relationship matrix (A or GRM)"))
+        xml_add_child(x, "A_nonzero", file = A_file, name = "A")
+    }
     
     ## Prediction Accuracies ----
     
-    
-    # build up ind = "Ind0,Ind1,...,Ind99"
-    sire_inds <- paste0("Ind", seq.int(0L, nsires - 1L), collapse = ",")
     xml_add_child(x, xml_comment("Prediction Accuracies for sires"))
-    xml_add_child(x, "prediction_accuracy", name = "sire", ind = sire_inds)
+    xml_add_child(x, "prediction_accuracy", name = "sire",
+                  ind = paste0(data[sdp == "sire", id], collapse = ","))
     
-    # build up ind = "Ind100,Ind101,...,Ind2099"
-    prog_inds <- paste0("Ind", seq.int(nsires, nsires + nprogeny - 1L), collapse = ",")
     xml_add_child(x, xml_comment("Prediction Accuracies for progeny"))
-    xml_add_child(x, "prediction_accuracy", name = "progeny", ind = prog_inds)
+    xml_add_child(x, "prediction_accuracy", name = "progeny",
+                  ind = paste0(data[sdp == "progeny", id], collapse = ","))
     
     
     # Write the XML file ----
@@ -452,27 +420,18 @@ generate_sire22_xml <- function(data, GRM, params) {
     write_xml(x, xml_file) #options = c("as_xml", "format") #?
     
     
-    ## Inject the TSV files using sed ----
-    cmd1 <- paste0("sed -e '/REPLACE_WITH_DATA/ {' -e 'r ", data_file, "' -e  'd' -e '}' -i ", xml_file)
-    cmd2 <- paste0("sed -e '/REPLACE_WITH_A/ {' -e 'r ", A_file, "' -e  'd' -e '}' -i ", xml_file)
+    # Fix XML formatting ----
     
-    # Remove indents (they're terrible anyway), and insert newlines before
-    # comments for readability
-    cmd3 <- paste0("sed -i 's/^\\t*//; s/^ *//; s/\\(<!--\\)/\\n\\1/' ", xml_file)
+    # Seriously, R does a terrible job here, this makes the output much more readable.
     
-    # On Mac need to use GNU sed (gsed) instead of BSD sed
-    if (Sys.info()["sysname"] == "Darwin") {
-        cmd1 <- glue("g{cmd1}")
-        cmd2 <- glue("g{cmd2}")
-        cmd3 <- glue("g{cmd3}")
-    }
-    
-    system(cmd1)
-    system(cmd2)
-    system(cmd3)
-    
-    ## Remove temporary files ----
-    system(glue("rm {A_file} {data_file}"))
+    cmd <- paste0(
+        # On Mac need to use GNU sed (gsed) instead of BSD sed
+        if (Sys.info()["sysname"] == "Darwin") "g" else NULL,
+        # sed: remove tabs at start; insert new lines before comments
+        "sed -i 's/^\\t*//; s/^ *//; s/\\(<!--\\)/\\n\\1/' ",
+        xml_file
+    )
+    system(cmd)
     
     return(x)
 }

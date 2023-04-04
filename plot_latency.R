@@ -64,13 +64,13 @@ library(cowplot)
 library(viridis)
 
 source("import_fishboost_data.R")
-fb_end <- fb_traits[, max(Trec, na.rm = TRUE)]
+fb_end <- fb_data[, max(Trec, na.rm = TRUE)]
 
 
 pdf("FB_plots.pdf", paper = "a4")
 for (i in 0:11) {
     gps <- c(1+6*i, 6+6*i)
-    fb1 <- fb_traits[group %in% seq.int(gps[1], gps[2])]
+    fb1 <- fb_data[group %in% seq.int(gps[1], gps[2])]
     fb1[, group := sprintf("%02d", group)]
 
 

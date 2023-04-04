@@ -48,10 +48,11 @@ apply_links <- function(params) {
         z <- strsplit(sim_link_traits, "")[[1]]
         
         # Subset based on which traits are actually used
-        z <- z[match(traitnames1, all_traits1)]
+        # z <- z[match(traitnames1, all_traits1)]
         
         # Turn that into indexes for Sigmas
-        new_idxs <- match(z, traitnames1)
+        # new_idxs <- match(z, traitnames1)
+        new_idxs <- match(z, all_traits1)
         
         # Copy rows and columns in Sigmas
         Sigma_G <- Sigma_G[new_idxs, , drop = FALSE]

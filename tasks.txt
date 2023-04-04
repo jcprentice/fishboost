@@ -1,0 +1,7 @@
+Fishboost To Do
+
+* Run with fixed LP and more samples
+* Test for bias with simulations, fixing LP low and high
+* using both trials
+* Test the effect of including a group effect on the variance estimates
+

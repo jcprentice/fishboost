@@ -1,7 +1,7 @@
 # Fishboost data ----
 #
 # Convert the fishboost data from XLSX to a format usable here. The final result
-# is the "fb_traits" data table.
+# is the "fb_data" data table.
 #
 # For simulations purposes, we need "id" and "group" for the epidemic, and
 # "sire" and "dam" for generating pedigree and trait values.
@@ -31,7 +31,7 @@ library(data.table)
 
 # These are the ids of the columns we want, the names they have in the
 # Masterfile, and what we're going to rename them
-cols <- as.data.table(dplyr::tribble(
+cols1 <- as.data.table(dplyr::tribble(
     ~id, ~old, ~new,
     2,  "Individual recoded", "id",
     19, "Sire_rec", "sire",
@@ -40,11 +40,14 @@ cols <- as.data.table(dplyr::tribble(
     4,  "Box", "group",
     9,  "Weight start (g)", "weight",
     8,  "Donor (D) / Receptor (R)", "donor",
+    11, "Description of sympthoms", "symptoms",
     12, "Day of first symptoms", "Tsym",
     13, "Day of death", "Trec",
+    14, "Parasites", "parasites",
     35, "Days onset symptoms (susceptibility)", "sus",
     34, "Day start to end (resilience)", "res",
-    36,  "Days onset to death (tolerance)", "tol"
+    36, "Days onset to death (tolerance)", "tol",
+    37, "Removed (yes / no)", "removed"
 ))
 
 # Adjust the path here if necessary
@@ -55,13 +58,13 @@ fb <- as.data.table(
         range = readxl::cell_cols(1:40),
         .name_repair = ~ janitor::make_clean_names(.x)
     )
-)[, .SD, .SDcols = cols$id]
+)[, .SD, .SDcols = cols1$id]
 
 
 
 # Rename columns to short single word values, both for easier use, and for
 # consistency with the rest of the code:
-setnames(fb, cols$new)
+setnames(fb, cols1$new)
 
 # Setting the key to "id" keeps the data sorted in a useful way
 setkey(fb, id)
@@ -70,26 +73,32 @@ setkey(fb, id)
 # Fix types and missing data ----
 
 # Convert columns to integers if possible
-cols <- c("id", "sire", "dam", "trial", "group")
-fb[, (cols) := lapply(.SD, as.integer), .SDcols = cols]
+cols2 <- c("id", "sire", "dam", "trial", "group")
+fb[, (cols2) := lapply(.SD, as.integer), .SDcols = cols2]
 
 # Donor / Recipient, "D" refers to donors (Exposed / Infectious), "R" are
 # initially Susceptible.
 fb[, donor := fifelse(donor == "D", 1L, 0L)]
+
+# Parasites "YES" = true, "slaughtered" or "no" = false
+fb[, parasites := startsWith(tolower(parasites), "yes")]
+
+# Removed "yes" / "no"
+fb[, removed := removed == "yes"]
 
 # Add sire / dam / progeny as factor (although they're all progeny here):
 fb[, sdp := factor("progeny", levels = c("sire", "dam", "progeny"))]
 
 
 # Collect pedigree columns at start
-setcolorder(fb, c(1:3, ncol(fb)))
+setcolorder(fb, c("id", "sire", "dam", "sdp"))
 
 
 # The following columns all contain NA's, therefore are incorrectly interpreted
 # as character vectors. Need to convert to numeric.
-cols <- c("Tsym", "Trec", "sus", "res", "tol")
+cols3 <- c("Tsym", "Trec", "sus", "res", "tol")
 fn <- function(x) as.numeric(fifelse(x == "NA", "", x))
-fb[, (cols) := lapply(.SD, fn), .SDcols = cols]
+fb[, (cols3) := lapply(.SD, fn), .SDcols = cols3]
 
 
 # Fix dates ----
@@ -171,8 +180,24 @@ fb[id == 1109, `:=`(sire = 28, dam = 20)]
 # fb <- fb[!(id %in% broken_ids)]
 
 
+# Remove fish with no data ----
+#
+# Fish with no data: IDs 796, 870, and 1362 have no recorded data (see Anacleto
+# paper), and were discarded from analysis. Assume just missing values?
 
-# Create the fb_traits file ----
+# fb <- fb[!id %in% c(796, 870, 1362)]
+
+
+# Trial 1 Group 14 was just broken, remove it completely
+fb <- fb[!(trial == 1 & group == 14)]
+
+
+# Reassign group numbers ----
+fb[trial == 1 & group %in% 15:36, group := group - 1L]
+fb[trial == 2, group := group + 35L]
+
+
+# Create the fb_data file ----
 
 # Since sires and dams were not involved in the Fishboost experiments, they lack
 # rows in the data, so we'll add them to the top of the pedigree section.
@@ -183,35 +208,31 @@ nsires   <- max(fb_sires$id)
 ndams    <- max(fb_dams$id)
 nparents <- nsires + ndams
 
-fb_traits <- rbind(fb_sires, fb_dams,
-                   fb[, .(id, sire, dam, sdp, trial, group, weight, donor, Tinf, Tsym, Trec)],
+fb_data <- rbind(fb_sires, fb_dams,
+                   fb[, .(id, sire, dam, sdp, trial, group, weight, donor, Tinf, Tsym, Trec, parasites)],
                    fill = TRUE)
 # need to fix column order again
-setcolorder(fb_traits, c(1,3,4,2))
+setcolorder(fb_data, c("id", "sire", "dam", "sdp"))
 
 
 # Sire, dam, and progeny IDs overlap, so assign them all unique ones
-fb_traits[sdp == "dam", id := id + nsires]
-fb_traits[sdp == "progeny", `:=`(id  = id + nparents,
+fb_data[sdp == "dam", id := id + nsires]
+fb_data[sdp == "progeny", `:=`(id  = id + nparents,
                                  dam = dam + nsires)]
 
 # Now use match() to shuffle the values down again, removing unused IDs
-fb_traits[, `:=`(sire = match(sire, unique(id)),
+fb_data[, `:=`(sire = match(sire, unique(id)),
                  dam  = match(dam,  unique(id)),
                  id   = match(id,   unique(id)))]
 
 # Might be handy to keep track of how parent IDs have been reassigned. I'm not
 # saving them, but they're generated here in case we need them later on.
-fb_sires$new_id <- fb_traits[sdp == "sire", id]
-fb_dams$new_id  <- fb_traits[sdp == "dam",  id]
+fb_sires$new_id <- fb_data[sdp == "sire", id]
+fb_dams$new_id  <- fb_data[sdp == "dam",  id]
 fb_parent_ids <- rbind(fb_sires, fb_dams)
 setnames(fb_parent_ids, "id", "orig_id")
-setcolorder(fb_parent_ids, c(2, 1, 3))
+setcolorder(fb_parent_ids, c("sdp", "orig_id", "new_id"))
 
-
-# The groups are repeated, we need them to also be unique.
-trial1_ngroups <- fb[trial == 1, length(unique(group))]
-fb_traits[trial == 2, group := group + trial1_ngroups]
 
 
 # Correct for Latent Period ----
@@ -226,19 +247,19 @@ correct_for_LP <- FALSE
 
 if (correct_for_LP) {
     # we may want to do this per trial, or only using Trial 1
-    mean_lp <- fb_traits[donor == 1, mean(Tsym - Tinf, na.rm = TRUE)]
+    mean_lp <- fb_data[donor == 1, mean(Tsym - Tinf, na.rm = TRUE)]
     # floor(mean_lp) to ensure rounding to nearst day
-    fb_traits[donor == 0, Tinf := pmax(Tsym - floor(mean_lp), 0.0)]
+    fb_data[donor == 0, Tinf := pmax(Tsym - floor(mean_lp), 0.0)]
 }
 
-# We now how a fb_traits file suitable for either passing to SIRE, or using as a
+# We now how a fb_data file suitable for either passing to SIRE, or using as a
 # base to create trait values and simulate epidemics.
-setkey(fb_traits, id)
+setkey(fb_data, id)
 
 
 
 # In case it's necessary later, create a map from original IDs to the new IDs.
-id_maps <- fb_traits[, .(sdp, id)]
+id_maps <- fb_data[, .(sdp, id)]
 
 setnames(id_maps, "id", "new")
 
@@ -251,5 +272,5 @@ setcolorder(id_maps, c("sdp", "original", "new"))
 # Save data ----
 
 # Save so we don't need to source this script next time unless anything changes
-saveRDS(fb_traits, file = "fb_data/fb_traits.rds")
-# fwrite(fb_traits, file = "fb_data/fb_traits.tsv", sep = "\t", quote = TRUE)
+saveRDS(fb_data, file = "fb_data/fb_data12.rds")
+# fwrite(fb_data, file = "fb_data/fb_data12.tsv", sep = "\t", quote = TRUE)

@@ -1,30 +1,32 @@
 make_pedigree <- function(params) {
     message("Making pedigree ...")
 
-    setup    <- params$setup
-    nsires   <- params$nsires
-    ndams    <- params$ndams
-    dpsire   <- params$dpsire
-    ppdam    <- params$ppdam
-    nparents <- params$nparents
-    nprogeny <- params$nprogeny
-    ntotal   <- params$ntotal
+    {
+        setup    <- params$setup
+        nsires   <- params$nsires
+        ndams    <- params$ndams
+        dpsire   <- params$dpsire
+        ppdam    <- params$ppdam
+        nparents <- params$nparents
+        nprogeny <- params$nprogeny
+        ntotal   <- params$ntotal
+    }
 
     # if "fishboost", we already have a pedigree
     if (setup  == "fishboost") {
         message(" - copying FB pedigree")
-        fb_traits <- readRDS("fb_data/fb_traits.rds")
-        ped <- fb_traits[, .(id, sire, dam, sdp)]
+        fb_data <- readRDS("fb_data/fb_data12.rds")
+        ped <- fb_data[, .(id, sire, dam, sdp)]
         return(ped)
     } else if (setup == "fb1") {
         message(" - copying FB1 pedigree")
-        fb_traits <- readRDS("fb_data/fb_traits1.rds")
-        ped <- fb_traits[, .(id, sire, dam, sdp)]
+        fb_data <- readRDS("fb_data/fb_data1.rds")
+        ped <- fb_data[, .(id, sire, dam, sdp)]
         return(ped)
     } else if (setup == "fb2") {
         message(" - copying FB2 pedigree")
-        fb_traits <- readRDS("fb_data/fb_traits2.rds")
-        ped <- fb_traits[, .(id, sire, dam, sdp)]
+        fb_data <- readRDS("fb_data/fb_data2.rds")
+        ped <- fb_data[, .(id, sire, dam, sdp)]
         return(ped)
     }
 

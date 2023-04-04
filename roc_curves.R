@@ -79,7 +79,7 @@ for (slider in seq.int(0L, 100L, by = 10L)) {
 
     plts <- plot_grid(plotlist = list(plt1, plt2), ncol = 2)
 
-    png(filename = paste0("gfx/roc", slider, ".png"), width = 1000, height = 500)
-    print(plts)
-    dev.off()
+    ggsave(glue("gfx/roc{slider}.png"),
+           plts,
+           width = 1000, height = 500, units = "px")
 }

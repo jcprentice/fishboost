@@ -4,22 +4,24 @@
 set_groups <- function(traits, params) {
     message("Assigning groups to progeny")
 
-    setup        <- params$setup
-    nprogeny     <- params$nprogeny
-    ngroups      <- params$ngroups
-    group_layout <- params$group_layout
-    group_size   <- params$group_size
-    group_effect <- params$group_effect
-    I0           <- params$I0
+    {
+        setup        <- params$setup
+        nprogeny     <- params$nprogeny
+        ngroups      <- params$ngroups
+        group_layout <- params$group_layout
+        group_size   <- params$group_size
+        group_effect <- params$group_effect
+        I0           <- params$I0
+    }
 
     # If using a Fishboost layout...
     using_fb_setup <- setup %in% c("fishboost", "fb1", "fb2")
     if (using_fb_setup) {
-        fb_traits <- switch(
+        fb_data <- switch(
             setup,
-            "fishboost" = readRDS("fb_data/fb_traits.rds"),
-            "fb1" = readRDS("fb_data/fb_traits1.rds"),
-            "fb2" = readRDS("fb_data/fb_traits2.rds")
+            "fishboost" = readRDS("fb_data/fb_data12.rds"),
+            "fb1"       = readRDS("fb_data/fb_data1.rds"),
+            "fb2"       = readRDS("fb_data/fb_data2.rds")
         )
     }
 
@@ -34,7 +36,7 @@ set_groups <- function(traits, params) {
 
     # Set trial
     if (using_fb_setup) {
-        dt[, trial := fb_traits[dt$id, trial]]
+        dt[, trial := fb_data[dt$id, trial]]
     } else {
         dt[, trial := 1L]
     }
@@ -52,7 +54,7 @@ set_groups <- function(traits, params) {
                dt[, group := rep(1:ngroups, length.out = .N)]
            }, "fishboost" = {
                message(" - copying Fishboost groups")
-               dt[, group := fb_traits[dt$id, group]]
+               dt[, group := fb_data[dt$id, group]]
            }, stop("Unrecognised group_layout!")
     )
 

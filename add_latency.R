@@ -3,8 +3,9 @@
 add_latency_donors <- function(pop) {
     # simulated data doesn't have a trial, so let it temporarily = 1
     has_trial <- "trial" %in% names(pop)
-    if (!has_trial)
+    if (!has_trial) {
         pop[, trial := 1]
+    }
 
     LP <- pop[sdp == "progeny" & donor == 1,
               .(LP = mean(Tsym, na.rm = TRUE)),
@@ -13,8 +14,9 @@ add_latency_donors <- function(pop) {
     pop[, estimated_Tinf := fifelse(donor == 1, 0, pmax(Tsym - LP[trial], 0))]
 
     # tidy up trial
-    if (!has_trial)
+    if (!has_trial) {
         pop[, trial := NULL]
+    }
 }
 
 
@@ -25,8 +27,9 @@ add_latency_donors <- function(pop) {
 add_latency_donors_plus <- function(pop) {
     # simulated data doesn't have a trial, so let it temporarily = 1
     has_trial <- "trial" %in% names(pop)
-    if (!has_trial)
+    if (!has_trial) {
         pop[, trial := 1]
+    }
 
     LP_donors <- pop[sdp == "progeny" & donor == 1,
               .(LP = ceiling(mean(Tsym, na.rm = TRUE))),
@@ -47,8 +50,9 @@ add_latency_donors_plus <- function(pop) {
     setkey(pop, id)
 
     # tidy up trial
-    if (!has_trial)
+    if (!has_trial) {
         pop[, trial := NULL]
+    }
 }
 
 
@@ -67,8 +71,9 @@ add_latency_biggest <- function(pop) {
     setkey(pop, id)
 
     # tidy up trial
-    if (!has_trial)
+    if (!has_trial) {
         pop[, trial := NULL]
+    }
 }
 
 
@@ -88,7 +93,8 @@ add_latency_smallest <- function(pop) {
     ][, .(lp = pmax(Tsym - cummax(shift(Trec, n = 1, fill = 0)), 0)), by = group
     ][, max(lp)]
 
-    message(" - Adding LP = ", round(lp, digits = 1), " days")
+    message(glue(" - Adding LP = {days} days",
+                 days = round(lp, digits = 1)))
 
     pop[, estimated_Tinf := pmax(Tsym - lp, 0)]
 }
@@ -109,7 +115,7 @@ add_latency_individual <- function(pop) {
 
     rng <- pop[, round(range(Tsym - Tinf, na.rm = TRUE), digits = 1)]
 
-    message(" - Adding LPs in [", rng[1], ", ", rng[2], "] days")
+    message(glue(" - Adding LPs in [{rng[1]}, {rng[2]}] days"))
 }
 
 

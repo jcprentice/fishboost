@@ -10,7 +10,7 @@ get_sis_infectives <- function(X) {
 generate_sis_path <- function(epi_time, pop, id, params) {
     with(params, {
         Tinf <- epi_time
-        Trec <- Tinf + rgamma(1L, r_gamma_shape, r_gamma_rate) * pop[id, recoverability]
+        Trec <- Tinf + rgamma(1L, r_gamma_shape, r_gamma_rate) * pop$recoverability[id]
 
         return(list("I", Tinf, Trec))
     })
@@ -58,8 +58,8 @@ model_SIS <- function(traits, params) {
         if (DEBUG) message("next NI event id = ", id_next_event, " at t = ", t_next_event)
 
 
-        # generate random timestep
-        total_event_rate <- pop[, sum(event_rate)]
+        # generate random timestep ----
+        total_event_rate <- sum(pop$event_rate)
 
         # calculate dt if infections event rate > 0
         if (total_event_rate > 0.0) {
@@ -80,7 +80,7 @@ model_SIS <- function(traits, params) {
                                     size = 1L,
                                     prob = pop$event_rate)
 
-            group_id <- pop[id_next_event, group]
+            group_id <- pop$group[id_next_event]
             infectives <- pop[, .(.I, group, status, infectivity)][group == group_id & status == "I"]
             infd_by <- safe_sample(x = infectives$I,
                                    size = 1L,

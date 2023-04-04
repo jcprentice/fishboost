@@ -7,10 +7,10 @@ source("make_time_series.R")
 source("make_plots.R")
 source("add_latency.R")
 
-fb_traits <- readRDS("fb_data/fb_traits.rds")
+fb_data <- readRDS("fb_data/fb_data12.rds")
 
 # Work with copy of data ----
-fb <- fb_traits[sdp == "progeny", .(id, sdp, trial, group, donor, Tinf, Tsym, Trec)]
+fb <- fb_data[sdp == "progeny", .(id, sdp, trial, group, donor, Tinf, Tsym, Trec)]
 fb[, Tinf := fifelse(donor == 1, 0, NA_real_)]
 
 

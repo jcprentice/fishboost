@@ -6,6 +6,7 @@ library(xml2)       # used to generate XML file
 # library(cowplot)    # grid plotting
 # library(tictoc)     # check performance
 # library(magrittr)   # the pipe can be nice for FP
+library(gtools)     # includes mixedsort
 library(glue)       # provides string interpolation
 # library(codetools)  # check for global variables
 library(here)       # useful according to Hadley Wickham

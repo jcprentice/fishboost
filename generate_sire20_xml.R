@@ -3,20 +3,22 @@
 # sire_ex <- read_xml("example.xml")
 # sire_ex_list <- as_list(sire_ex)
 
-generate_sire20_xml <- function(data, GRM, params) {
-    name       <- params$name
-    nsires     <- params$nsires
-    nprogeny   <- params$nprogeny
-    nparents   <- params$nparents
-    ntotal     <- params$ntotal
-    ngroups    <- params$ngroups
-    model_type <- params$model_type
-    nsample    <- params$nsample
-    burnin     <- params$burnin
-    t_gap      <- params$t_gap
-    data_dir   <- params$data_dir
-
+generate_sire20_xml <- function(data, params, GRM) {
     message(glue("Generating SIRE 2.0 XML file {data_dir}/{name}.xml ..."))
+
+    {
+        name       <- params$name
+        nsires     <- params$nsires
+        nprogeny   <- params$nprogeny
+        nparents   <- params$nparents
+        ntotal     <- params$ntotal
+        ngroups    <- params$ngroups
+        model_type <- params$model_type
+        nsample    <- params$nsample
+        burnin     <- params$burnin
+        t_gap      <- params$t_gap
+        data_dir   <- params$data_dir
+    }
 
     # Build XML file `x` ----
     x <- xml_new_root("SIRE", version = "2.0")

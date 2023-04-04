@@ -10,7 +10,7 @@ spearmans_rc <- function(x, y) {
 # Return EBVs ranked, show rank distance vs true ranks
 get_ranks <- function(pop, estimated_BVs, params, verbose = FALSE) {
     {
-        traitnames <- params$traitnames
+        traitnames   <- params$traitnames
         sire_version <- params$sire_version
     }
 
@@ -22,7 +22,7 @@ get_ranks <- function(pop, estimated_BVs, params, verbose = FALSE) {
 
     # individual effect names (what SIRE 2.1 calls them)
     
-    if (sire_version == "2.2") {
+    if (sire_version == "sire22") {
         ie_names <- c("s_a EBV", "i_a EBV", "r_a EBV")
     } else {
         ie_names <- c("s_a", "i_a", "r_a")

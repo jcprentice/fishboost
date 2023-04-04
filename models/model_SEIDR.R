@@ -10,9 +10,9 @@ get_seidr_infectives <- function(pop) {
 generate_seidr_path <- function(epi_time, pop, id, params) {
     with(params, {
         Tinf <- epi_time
-        Tinc <- Tinf + rgamma(1L, r_eta_shape, r_eta_rate) * pop[id, latency]
-        Tsym <- Tinc + rgamma(1L, r_rho_shape, r_rho_rate) * pop[id, detectability]
-        Trec <- Tsym + rgamma(1L, r_gamma_shape, r_gamma_rate) * pop[id, recoverability]
+        Tinc <- Tinf + rgamma(1L, r_eta_shape, r_eta_rate) * pop$latency[id]
+        Tsym <- Tinc + rgamma(1L, r_rho_shape, r_rho_rate) * pop$detectability[id]
+        Trec <- Tsym + rgamma(1L, r_gamma_shape, r_gamma_rate) * pop$recoverability[id]
 
         list("E", Tinf, Tinc, Tsym, Trec)
     })
@@ -64,7 +64,7 @@ model_SEIDR <- function(traits, params) {
         if (DEBUG) message("next NI event id = ", id_next_event, " at t = ", signif(t_next_event, 5))
 
         # generate random timestep ----
-        total_event_rate <- pop[, sum(event_rate)]
+        total_event_rate <- sum(pop$event_rate)
 
         # calculate dt if infections event rate > 0
         if (total_event_rate > 0.0) {
@@ -86,12 +86,12 @@ model_SEIDR <- function(traits, params) {
                                     size = 1L,
                                     prob = pop$event_rate)
 
-            group_id <- pop[id_next_event, group]
+            group_id <- pop$group[id_next_event]
             infectives <- pop[, .(.I, group, status, infectivity)][group == group_id & status %in% c("I", "D")]
             infd_by <- safe_sample(x = infectives$I,
                                    size = 1L,
                                    prob = infectives$infectivity)
-            next_gen <- pop[infd_by, generation + 1L]
+            next_gen <- pop$generation[infd_by] + 1L
 
             set(pop, id_next_event, c("status", "Tinf", "Tinc", "Tsym", "Trec"),
                 generate_seidr_path(epi_time, pop, id_next_event, params))
@@ -103,7 +103,7 @@ model_SEIDR <- function(traits, params) {
 
             epi_time <- t_next_event
 
-            status <- pop[id_next_event, status]
+            status <- pop$status[id_next_event]
 
             if (status == "E") {
                 if (DEBUG) message("ID ", id_next_event, ": E -> I")

@@ -12,20 +12,20 @@ generate_path <- function(epi_time, pop, id, params) {
         Tinf <- epi_time
 
         if (model_type %in% c("SEIDR", "SEIDR_res")) {
-            Tinc <- Tinf + rgamma(1L, r_eta_shape, r_eta_rate) * pop[id, latency]
-            Tsym <- Tinc + rgamma(1L, r_rho_shape, r_rho_rate) * pop[id, detectablity]
-            Trec <- Tsym + rgamma(1L, r_gamma_shape, r_gamma_rate) * pop[id, recoverability]
+            Tinc <- Tinf + rgamma(1L, r_eta_shape, r_eta_rate) * pop$latency[id]
+            Tsym <- Tinc + rgamma(1L, r_rho_shape, r_rho_rate) * pop$detectablity[id]
+            Trec <- Tsym + rgamma(1L, r_gamma_shape, r_gamma_rate) * pop$recoverability[id]
             list("E", Tinf, Tinc, Tsym, Trec)
         } else if (model_type %in% c("SEIR", "SEIR_res")) {
-            Tsym <- Tinf + rgamma(1L, r_eta_shape, r_eta_rate) * pop[id, latency]
-            Trec <- Tsym + rgamma(1L, r_gamma_shape, r_gamma_rate) * pop[id, recoverability]
+            Tsym <- Tinf + rgamma(1L, r_eta_shape, r_eta_rate) * pop$latency[id]
+            Trec <- Tsym + rgamma(1L, r_gamma_shape, r_gamma_rate) * pop$recoverability[id]
             list("E", Tinf, Tsym, Trec)
         } else if (model_type %in% c("SIDR", "SIDR_res")) {
-            Tsym <- Tinf + rgamma(1L, r_rho_shape, r_rho_rate) * pop[id, detectability]
-            Trec <- Tsym + rgamma(1L, r_gamma_shape, r_gamma_rate) * pop[id, recoverability]
+            Tsym <- Tinf + rgamma(1L, r_rho_shape, r_rho_rate) * pop$detectability[id]
+            Trec <- Tsym + rgamma(1L, r_gamma_shape, r_gamma_rate) * pop$recoverability[id]
             list("I", Tinf, Tsym, Trec)
         } else if (model_type %in% c("SIS", "SIR", "SIS_res", "SIR_res")) {
-            Trec <- Tinf + rgamma(1L, r_gamma_shape, r_gamma_rate) * pop[id, recoverability]
+            Trec <- Tinf + rgamma(1L, r_gamma_shape, r_gamma_rate) * pop$recoverability[id]
             list("I", Tinf, Trec)
         }
     })
@@ -89,7 +89,7 @@ model_generic <- function(traits, params) {
         if (DEBUG) message("next NI event id = ", id_next_event, " at t = ", t_next_event)
 
         # generate random timestep ----
-        total_event_rate <- pop[, sum(event_rate)]
+        total_event_rate <- sum(pop$event_rate)
 
         # calculate dt if infections event rate > 0
         if (total_event_rate > 0.0) {
@@ -111,11 +111,11 @@ model_generic <- function(traits, params) {
                                     size = 1L,
                                     prob = pop$event_rate)
 
-            group_id <- pop[id_next_event, group]
+            group_id <- pop$group[id_next_event]
             infectives <- pop[, .(.I, group, status, infectivity)][group == group_id & status == "I"]
             infd_by <- safe_sample(x = infectives$I,
-                                       size = 1L,
-                                       prob = infectives$infectivity)
+                                   size = 1L,
+                                   prob = infectives$infectivity)
             next_gen <- pop[infd_by, generation + 1L]
 
             set(pop, id_next_event, c("status", "Tinf", "Tsym", "Trec"),

@@ -1,19 +1,27 @@
+library(MASS)
+
 # This is a faster version using arrays and no loops
 make_traits_from_pedigree <- function(pedigree, params) {
     message("Making trait values from pedigree ...")
 
     # extract parameters
-    all_traitnames <- params$all_traitnames
-    traitnames     <- params$traitnames
-    Sigma_G <- params$Sigma_G
-    Sigma_E <- params$Sigma_E
-    ntraits <- params$ntraits
+    {
+        all_traitnames <- params$all_traitnames
+        traitnames     <- params$traitnames
+        Sigma_G        <- with(params, Sigma_G[traitnames, traitnames]) # params$Sigma_G
+        Sigma_E        <- with(params, Sigma_E[traitnames, traitnames]) # params$Sigma_E
+        ntraits        <- params$ntraits
+    }
 
     missing_traits <- setdiff(all_traitnames, traitnames)
 
     # skip everything if ntraits == 0 (otherwise things break)
     if (ntraits == 0) {
         traits <- copy(pedigree)
+        missing_traits_BV <- paste0(missing_traits, "_BV")
+        missing_traits_EV <- paste0(missing_traits, "_EV")
+        traits[, (missing_traits_BV) := 0]
+        traits[, (missing_traits_EV) := 0]
         traits[, (missing_traits) := 1]
         return(traits)
     }

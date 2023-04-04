@@ -127,9 +127,7 @@ plot_ranks <- function(data_set = "sim-Gcov", scenario = 1) {
         
         ranks_str <- glue("{gfx_dir}/ranks-scen{scenario}.png")
         message("Plotting Ranks: ", ranks_str)
-        png(ranks_str, width = 1000, height = 1000)
-        print(plt_rank)
-        dev.off()
+        ggsave(ranks_str, plt_rank, width = 1000, height = 1000, units = "px")
     }
     
     plt_rank

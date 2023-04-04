@@ -3,7 +3,7 @@
 # sire_ex <- read_xml("example.xml")
 # sire_ex_list <- as_list(sire_ex)
 
-generate_sire21_xml <- function(data, GRM, params) {
+generate_sire21_xml <- function(data, params, GRM) {
     {
         name            <- params$name
         nsires          <- params$nsires
@@ -20,8 +20,8 @@ generate_sire21_xml <- function(data, GRM, params) {
         nsample         <- params$nsample
         burnin          <- params$burnin
         thin            <- params$thin
-        quench          <- params$quench
-        quench_power    <- params$quench_power
+        anneal          <- params$anneal
+        anneal_power    <- params$anneal_power
         data_dir        <- params$data_dir
         trial_fe        <- params$trial_fe
         donor_fe        <- params$donor_fe
@@ -45,7 +45,7 @@ generate_sire21_xml <- function(data, GRM, params) {
     xml_add_child(x, xml_comment("MCMC options"))
     xml_add_child(x, "mcmc", output_dir = glue("{data_dir}/{name}_out"),
                   nsample = nsample, burnin = burnin, thin = thin,
-                  quench = quench, quench_power = quench_power)
+                  anneal = anneal, anneal_power = anneal_power)
     
     
     ## Model details ----
@@ -261,10 +261,10 @@ generate_sire21_xml <- function(data, GRM, params) {
                       relationship_matrix = "A")
         xml_add_child(xml_child(x, length(xml_children(x))),
                       "variance",
-                      data_table_to_tsv_string(cov_G_mat))
+                      table_to_tsv_string(cov_G_mat))
         xml_add_child(xml_child(x, length(xml_children(x))),
                       "correlation",
-                      data_table_to_tsv_string(cor_G_mat))
+                      table_to_tsv_string(cor_G_mat))
         
         # Environmental Covariance
         xml_add_child(x, xml_comment("Environmental covariance between different individual effects"))
@@ -273,10 +273,10 @@ generate_sire21_xml <- function(data, GRM, params) {
                       relationship_matrix = "I")
         xml_add_child(xml_child(x, length(xml_children(x))),
                       "variance",
-                      data_table_to_tsv_string(cov_E_mat))
+                      table_to_tsv_string(cov_E_mat))
         xml_add_child(xml_child(x, length(xml_children(x))),
                       "correlation",
-                      data_table_to_tsv_string(cor_E_mat))
+                      table_to_tsv_string(cor_E_mat))
     }
     
     ## Demography ----
@@ -447,5 +447,5 @@ generate_sire21_xml <- function(data, GRM, params) {
     ## Remove temporary files ----
     system(glue("rm {A_file} {data_file}"))
     
-    return(x)
+    x
 }

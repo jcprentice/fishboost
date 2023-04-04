@@ -148,9 +148,9 @@ plot_violins <- function(data_set = "fb_1_12_Dx", split_replicates = FALSE) {
                   legend.position = "none")
         
         # png(glue("{gfx_dir}/violin-{param}.png"), width = 2000, height = 1000)
-        png(glue("{gfx_dir}/boxplot-{param}.png"), width = 2000, height = 1000)
-        print(plts[[param]])
-        dev.off()
+        ggsave(glue("{gfx_dir}/boxplot-{param}.png"),
+               plts[[param]],
+               width = 2000, height = 1000, units = "px")
     }
     
     legend <- get_legend(
@@ -161,23 +161,23 @@ plot_violins <- function(data_set = "fb_1_12_Dx", split_replicates = FALSE) {
     
     plot_periods <- FALSE
     if (plot_periods) {
-        png(glue("{gfx_dir}/periods.png"), width = 1000, height = 1000)
-        plot_grid(plotlist = plts[c("latent_period", "detection_period", "recovery_period")], nrow = 3)
-        dev.off()
+        ggsave(glue("{gfx_dir}/periods.png"),
+               plot_grid(plotlist = plts[c("latent_period", "detection_period", "recovery_period")], nrow = 3),
+               width = 1000, height = 1000, units = "px")
     }
     
     plot_donor_FE <- FALSE
     if (plot_donor_FE) {
-        png(glue("{gfx_dir}/donor_FEs.png"), width = 1500, height = 1000)
-        plot_grid(plotlist = plts[startsWith(names(plts), "donor_")], nrow = 2)
-        dev.off()
+        ggsave(glue("{gfx_dir}/donor_FEs.png"),
+               plot_grid(plotlist = plts[startsWith(names(plts), "donor_")], nrow = 2),
+               width = 1500, height = 1000, units = "px")
     }
     
     plot_trial_FE <- FALSE
     if (plot_trial_FE) {
-        png(glue("{gfx_dir}/trial_FEs.png"), width = 1500, height = 1000)
-        plot_grid(plotlist = plts[startsWith(names(plts), "trial_")], nrow = 2)
-        dev.off()
+        ggsave(glue("{gfx_dir}/trial_FEs.png"),
+               plot_grid(plotlist = plts[startsWith(names(plts), "trial_")], nrow = 2),
+               width = 1500, height = 1000, units = "px")
     }
     
     
@@ -187,12 +187,14 @@ plot_violins <- function(data_set = "fb_1_12_Dx", split_replicates = FALSE) {
         # pdf("foo2.pdf", width = 16, height = 9)
         # png("gfx/fb-violins/all_pars.png", width = 2000, height = 1000)
         if (split_replicates) {
-            png(glue("{gfx_dir}/all_pars_split.png"), width = 4000, height = 2000)
+            ggsave(glue("{gfx_dir}/all_pars_split.png"),
+                   pltg,
+                   width = 4000, height = 2000, units = "px")
         } else {
-            png(glue("{gfx_dir}/all_pars.png"), width = 2000, height = 1000)
+            ggsave(glue("{gfx_dir}/all_pars.png"),
+                   pltg,
+                   width = 2000, height = 1000, units = "px")
         }
-        print(pltg)
-        dev.off()
     } else {
         gc()
         # print(pltg)
@@ -200,12 +202,14 @@ plot_violins <- function(data_set = "fb_1_12_Dx", split_replicates = FALSE) {
         p1 <- plot_grid(plotlist = plts[names(plts) != "sigma"])
         pltg <- plot_grid(p1, legend, ncol = 1, rel_heights = c(1, 0.1))
         if (split_replicates) {
-            png(glue("{gfx_dir}/all_pars_split.png"), width = 4000, height = 2000)
+            ggsave(glue("{gfx_dir}/all_pars_split.png"),
+                   pltg,
+                   width = 4000, height = 2000, units = "px")
         } else {
-            png(glue("{gfx_dir}/all_pars.png"), width = 2000, height = 1000)
+            ggsave(glue("{gfx_dir}/all_pars.png"),
+                   pltg,
+                   width = 2000, height = 1000, units = "px")
         }
-        print(pltg)
-        dev.off()
     }
     
     file_str <- glue("meta/boxplots-{data_set}.RData") # -{scenario}

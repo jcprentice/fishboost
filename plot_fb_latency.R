@@ -7,10 +7,10 @@ source("make_time_series.R")
 source("make_plots.R")
 source("add_latency.R")
 
-fb_traits <- readRDS("fb_data/fb_traits.rds")
+fb_data <- readRDS("fb_data/fb_data12.rds")
 
 # Work with copy of data
-fb <- fb_traits[sdp == "progeny", .(id, sdp, trial, group, donor, Tinf, Tsym, Trec)]
+fb <- fb_data[sdp == "progeny", .(id, sdp, trial, group, donor, Tinf, Tsym, Trec)]
 fb[Tsym > 10, donor := 0]
 fb[, Tinf := fifelse(donor == 1, 0, NA_real_)]
 
@@ -84,31 +84,15 @@ plot_paths <- function(pop, group_num = 3, sort_ids = TRUE) {
 {
     x <- plot_paths(fb, group_num = 3, sort_ids = FALSE)
 
-    png("gfx/group3-noLP.png", width = 1000, height = 1000)
-    print(x[1])
-    dev.off()
-
-    png("gfx/group3-LP.png", width = 1000, height = 1000)
-    print(x[2])
-    dev.off()
-
-    png("gfx/group3.png", width = 2000, height = 1000)
-    print(x[3])
-    dev.off()
+    ggsave("gfx/group3-noLP.png", x[1], width = 1000, height = 1000, units = "px")
+    ggsave("gfx/group3-LP.png", x[2], width = 1000, height = 1000, units = "px")
+    ggsave("gfx/group3.png", x[3], width = 2000, height = 1000, units = "px")
 
     x <- plot_paths(fb, group_num = 3, sort_ids = TRUE)
 
-    png("gfx/group3-noLP-sorted.png", width = 1000, height = 1000)
-    print(x[1])
-    dev.off()
-
-    png("gfx/group3-LP-sorted.png", width = 1000, height = 1000)
-    print(x[2])
-    dev.off()
-
-    png("gfx/group3-sorted.png", width = 2000, height = 1000)
-    print(x[3])
-    dev.off()
+    ggsave("gfx/group3-noLP-sorted.png", x[1], width = 1000, height = 1000, units = "px")
+    ggsave("gfx/group3-LP-sorted.png", x[2], width = 1000, height = 1000, units = "px")
+    ggsave("gfx/group3-sorted.png", x[3], width = 2000, height = 1000, units = "px")
 }
 
 

@@ -1,9 +1,13 @@
-library(data.table)
-library(gtools)
-library(coda)
-library(glue)
-library(xtable)
-library(stringr)
+{
+    library(data.table)
+    library(gtools)
+    library(coda)
+    library(glue)
+    library(xtable)
+    library(stringr)
+    
+    source("rename_pars.R")
+}
 
 gr_diagnostics <- function(data_set = "sim", scenario = 1, replicate = 0) {
     
@@ -32,8 +36,15 @@ gr_diagnostics <- function(data_set = "sim", scenario = 1, replicate = 0) {
     res <- list.files(res_dir, pattern = glue("scen-{scenario}-"), full.names = TRUE)
     load(res[1])
     
+    # Select columns to keep
     cols <- parameter_estimates$parameter
     cols <- cols[!startsWith(cols, "Group effect")]
+    # cols <- cols[!startsWith(cols, "L_")]
+    # cols <- cols[!cols %in% c("state", "Prior", "Posterior", "Number infected", "log(phi)")]
+    
+    # Remove columns with zero variance
+    cols <- cols[!cols %in% params$priors[type == "Fixed", parameter]]
+    
     
     thin <- params$thin
     burnin <- params$burnin
@@ -52,26 +63,50 @@ gr_diagnostics <- function(data_set = "sim", scenario = 1, replicate = 0) {
          GRD = gelman.diag(l))
 }
 
-data_set <- "fb-mpi"
-# data_set <- "sim-donor_links1-1-mpi"
-scenario <- 4
+# data_set <- "sim-events1-mpi"; nScenarios <- 4
+# data_set <- "sim-donor_links1-1"; nScenarios <- 3
+# data_set <- "sim-donor_links1-1-mpi"; nScenarios <- 4
+# data_set <- "sim-G_Da-1-mpi"; nScenarios <- 4
+# data_set <- "sim-Gsi_cov_Da-1-mpi"; nScenarios <- 4
+# data_set <- "fb-mpi"; nScenarios <- 4
+data_set <- "fb-parasites3"; nScenarios <- 12
+
 replicate <- 0 # which replicate if doing coverage
 
 xl <- list()
-for (scenario in 1:4) {
+gd <- list()
+for (scenario in 1:nScenarios) {
     out <- gr_diagnostics(data_set, scenario, replicate)
+    gd[[scenario]] <- out$GRD$mpsrf
     
     x <- as.data.table(round(out$GRD$psrf, 2), keep.rownames = "Parameter")
-    x[, ESS := as.integer(out$ESS)]
-    x[, Parameter := str_to_title(sub("_", " ", Parameter))]
-    x[, Parameter := sub("Eta", "LP", Parameter)]
-    x[, Parameter := sub("Rho", "DP", Parameter)]
-    x[, Parameter := sub("Gamma", "RP", Parameter)]
+    x[, `Point est.` := NULL]
+    x[, ESS := format(as.integer(out$ESS), big.mark = ",")]
+    x[, Parameter := rename_pars(Parameter)]
+    setnames(x, "Upper C.I.", "GR95")
     
+    x <- rbind(x, data.table(Parameter = "MVPSF", GR95 = gd[[scenario]]), fill = TRUE)
     xl[[scenario]] <- x
     
     print(x)
-    
-    # print(xtable(x, align = "ll|rrr", caption = data_set), include.rownames = FALSE, booktabs = TRUE)
 }
-# 
+
+print(round(unlist(gd), 2))
+
+trial_offset <- 0:2
+names(trial_offset) <- c("1", "2", "12")
+
+{
+    offset <- trial_offset[["12"]]
+    foo <- cbind(xl[[1 + offset]][, .(Parameter)],
+                 xl[[1 + offset]][, .(GR95, ESS)],
+                 xl[[4 + offset]][, .(GR95, ESS)],
+                 xl[[7 + offset]][, .(GR95, ESS)],
+                 xl[[10 + offset]][, .(GR95, ESS)])
+    
+    names(foo) <- c("Parameter", rep(c("95% GR", "ESS"), 4))
+    
+    print(xtable(foo, align = "llrrrrrrrr"),
+          include.rownames = FALSE,
+          booktabs = TRUE)
+}

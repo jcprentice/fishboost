@@ -19,7 +19,7 @@ plot_tornadoes <- function(data_set = "sim-linked",
                            combine = TRUE,
                            show_plots = FALSE) {
     
-    # data_set = "fb-mpi"; scenario = 1; sort_CIs = FALSE; use_hpdi = TRUE, combine = FALSE; show_plots = FALSE
+    # data_set = "sim-censored-1"; scenario = 1; sort_CIs = TRUE; use_hpdi = TRUE; combine = FALSE; show_plots = FALSE
     
     
     # slightly different behaviour if using actual data since we don't know the true means
@@ -87,7 +87,7 @@ plot_tornadoes <- function(data_set = "sim-linked",
     burn_prop <- if (exists("params")) with(params, burnin / nsample) else 0.2
     burn_prop <- clamp(burn_prop, 0, 1)
     
-    if (params$sire_version == "2.2" && combine) {
+    if (params$sire_version == "sire22" && combine) {
         trace_files <- trace_files[grepl("combine", trace_files)]
         # burnin was already discarded
         burn_prop <- 0
@@ -143,11 +143,12 @@ plot_tornadoes <- function(data_set = "sim-linked",
                        by = "parameter")
     
     # Set X-axis limits ----
+    # Xrng <- params$priors[parameter %in% parameters, .(parameter, xmin = val1, xmax = val2)]
     Xrng <- X[, .(xmin = min(min), xmax = max(max)), by = parameter]
     
-    Xrng[startsWith(parameter, "r_"),
-         `:=`(xmin = min(-1, xmin), xmax = max(1, xmax)),
-         by = parameter]
+    # Xrng[startsWith(parameter, "r_"),
+    #      `:=`(xmin = min(-1, xmin), xmax = max(1, xmax)),
+    #      by = parameter]
     
     Xrng[startsWith(parameter, "cov_"),
          `:=`(xmin = 0, xmax = max(1, xmax)),
@@ -178,7 +179,7 @@ plot_tornadoes <- function(data_set = "sim-linked",
     
     
     # Plot parameters ----
-        plots <- list()
+    plots <- list()
     
     for (i in seq_along(parameters)) {
         param <- parameters[i]
@@ -206,7 +207,9 @@ plot_tornadoes <- function(data_set = "sim-linked",
                   axis.title.y = element_blank())
     }
     
-    if (is.null(params$label)) {params$label <- scenario}
+    if (is.null(params$label)) {
+        params$label <- scenario
+    }
     title_plt <- ggplot() + labs(title = glue("Scenario {params$label}, {params$description}"))
     
     
@@ -219,9 +222,7 @@ plot_tornadoes <- function(data_set = "sim-linked",
     
     pars_str <- glue("{gfx_dir}/pars-scen{scenario}.png")
     message("Plotting Parameters to ", pars_str)
-    png(pars_str, width = 2000, height = 1000)
-    print(plt_pars)
-    dev.off()
+    ggsave(pars_str, plt_pars, width = 2000, height = 1000, units = "px")
     
     # Save data ----
     save(X, plt_pars,
@@ -245,7 +246,8 @@ plot_tornadoes <- function(data_set = "sim-linked",
 # plts1 <- plot_tornadoes(data_set = "sim", scenario = 1, show_plots = FALSE)
 # plts1 <- plot_tornadoes(data_set = "fb_1_12_Dx_linked", scenario = 17, show_plots = FALSE)
 
-data_set <- "fb-mpi"; combine <- FALSE
+# data_set <- "fb-mpi"; combine <- FALSE
+data_set <- "sim-censored-1"; combine <- FALSE
 # data_set <- "sim-Gsi_cov_Da-1-mpi"; combine = FALSE
 # data_set = "sim-donor_links1-2-mpi"; combine = TRUE
 
@@ -257,9 +259,9 @@ if (TRUE) {
         
         # p_ht <- ceiling(sqrt(length(plts_sim[[i]]$plots))) * 5/3
         
-        pdf(glue("gfx/{data_set}/{data_set}-pars-scen{i}.pdf"), width = 10, height = 6)
-        print(plts_sim[[i]]$pars)
-        dev.off()
+        ggsave(glue("gfx/{data_set}/{data_set}-pars-scen{i}.pdf"),
+               plts_sim[[i]]$pars,
+               width = 10, height = 6)
     }
 }
 

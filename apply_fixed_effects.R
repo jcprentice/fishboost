@@ -3,6 +3,8 @@
 # recalculating the trait
 
 apply_fixed_effects <- function(traits, params) {
+    message("Applying fixed effects...")
+
     {
         traitnames     <- params$traitnames
         all_traitnames <- params$all_traitnames

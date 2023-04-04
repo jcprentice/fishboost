@@ -7,20 +7,22 @@
     library(cowplot)
     
     source("rename_pars.R")
+    source("add_h2.R")
 }
 
-plot_posteriors <- function(data_set = "fb-mpi",
-                            scenario = 1,
-                            ci = "hpdi",
-                            draw_hist = TRUE) {
-    # data_set <- "fb-mpi"; scenario <- 1; ci <- "hpdi"; draw_hist = TRUE
+plot_posteriors <- function(
+        data_set = "fb-parasites",
+        scenario = 1,
+        ci = "hpdi",
+        draw_hist = TRUE
+) {
     
-    data_dir <- glue("data/{data_set}")
-    res_dir <- glue("results/{data_set}")
+    # data_set <- "fb-parasites4"; scenario <- 1; ci <- "hpdi"; draw_hist = TRUE
     
-    x <- fread(glue("{data_dir}/scen-{scenario}-1_out/trace_combine.txt"))
+    # Slight nudge to ensure that LP is the same type as everything else
+    x <- fread(glue("data/{data_set}/scen-{scenario}-1_out/trace_combine.txt"))
     
-    res_file <- glue("{res_dir}/scen-{scenario}-1.RData")
+    res_file <- glue("results/{data_set}/scen-{scenario}-1.RData")
     if (file.exists(res_file)) {
         load(res_file)
         title_plot_str <- glue("Scenario {params$label}, {params$description}")
@@ -30,24 +32,41 @@ plot_posteriors <- function(data_set = "fb-mpi",
         burn_prop <- 0.2
     }
     
-    pars <- parameter_estimates$parameter
-    # discard group effect and shape
+    # Get the list of columns, and find the subset we want to actually plot
+    pars <- names(x)
+    
+    # Discard unwanted columns like group effect and shape
     pars <- pars[!grepl("^Group effect", pars)]
     pars <- pars[!grepl("_shape$", pars)]
-
-    x <- x[, ..pars]
+    pars <- pars[!grepl("state", pars)]
     
-    pars2 <- rename_pars(pars)
+    x <- x[, names(x)[!names(x) %in% pars] := NULL]
+    
+    # Check for values with 0 std. dev. and discard them
+    y <- x[, lapply(.SD, sd)][, .(.SD != 0), .SDcols = pars]
+    pars <- names(y)[y == TRUE]
+    
+    x[, names(x)[!names(x) %in% pars] := NULL]
+    
+    # Calculate heritability
+    pars <- add_h2(x, pars)
+    h2_priors <- data.table(parameter = c("h2_ss", "h2_ii", "h2_rr"),
+                            type = "Flat", val1 = 0, val2 = 1, true_val = 0.5, use = TRUE)
+    params$priors <- rbind(params$priors, h2_priors)
+    
     
     x2 <- melt(x, measure.vars = pars, variable.name = "parameter", value.name = "val")
     
     x3 <- x2[, .(mean = mean(val)), parameter]
     
+    # Now convert pars so that it has usable names
+    tidy_pars <- rename_pars(pars)
+    names(tidy_pars) <- pars
+    
     plts <- list()
     # plts1 <- list()
-    for (i in seq_along(pars)) {
-        param <- pars[i]
-        param2 <- pars2[i]
+    for (param in pars) {
+        tidy_param <- tidy_pars[[param]]
         
         xp <- x2[parameter == param, .(val)]
         
@@ -55,6 +74,7 @@ plot_posteriors <- function(data_set = "fb-mpi",
         dd <- with(dens, data.table(x, y))
         
         x_mean <- mean(xp$val)
+        x_median <- median(xp$val)
         x_mode <- dd[, x[which.max(y)]] # mode
         
         if (ci == "hpdi") {
@@ -68,6 +88,7 @@ plot_posteriors <- function(data_set = "fb-mpi",
         
         x_min <- params$priors[parameter == param, val1]
         x_max <- params$priors[parameter == param, val2]
+        x_true <- params$priors[parameter == param, true_val]
         
         
         if (draw_hist) {
@@ -84,13 +105,25 @@ plot_posteriors <- function(data_set = "fb-mpi",
                             aes(x = x, ymin = 0, ymax = y),
                             fill = "red", colour = NA, alpha = 0.5)
         }
-        plts[[param]] <- p + geom_vline(xintercept = x_mode, colour = "red") +
+        if (startsWith(data_set, "fb")) {
+            p <- p +
+                geom_vline(xintercept = x_mean, colour = "red") +
+                geom_vline(xintercept = x_median, color = "green") +
+                geom_vline(xintercept = x_mode, colour = "blue")
+        } else {
+            p <- p +
+                geom_vline(xintercept = x_mean, colour = "blue") +
+                geom_vline(xintercept = x_true, colour = "green")
+        }
+        p <- p +
             coord_cartesian(xlim = c(x_min, x_max)) +
-            labs(x = "value", y = "density", title = param2) +
+            labs(x = "value", y = "density", title = tidy_param) +
             theme(legend.position = "none",
                   axis.ticks.y = element_blank(),
                   axis.text.y = element_blank(),
                   axis.title.y = element_blank())
+        
+        plts[[param]] <- p
     }
     
     title_plt <- ggplot() + labs(title = glue("Scenario {params$label}, {params$description}"))
@@ -106,16 +139,16 @@ plot_posteriors <- function(data_set = "fb-mpi",
 }
 
 
-data_set <- "fb-mpi"
-scenario <- 3
+# data_set <- "sim-censored-1"; num_scenarios <- 3
+data_set <- "fb-parasites4"; num_scenarios <- 6
 
 plts <- list()
-for (i in 1:3) {
+for (i in 1:num_scenarios) {
     plts[[i]] <- plot_posteriors(data_set = data_set, scenario = i, ci = "hpdi")
     
-    n <- ceiling(length(plts[[i]]$plts) / 3)
+    # n <- ceiling(length(plts[[i]]$plts) / 3)
     
-    pdf(glue("gfx/{data_set}/{data_set}-posteriors-scen{i}.pdf"), width = 10, height = 6)
-    print(plts[[i]]$pars)
-    dev.off()
+    pdf_str = glue("gfx/{data_set}/{data_set}-posteriors-scen{i}.pdf")
+    ggsave(pdf_str, plts[[i]]$pars, width = 10, height = 12)
+    message("plotted ", pdf_str)
 }

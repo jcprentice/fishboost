@@ -4,7 +4,7 @@ library(cowplot)
 
 
 plot_km <- function() {
-    x <- readRDS("fb_traits.rds")
+    x <- readRDS("fb_data/fb_data12.rds")
     x <- x[sdp == "progeny"]
     
     # censor final times
@@ -55,10 +55,9 @@ plot_km <- function() {
               text = element_text(size = 48))
     
     plts <- plot_grid(plotlist = plt)
-    png("gfx/km_plots.png", width = 2000, height = 1000)
-    print(plts)
-    dev.off()
-    
+
+    ggsave("gfx/km_plots.png", plts, width = 2000, height = 1000, units = "px")
+
     plts
 }
 

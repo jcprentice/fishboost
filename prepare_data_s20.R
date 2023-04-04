@@ -8,7 +8,6 @@ prepare_data <- function(pop, params) {
 
     model_type   <- params$model_type
     t_gap        <- params$t_gap
-    clear_Tsym   <- params$clear_Tsym
     pass_Tsym    <- params$pass_Tsym
     use_sire_21  <- params$use_sire_21
     compartments <- params$compartments
@@ -45,7 +44,7 @@ prepare_data <- function(pop, params) {
     traitnames_BV <- if (any(used)) {
         paste0(sir[sir %in% traitnames], "_BV")
     } else {
-        c()
+        NULL
     }
     cols <- c("id", "sdp", "group", "donor", timings, traitnames_BV)
 
@@ -54,10 +53,6 @@ prepare_data <- function(pop, params) {
 
     # Whatever we got, call it "Tsym". Note: SIRE 2.0 calls it "It"
     setnames(traits2, timings[1], "Tsym")
-
-    if (clear_Tsym) {
-        traits2[, Tsym := NA]
-    }
 
     # tmax <- ceiling(max(traits2[, .(Tsym, Trec)], na.rm = TRUE))
     tmax <- ceiling(max(traits2$Trec, na.rm = TRUE))

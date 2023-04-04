@@ -10,8 +10,8 @@ get_seir_res_infectives <- function(pop) {
 generate_seir_res_path <- function(epi_time, pop, id, params) {
     with(params, {
         Tinf <- epi_time
-        Tsym <- Tinf + rgamma(1L, r_eta_shape, r_eta_rate) * pop[id, latency]
-        Trec <- Tsym + rgamma(1L, r_gamma_shape, r_gamma_rate) * pop[id, recoverability]
+        Tsym <- Tinf + rgamma(1L, r_eta_shape, r_eta_rate) * pop$latency[id]
+        Trec <- Tsym + rgamma(1L, r_gamma_shape, r_gamma_rate) * pop$recoverability[id]
 
         # return
         list("E", Tinf, Tsym, Trec)
@@ -68,7 +68,7 @@ model_SEIR_res <- function(traits, params) {
         if (DEBUG) message("next NI event id = ", id_next_event, " at t = ", t_next_event)
 
         # generate random timestep ----
-        total_event_rate <- pop[, sum(event_rate)]
+        total_event_rate <- sum(pop$event_rate)
 
         # calculate dt if infections event rate > 0
         if (total_event_rate > 0.0) {
@@ -90,7 +90,7 @@ model_SEIR_res <- function(traits, params) {
                                     size = 1L,
                                     prob = pop$event_rate)
 
-            group_id <- pop[id_next_event, group]
+            group_id <- pop$group[id_next_event]
             infectives <- pop[, .(.I, group, status, infectivity)][group == group_id & status == "I"]
 
             set(pop, id_next_event, c("status", "Tinf", "Tsym", "Trec"),

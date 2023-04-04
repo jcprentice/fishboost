@@ -2,6 +2,7 @@ make_time_series <- function(pop, params) {
     switch(params$model_type,
            "SIR"  = make_time_series_sir(pop, params),
            "SEIR" = make_time_series_seir(pop, params),
+           "SIDR" = make_time_series_sidr(pop, params),
            "SEIDR" = make_time_series_seidr(pop, params)
     )
 }

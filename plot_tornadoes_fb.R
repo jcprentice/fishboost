@@ -81,9 +81,9 @@ plot_tornadoes_fb <- function(scen = 1, data_set = "fb") {
         plot_grid(plotlist = plots),
         ncol = 1, rel_heights = c(0.06, 1))
 
-    png(paste0("gfx/fb-scens/", scen, "-pars.png"), width = 2000, height = 1000)
-    print(plt_pars)
-    dev.off()
+    ggsave(glue("gfx/fb-scens/{scen}-pars.png"),
+           plt_pars,
+           width = 2000, height = 1000, units = "px")
 
     plt_pars
 }
@@ -138,9 +138,9 @@ tornado_plots_fb_trials <- function(scen = 1) {
         plot_grid(plotlist = plots, nrow = 3),
         ncol = 1, rel_heights = c(0.06, 1))
 
-    png(paste0("gfx/fb-trials", scen, "-pars.png"), width = 2000, height = 1000)
-    plt_pars
-    dev.off()
+    ggsave(glue("gfx/fb-trials{scen}-pars.png"),
+           plt_pars,
+           width = 2000, height = 1000, units = "px")
 
     plt_pars
 }
