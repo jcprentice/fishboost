@@ -23,9 +23,9 @@ plot_SxxDR <- function(pop, params) {
     }
 
     plt <- ggplot(events, aes(x = time)) +
-        geom_line(aes(y = S / N, colour = "Susceptible?"),  size = 1.2) +
-        geom_line(aes(y = D / N, colour = "Detectable"),   size = 0.6) +
-        geom_line(aes(y = R / N, colour = "Recovered"),    size = 1.2) +
+        geom_line(aes(y = S / N, colour = "Susceptible?"), linewidth = 1.2) +
+        geom_line(aes(y = D / N, colour = "Detectable"),   linewidth = 0.6) +
+        geom_line(aes(y = R / N, colour = "Recovered"),    linewidth = 1.2) +
         scale_colour_manual("Compartments",
                             breaks = c("Susceptible?", "Detectable", "Recovered"),
                             values = c("blue", "red", "green")) +
@@ -46,12 +46,12 @@ plot_SEIDR <- function(pop, params) {
     # e2 <- melt(events, id = "time")
 
     plt <- ggplot(events, aes(x = time)) +
-        geom_line(aes(y = S / N, colour = "Susceptible"),  size = 1.2) +
-        geom_line(aes(y = E / N, colour = "Exposed"),      size = 1.2) +
-        geom_line(aes(y = I / N, colour = "Undetectable"), size = 0.6) +
-        geom_line(aes(y = D / N, colour = "Detectable"),   size = 0.6) +
-        geom_line(aes(y = ID / N, colour = "Infectious"),  size = 1.2) +
-        geom_line(aes(y = R / N, colour = "Recovered"),    size = 1.2) +
+        geom_line(aes(y = S / N, colour = "Susceptible"),  linewidth = 1.2) +
+        geom_line(aes(y = E / N, colour = "Exposed"),      linewidth = 1.2) +
+        geom_line(aes(y = I / N, colour = "Undetectable"), linewidth = 0.6) +
+        geom_line(aes(y = D / N, colour = "Detectable"),   linewidth = 0.6) +
+        geom_line(aes(y = ID / N, colour = "Infectious"),  linewidth = 1.2) +
+        geom_line(aes(y = R / N, colour = "Recovered"),    linewidth = 1.2) +
         scale_colour_manual("Compartments",
                             breaks = c("Susceptible", "Exposed", "Undetectable", "Detectable", "Infectious", "Recovered"),
                             values = c("blue", "pink", "mediumpurple", "purple", "red", "green")) +
@@ -76,11 +76,11 @@ plot_SIDR <- function(pop, params) {
     # e2 <- melt(events, id = "time")
 
     plt <- ggplot(events, aes(x = time)) +
-        geom_line(aes(y = S / N, colour = "Susceptible"),  size = 1.2) +
-        geom_line(aes(y = I / N, colour = "Undetectable"), size = 0.6) +
-        geom_line(aes(y = D / N, colour = "Detectable"),   size = 0.6) +
-        geom_line(aes(y = ID / N, colour = "Infectious"),  size = 1.2) +
-        geom_line(aes(y = R / N, colour = "Recovered"),    size = 1.2) +
+        geom_line(aes(y = S / N, colour = "Susceptible"),  linewidth = 1.2) +
+        geom_line(aes(y = I / N, colour = "Undetectable"), linewidth = 0.6) +
+        geom_line(aes(y = D / N, colour = "Detectable"),   linewidth = 0.6) +
+        geom_line(aes(y = ID / N, colour = "Infectious"),  linewidth = 1.2) +
+        geom_line(aes(y = R / N, colour = "Recovered"),    linewidth = 1.2) +
         scale_colour_manual("Compartments",
                             breaks = c("Susceptible", "Undetectable", "Detectable", "Infectious", "Recovered"),
                             values = c("blue", "mediumpurple", "purple", "red", "green")) +
@@ -102,10 +102,10 @@ plot_SEIR <- function(pop, params) {
     # e2 <- melt(events, id = "time")
 
     plt <- ggplot(events, aes(x = time)) +
-        geom_line(aes(y = S / N, colour = "Susceptible"), size = 1.2) +
-        geom_line(aes(y = E / N, colour = "Exposed"),     size = 1.2) +
-        geom_line(aes(y = I / N, colour = "Infectious"),  size = 1.2) +
-        geom_line(aes(y = R / N, colour = "Recovered"),   size = 1.2) +
+        geom_line(aes(y = S / N, colour = "Susceptible"), linewidth = 1.2) +
+        geom_line(aes(y = E / N, colour = "Exposed"),     linewidth = 1.2) +
+        geom_line(aes(y = I / N, colour = "Infectious"),  linewidth = 1.2) +
+        geom_line(aes(y = R / N, colour = "Recovered"),   linewidth = 1.2) +
         scale_colour_manual("Compartments",
                             breaks = c("Susceptible", "Exposed", "Infectious", "Recovered"),
                             values = c("blue", "pink", "red", "green")) +
@@ -126,10 +126,10 @@ plot_SIR <- function(pop, params) {
     events <- make_time_series_sir(pop, params)
 
     plt <- ggplot(events, aes(x = time)) +
-        # geom_line(size = 1.2) +
-        geom_line(aes(y = S / N, colour = "Susceptible"), size = 1.2) +
-        geom_line(aes(y = I / N, colour = "Infectious"),  size = 1.2) +
-        geom_line(aes(y = R / N, colour = "Recovered"),   size = 1.2) +
+        # geom_line(linewidth = 1.2) +
+        geom_line(aes(y = S / N, colour = "Susceptible"), linewidth = 1.2) +
+        geom_line(aes(y = I / N, colour = "Infectious"),  linewidth = 1.2) +
+        geom_line(aes(y = R / N, colour = "Recovered"),   linewidth = 1.2) +
         scale_colour_manual("Compartments",
                             breaks = c("Susceptible", "Infectious", "Recovered"),
                             values = c("blue", "red", "green")) +
@@ -150,9 +150,9 @@ plot_SIS <- function(pop, params) {
     events <- make_time_series_sis(pop, params)
 
     plt <- ggplot(events, aes(x = time)) +
-        # geom_line(size = 1.2) +
-        geom_line(aes(y = S / N, colour = "Susceptible"), size = 1.2) +
-        geom_line(aes(y = I / N, colour = "Infectious"),  size = 1.2) +
+        # geom_line(linewidth = 1.2) +
+        geom_line(aes(y = S / N, colour = "Susceptible"), linewidth = 1.2) +
+        geom_line(aes(y = I / N, colour = "Infectious"),  linewidth = 1.2) +
         scale_colour_manual("Compartments",
                             breaks = c("Susceptible", "Infectious"),
                             values = c("blue", "red")) +

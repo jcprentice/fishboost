@@ -145,6 +145,3 @@ tornado_plots_fb_trials <- function(scen = 1) {
     plt_pars
 }
 
-plt <- plot_tornadoes_fb(scen = 1)
-print(plt)
-# tornado_plots_fb_trials(scen = 1)

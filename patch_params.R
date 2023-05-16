@@ -78,6 +78,7 @@ patch_params <- function(params, trace_row = 0) {
         }
 
         params2[[glue("Sigma_{GE}")]][sir[[x]], sir[[y]]] <- cov_xy
+        params2[[glue("Sigma_{GE}")]][sir[[y]], sir[[x]]] <- cov_xy
         patched_covariances <- TRUE
     }
     if (patched_covariances) {

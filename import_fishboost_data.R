@@ -193,7 +193,7 @@ fb <- fb[!(trial == 1 & group == 14)]
 
 
 # Reassign group numbers ----
-fb[trial == 1 & group %in% 15:36, group := group - 1L]
+fb[trial == 1 & group > 14, group := group - 1L]
 fb[trial == 2, group := group + 35L]
 
 
