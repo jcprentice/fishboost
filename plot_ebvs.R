@@ -32,4 +32,3 @@ IvRtd <- ggplot(ebvs) + geom_point(aes(x=inf_G, y=rec_G, colour = td))
 
 ebvs_td <- plot_grid(SvItd, SvRtd, IvRtd)
 ggsave("EBVs by trial+donor.pdf", ebvs_td, width = 10, height = 6)
-

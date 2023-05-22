@@ -9,7 +9,7 @@ source("make_parameters.R")
 convergence <- TRUE # only need convergence for FB data set
 print(glue("convergence = {convergence}"))
 
-data_set <- glue("sim-test-{cvg}",
+data_set <- glue("sim-events-{cvg}",
                  cvg = if (convergence) 1 else 2)
 
 

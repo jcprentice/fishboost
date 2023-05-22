@@ -28,7 +28,7 @@ source("source_files.R")
         trial_fe = "lidr",
         donor_fe = "lidr",
         # txd_fe = "lidr",
-        use_fb_data = FALSE
+        use_fb_data = TRUE
     )
     
     # Temporary override of some parameters
@@ -48,9 +48,8 @@ source("source_files.R")
     params$censor <- 0.8
     
     # Patch params with posterior mean values from data set/scenario
-    params$patch_data_set <- "fb-parasites4"
-    params$patch_scenario <- 3
-    params$patch_traits <- TRUE
+    params$patch_data_set <- "fb-parasites"
+    params$patch_scenario <- 1
     params <- patch_params(params)
 
     # link traits (needs to be done after params is constructed)

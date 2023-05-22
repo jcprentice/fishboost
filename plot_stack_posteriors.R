@@ -1,5 +1,3 @@
-source("plotting/posteriors.R")
-
 # Parasites ----
 data_set <- "fb-parasites"; num_scenarios <- 12
 plts <- list()

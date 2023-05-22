@@ -79,8 +79,7 @@ model_SIR <- function(traits, params) {
                                     prob = pop$event_rate)
 
             group_id <- pop$group[id_next_event]
-            # infectives <- pop[, .(.I, group, status, infectivity)][group == group_id & status == "I"]
-            infectives <- pop[group == group_id & status == "I", .(.I, group, status, infectivity)]
+            infectives <- pop[, .(.I, group, status, infectivity)][group == group_id & status == "I"]
             infd_by <- safe_sample(x = infectives$I,
                                    size = 1L,
                                    prob = infectives$infectivity)

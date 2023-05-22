@@ -1,7 +1,7 @@
 library(data.table)
 library(glue)
 
-data_set <- "fb-parasites4"
+data_set <- "fb-parasites2"
 
 parasites <- c("S", "SE", "SEI", "unused")
 trial <- c(1, 2, 12)

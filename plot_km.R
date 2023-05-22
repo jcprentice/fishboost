@@ -61,3 +61,4 @@ plot_km <- function() {
     plts
 }
 
+plot_km()
