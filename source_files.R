@@ -24,8 +24,6 @@
     source("cleanup_files.R")
     source("fix_fb_data.R")
     source("prepare_data.R")
-    source("generate_sire_xml.R")
-    source("discretise_time_sire.R")
     source("discretise_time_bici.R")
     source("generate_bici_script.R")
     source("make_time_series.R")
