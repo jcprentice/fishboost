@@ -23,7 +23,6 @@
     source("init_populations.R")
     source("cleanup_files.R")
     source("fix_fb_data.R")
-    source("prepare_data.R")
     source("discretise_time_bici.R")
     source("generate_bici_script.R")
     source("make_time_series.R")
