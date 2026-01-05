@@ -19,7 +19,6 @@ set_use_flags <- function(params) {
         setup         <- params$setup
         weight_fe     <- params$weight_fe
         group_effect  <- params$group_effect
-        sire_version  <- params$sire_version
         # DTs are modified by reference, so this doesn't need to be copied back
         priors        <- params$priors
     }

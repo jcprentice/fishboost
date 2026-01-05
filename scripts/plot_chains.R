@@ -161,19 +161,21 @@ plot_chains <- function(dataset, scen, rep) {
     sildt2 <- str_c(sildt1, sildt1)
     any_non_empty <- function(x) any(x != "empty")
     
+    cov_pars <- c(str_c("cov_G_", sildt2),
+                  "r_G_si", "r_G_st", "empty", "empty", "r_G_it",
+                  str_c("cov_E_", sildt2), str_c("cov_P_", sildt2))
+    
+    model_pars <- c(
+        "sigma",  "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
+        "infrat", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
+        "sigma",  "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
+        "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec")
+    
     fes <- expand.grid(sildt1,
                        c("trial", "donor", "txd", "weight", "weight1", "weight2")) |>
         rev() |> apply(1, str_flatten, "_")
     
-    plt_names <- c(
-        "sigma",  "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
-        "infrat", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
-        "sigma",  "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
-        "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec",
-        str_c("cov_G_", sildt2),
-        "r_G_si", "r_G_st", "empty", "empty", "r_G_it",
-        str_c("cov_E_", sildt2), str_c("cov_P_", sildt2),
-        fes)
+    plt_names <- c(cov_pars, model_pars, fes)
     
     beta_in <- str_subset(pars, "beta")
     if (beta_in[[1]] == "beta_Tr2") {

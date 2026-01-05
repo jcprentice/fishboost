@@ -1,9 +1,4 @@
-# Full Pipeline ----
-#
-# Send simulated data to SIRE 2.x
-# Eventually intend to replace simulated data with Turbot data
-#
-# SIRE 2.x modified from Chris Pooley's original
+# Script for generating data and/or running inference in BICI on a server
 
 ## Load libraries and source files ----
 suppressPackageStartupMessages({
@@ -282,27 +277,18 @@ message(str_glue("censor = {x}\nTmax = {y}",
          ~ if (!dir.exists(.x)) dir.create(.x, recursive = TRUE))
     
     # Clean up old config files and generate fresh one
-    if (str_detect(params$sire_version, "bici")) {
-        cleanup_bici_files(params)
-        bici_txt <- generate_bici_script(popn, params)
-    } else {
-        cleanup_sire_files(params)
-        generate_sire_xml(popn, params)
-    }
+    cleanup_bici_files(params)
+    bici_txt <- generate_bici_script(popn, params)
 }
 
 
-## Run BICI / SIRE ----
+## Run BICI ----
 
 {
     cmd <- with(params, str_glue(
         if (algorithm == "pas")
             "mpirun -n {nchains} --output :raw --oversubscribe " else "",
-        if (str_detect(sire_version, "sire")) {
-            "../{sire_version}/sire-{platform} {config}.xml {replicate}"
-        } else {
-            "../BICI/bici-{platform} {config}.bici {bici_cmd}"
-        },
+        "../BICI/bici-{platform} {config}.bici {bici_cmd}",
         platform = Sys.info()[["sysname"]]
     ))
     message(str_glue("Running:\n$ {cmd}"))
@@ -314,13 +300,13 @@ message(str_glue("censor = {x}\nTmax = {y}",
         time_taken <- toc()
         
         if (out == 0) {
-            message(str_glue("{params$sire_version} ran successfully"))
+            message("BICI ran successfully")
             break
         } else if (attempt < nattempts) {
             message(str_glue(" - attempt {attempt}/{nattempts} failed, trying again"))
             inc_seed(params)
         } else {
-            stop(str_glue("{params$sire_version} failed to finish"))
+            stop("BICI failed to finish")
         }
     }
 }
@@ -334,30 +320,16 @@ message(str_glue("censor = {x}\nTmax = {y}",
     dataset <- params$dataset
     output_dir <- params$output_dir
     results_dir <- params$results_dir
-    sire_version <- params$sire_version
     bici_cmd <- params$bici_cmd
     
-    if (sire_version == "bici") {
-        if (bici_cmd == "inf") {
-            # pe_name <- str_glue("{output_dir}/posterior.csv")
-            # parameter_estimates <- if (file.exists(pe_name)) fread(pe_name)
-            parameter_estimates <- rebuild_bici_posteriors(dataset, name)
-            
-            ebvs_name     <- str_glue("{output_dir}/ebvs.csv")
-            estimated_BVs <- if (file.exists(ebvs_name)) fread(ebvs_name)
-            
-            pa_name   <- str_glue("{output_dir}/pred_accs.csv")
-            pred_accs <- if (file.exists(pa_name)) fread(pa_name)
-        }
-    } else {
+    if (bici_cmd == "inf") {
         # pe_name <- str_glue("{output_dir}/posterior.csv")
         # parameter_estimates <- if (file.exists(pe_name)) fread(pe_name)
-        parameter_estimates <- rebuild_sire_posteriors(dataset, name)
-        flatten_sire_states(dataset, name)
-        
+        parameter_estimates <- rebuild_bici_posteriors(dataset, name)
+
         ebvs_name     <- str_glue("{output_dir}/ebvs.csv")
         estimated_BVs <- if (file.exists(ebvs_name)) fread(ebvs_name)
-        
+
         pa_name   <- str_glue("{output_dir}/pred_accs.csv")
         pred_accs <- if (file.exists(pa_name)) fread(pa_name)
     }
@@ -384,11 +356,7 @@ message(str_glue("censor = {x}\nTmax = {y}",
     }
     
     # generate etc_inf.rds summary file
-    if (sire_version == "bici") {
-        flatten_bici_states(dataset, name, bici_cmd)
-    } else {
-        flatten_sire_states(dataset, name)
-    }
+    flatten_bici_states(dataset, name, bici_cmd)
 }
 
 message("Finished!")

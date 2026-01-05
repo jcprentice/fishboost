@@ -70,7 +70,6 @@ common <- list(use_traits = "sit",
                prior__txd_l__val2 = 8,
                prior__txd_d__val1 = -4,
                prior__txd_d__val2 = 4,
-               sire_version = "bici",
                nsample = 1e4,
                # sample_states = 100,
                ie_output = "true") |>

@@ -27,14 +27,8 @@ draw_event_times <- function(dataset = "fb-test", scen = 1, rep = 1) {
     )
     
     
-    if (res$params$sire_version == "bici") {
-        pe <- res$parameter_estimates[str_detect(parameter, "period"),
-                                      .(parameter, mean)] # , hdi95min, hdi95max
-    } else {
-        pe <- fes_to_vals(dataset, scen, rep) |>
-            setnames("true_val", "mean")
-        pe <- pe[!str_detect(parameter, "beta")]
-    }
+    pe <- res$parameter_estimates[str_detect(parameter, "period"),
+        .(parameter, mean)] # , hdi95min, hdi95max
     
     pe[, parameter := str_replace_all(
         parameter,

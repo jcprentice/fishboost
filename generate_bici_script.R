@@ -1,8 +1,5 @@
 # if we want the same data as example.xml (handy for exploring the structure)
 
-# sire_ex <- read_xml("example.xml")
-# sire_ex_list <- as_list(sire_ex)
-
 # Takes a list and converts it into a BICI string, and wraps strings in "", e.g.
 # comp name="S" x=1 y=2 z="fnoof"
 

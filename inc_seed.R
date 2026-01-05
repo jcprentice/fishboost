@@ -2,10 +2,8 @@ library(stringr)
 library(purrr)
 
 # For BICI config files, modify them to increment the seed by 100 if they fail
-# to run properly (not necessary for SIRE since we modify the argument)
+# to run properly
 inc_seed <- function(params) {
-    if (!str_detect(params$sire_version, "bici")) return()
-    
     f <- str_glue("{params$config}.bici")
     lines <- readLines(f)
     n1 <- str_which(lines, "inf.*seed")

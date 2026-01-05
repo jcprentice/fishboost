@@ -86,29 +86,26 @@ pars_boxplots <- function(dataset = "fb-final", scens = 0, st_str = "") {
     sildt2 <- str_c(sildt1, sildt1)
     any_non_empty <- function(x) any(x != "empty")
     
+    cov_pars <- c(str_c("cov_G_", sildt2),
+                  "r_G_si", "r_G_st", "empty", "empty", "r_G_it",
+                  str_c("cov_E_", sildt2),
+                  str_c("cov_P_", sildt2))
+    
+    model_pars <- c(
+        "sigma", "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don", 
+        "empty", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
+        "empty", "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
+        "empty", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec"
+    ) |>
+        str_replace_all(c("LP" = "latent_period",
+                          "DP" = "detection_period",
+                          "RP" = "removal_period"))
+    
     fes <- expand.grid(sildt1,
                        c("trial", "donor", "txd", "weight", "weight1", "weight2")) |>
         rev() |> apply(1, str_flatten, "_")
     
-    bici_pars <- c(
-        "sigma",            "empty",    "empty",       "empty",       "empty",
-        "RP_shape_Tr1,Don", "beta_Tr1", "lat_Tr1,Don", "det_Tr1,Don", "rem_Tr1,Don", 
-        "RP_shape_Tr1,Rec", "empty",    "lat_Tr1,Rec", "det_Tr1,Rec", "rem_Tr1,Rec",
-        "RP_shape_Tr2,Don", "beta_Tr2", "lat_Tr2,Don", "det_Tr2,Don", "rem_Tr2,Don",
-        "RP_shape_Tr2,Rec", "empty",    "lat_Tr2,Rec", "det_Tr2,Rec", "rem_Tr2,Rec"
-    ) |>
-        str_replace_all(c("lat" = "latent_period",
-                          "det" = "detection_period",
-                          "rem" = "removal_period"))
-    
-    sire_pars <- c("sigma", "beta", "latent_period", "detection_period", "removal_period")
-    
-    in_both <- c(str_c("cov_G_", sildt2),
-                 "r_G_si", "r_G_st", "empty", "empty", "r_G_it",
-                 str_c("cov_E_", sildt2),
-                 str_c("cov_P_", sildt2),
-                 fes)
-    plt_names <- c(if (any(str_detect(pars, "Tr"))) bici_pars else sire_pars, in_both)
+    plt_names <- c(cov_pars, model_pars, fes)
     
     # Some entries like "trial_s" might be missing
     plt_names[plt_names %notin% pars] <- "empty"

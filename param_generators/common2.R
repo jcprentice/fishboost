@@ -17,7 +17,7 @@ common2 <- list(
     nchains = if (goal == "convergence") 16 else 4,
     nsample = 1e6, burnprop = 0.2, thinto = 1e4,
     nsample_per_gen = 1, phi = 1.0,
-    anneal = "on", anneal_power = 4, sire_version = "bici", bici_cmd = "inf"
+    anneal = "on", anneal_power = 4, bici_cmd = "inf"
 )
 
 common2$nsample_per_gen <- max(3e-3 * common2$nsample, 1)

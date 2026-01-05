@@ -333,8 +333,6 @@ make_parameters <- function(
     
     # MCMC settings ----
     
-    # Which version of SIRE to call
-    sire_version <- "bici" # "sire22"
     bici_cmd <- "inf"
     
     nchains <- 16L
@@ -613,8 +611,7 @@ make_parameters <- function(
           "weight_fe", "sim_weight_fe", "weight_is_nested",
           # MCMC & extra
           "priors", "cov_prior", "single_prior",
-          "sire_version", "popn_format", "bici_cmd", "algorithm",
-          "anneal", "anneal_power",
+          "popn_format", "bici_cmd", "algorithm", "anneal", "anneal_power",
           "nchains", "nsample", "burnprop", "thinto", "nchains",
           "phi", "nsample_per_gen", "sample_states",
           "ie_output", "time_step", "time_step_bici", "censor", "nreps",
@@ -636,8 +633,7 @@ summarise_params <- function(params) {
             message(str_glue("Simulating new data with {model_type} model"))
         }
 
-        ext <- if (str_detect(sire_version, "bici")) "bici" else "xml"
-        param_file <- str_glue("{data_dir}/{name}.{ext}")
+        param_file <- str_glue("{data_dir}/{name}.bici")
         
         message(str_glue(
             " - Demography is:\n",

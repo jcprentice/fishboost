@@ -88,7 +88,6 @@ params$thin <- as.integer(max(nsample / 1e4, 1))
 params$nsample_per_gen <- as.integer(max(nsample * 2.5e-3, 1))
 params$anneal <- "on"
 params$anneal_power <- 4
-params$sire_version <- "sire22"
 
 # Add missing columns ----
 
@@ -104,7 +103,7 @@ replace_NAs <- function(col) {
 missing_cols <- c("model_type", "dataset", "name", "use_traits", "vars", "cors",
                   "setup", "group_effect", "trial_fe", "donor_fe", "txd_fe", "seed",
                   "weight_is_nested",
-                  "sire_version", "nsample_per_gen", "anneal", "anneal_power",
+                  "nsample_per_gen", "anneal", "anneal_power",
                   "nsample", "burnin", "thin", "nchains", "censor")
 
 walk(missing_cols, replace_NAs)

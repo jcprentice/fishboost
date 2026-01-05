@@ -53,9 +53,7 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
         rbindlist(idcol = "scen", fill = TRUE)
     
     rf <- str_glue("{res_dir}/{scens_str[[1]]}.rds")
-    if (readRDS(rf)$params$sire_version == "bici") {
-        x[, parameter := rename_bici_pars(parameter)]
-    }
+    x[, parameter := rename_bici_pars(parameter)]
     
     # Extract the widest priors for all parameters
     priors <- map(scens, ~ {
@@ -142,38 +140,34 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
     sildt2 <- str_c(sildt1, sildt1)
     any_non_empty <- function(x) any(x != "empty")
     
-    fes <- expand.grid(sildt1,
-                       c("trial", "donor", "txd", "weight", "weight1", "weight2")) |>
-        rev() |> apply(1, str_flatten, "_")
-    
-    bici_pars <- c(
-        "sigma",  "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don", 
-        "infrat", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
-        "sigma",  "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
-        "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec"
-    )
-    
-    # Remove repeated sigma and infrat
-    beta_in <- str_subset(pars, "beta")
-    if (beta_in[[1]] == "beta_Tr2") {
-        bici_pars[c(1, 6)] <- "empty"
-    } else {
-        bici_pars[c(11, 16)] <- "empty"
-    }
-        
-    
-    sire_pars <- c("sigma", "beta", "LP", "DP", "RP")
-    
     cov_pars <- c(str_c("cov_G_", sildt2),
                   "r_G_si", "r_G_st", "empty", "empty", "r_G_it",
                   str_c("cov_E_", sildt2),
                   str_c("cov_P_", sildt2))
-    plt_names <- c(cov_pars,
-                   if (any(str_detect(pars, "Tr"))) bici_pars else sire_pars,
-                   fes) |>
+    
+    model_pars <- c(
+        "sigma",  "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don", 
+        "infrat", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
+        "sigma",  "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
+        "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec"
+    ) |>
         str_replace_all(c("LP" = "latent_period",
                           "DP" = "detection_period",
                           "RP" = "removal_period"))
+    
+    # Remove repeated sigma and infrat
+    beta_in <- str_subset(pars, "beta")
+    if (beta_in[[1]] == "beta_Tr2") {
+        model_pars[c(1, 6)] <- "empty"
+    } else {
+        model_pars[c(11, 16)] <- "empty"
+    }
+    
+    fes <- expand.grid(sildt1,
+                       c("trial", "donor", "txd", "weight", "weight1", "weight2")) |>
+        rev() |> apply(1, str_flatten, "_")
+    
+    plt_names <- c(cov_pars, model_pars, fes)
     
     # Some entries like "trial_s" might be missing
     plt_names[plt_names %notin% pars] <- "empty"

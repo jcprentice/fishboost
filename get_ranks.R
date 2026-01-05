@@ -11,7 +11,6 @@ spearmans_rc <- function(x, y) {
 get_ranks <- function(popn, estimated_BVs, params, verbose = FALSE) {
     {
         use_traits   <- params$use_traits
-        sire_version <- params$sire_version
     }
 
     # make a copy of this so we can add missing columns
@@ -19,11 +18,7 @@ get_ranks <- function(popn, estimated_BVs, params, verbose = FALSE) {
 
     # individual effect names (what SIRE 2.1 calls them)
     
-    ie_names <- if (sire_version == "bici") {
-        c("sg", "ig", "tg")
-    } else {
-        c("s_g EBV", "i_g EBV", "t_g EBV")
-    }
+    ie_names <- c("sg", "ig", "tg")
 
     setnames(estimated_BVs, ie_names, c("sus", "inf", "tol"), skip_absent = TRUE)
 

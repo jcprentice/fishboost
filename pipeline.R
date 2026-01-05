@@ -59,9 +59,6 @@ run_from_script <- length(cmd_args) > 0
     params$weight_is_nested <- TRUE
     # params$fix_donors <- c(params$fix_donors, "set_to_R")
     
-    params$sire_version <- "bici"
-    # params$sire_version <- "sire22"
-    
     # Tidy up LP, DP, RP, including rate, shape, and priors
     params <- tidy_up_periods(params)
     
@@ -146,13 +143,8 @@ plt <- plot_model(popn, params)
     })
 
     # Clean up old config files and generate fresh one
-    if (str_detect(params$sire_version, "bici")) {
-        cleanup_bici_files(params)
-        bici_txt <- generate_bici_script(popn, params)
-    } else {
-        cleanup_sire_files(params)
-        sire_xml <- generate_sire_xml(popn, params)
-    }
+    cleanup_bici_files(params)
+    bici_txt <- generate_bici_script(popn, params)
 }
 
 
@@ -162,11 +154,7 @@ plt <- plot_model(popn, params)
     cmd <- with(params, str_glue(
         if (algorithm == "pas")
             "mpirun -n {nchains} --output :raw --oversubscribe " else "",
-        if (sire_version == "bici") {
-            "../BICI/bici-{platform} {data_dir}/{name}.bici {bici_cmd}"
-        } else {
-            "../{sire_version}/sire-{platform} {data_dir}/{name}.xml 0"    
-        },
+        "../BICI/bici-{platform} {data_dir}/{name}.bici {bici_cmd}",
         platform = Sys.info()[["sysname"]]
     ))
     message(str_glue("Running:\n$ {cmd}"))
@@ -176,7 +164,7 @@ plt <- plot_model(popn, params)
     time_taken <- toc()
     
     if (out != 0) {
-        stop(str_glue("{params$sire_version} failed to finish"))
+        stop("BICI failed to finish")
     }
 }
 
@@ -190,30 +178,16 @@ plt <- plot_model(popn, params)
     dataset <- params$dataset
     output_dir <- params$output_dir
     results_dir <- params$results_dir
-    sire_version <- params$sire_version
     bici_cmd <- params$bici_cmd
     
-    if (sire_version == "bici") {
-        if (bici_cmd == "inf") {
-            # pe_name <- str_glue("{output_dir}/posterior.csv")
-            # parameter_estimates <- fread(pe_name)
-            parameter_estimates <- rebuild_bici_posteriors(dataset, name)
-            
-            ebvs_name     <- str_glue("{output_dir}/ebvs.csv")
-            estimated_BVs <- if (file.exists(ebvs_name)) fread(ebvs_name)
-            
-            pa_name   <- str_glue("{output_dir}/pred_accs.csv")
-            pred_accs <- if (file.exists(pa_name)) fread(pa_name)
-        }
-    } else {
+    if (bici_cmd == "inf") {
         # pe_name <- str_glue("{output_dir}/posterior.csv")
         # parameter_estimates <- fread(pe_name)
-        parameter_estimates <- rebuild_sire_posteriors(dataset, name)
-        flatten_sire_states(dataset, name)
-        
+        parameter_estimates <- rebuild_bici_posteriors(dataset, name)
+
         ebvs_name     <- str_glue("{output_dir}/ebvs.csv")
         estimated_BVs <- if (file.exists(ebvs_name)) fread(ebvs_name)
-        
+
         pa_name   <- str_glue("{output_dir}/pred_accs.csv")
         pred_accs <- if (file.exists(pa_name)) fread(pa_name)
     }
@@ -236,9 +210,5 @@ plt <- plot_model(popn, params)
     }
         
     # generate etc_inf.rds summary file
-    if (sire_version == "bici") {
-        flatten_bici_states(dataset, name, bici_cmd)
-    } else {
-        flatten_sire_states(dataset, name)
-    }
+    flatten_bici_states(dataset, name, bici_cmd)
 }

@@ -62,7 +62,6 @@ common <- list(sim_new_data = "r",
                prior__txd_d__val1 = -4,
                prior__txd_d__val2 = 4,
                censor = 0.8,
-               sire_version = "bici",
                nsample = 1e5,
                # sample_states = 100,
                ie_output = "true") |>
