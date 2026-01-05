@@ -3,10 +3,11 @@
 .RData
 .Ruserdata
 .DS_Store
-fb_data
+fb_data/H*
+fb_data/*xlsx
 Hinv
 Hinv_drop71
-datasets
+datasets/*
 gfx
 meta
 out

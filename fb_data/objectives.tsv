@@ -1,0 +1,19 @@
+Objective	Part	Start	End	Task
+1	a	2021-02-01	2021-03-31	Develop and complete pipeline in R
+1	b	2021-02-01	2021-03-19	Generate code for additional epidemic model scenarios in R
+1	b	2021-03-01	2021-03-30	Add environmental component to model
+1	c	2021-03-01	2021-04-30	Carry out and report on Sensitivity Analysis
+1	d	2021-03-01	2021-04-30	Literature review for R0 in populations with continuous variation
+1	d	2021-03-01	2021-04-16	Develop method for calculating R0
+1	d	2021-03-01	2021-07-31	Prepare and submit paper?
+				
+2	a	2021-04-01	2021-06-30	Apply SIRE 2.0 to simulated data scenarios
+2	b	2021-04-01	2021-04-30	Review SIRE 2.0 paper
+2	c	2021-04-01	2021-06-30	Assist Chris with writing and submission of paper
+				
+3	a	2021-02-22	2021-02-28	Fishboost data quality assesment
+3	b	2021-03-01	2021-12-31	Liaise with Smaragda to synchronise SIRE / GLMM
+3	c	2021-03-01	2021-06-30	Liaise with Chris to make necessary modifications to SIRE 2.0
+3	d	2021-03-01	2021-10-31	Generate pipeline for applying SIRE 2.0 to Fishboost data
+3	e	2021-06-01	2021-10-31	Validate results and make necessary modifications
+3	f	2021-07-01	2021-12-31	Prepare and submit paper
