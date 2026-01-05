@@ -1,57 +1,64 @@
 # This is a slower version but has the advantage of using very little memory
-make_traits_from_pedigree2 <- function(pedigree, params) {
+make_traits_from_pedigree2 <- function(popn, params) {
     message("Making trait values from pedigree ...")
 
     # extract parameters
-    ntraits <- params$ntraits
+    n_traits <- params$n_traits
     traitnames <- params$traitnames
-    Sigma_G <- params$Sigma_G
-    Sigma_E <- params$Sigma_E
+    cov_G <- params$cov_G
+    cov_E <- params$cov_E
 
-    # drop traits where covariance = 0 (keep if small but non-zero)
-    keep_traits <- traitnames[diag(Sigma_G) > 0]
+    # drop popn where covariance = 0 (keep if small but non-zero)
+    keep_traits <- traitnames[diag(cov_G) > 0]
     traitnames <- traitnames[keep_traits]
-    ntraits <- length(keep_traits)
-    Sigma_G <- Sigma_G[keep_traits, keep_traits]
-    Sigma_E <- Sigma_E[keep_traits, keep_traits]
+    n_traits <- length(keep_traits)
+    cov_G <- cov_G[keep_traits, keep_traits]
+    cov_E <- cov_E[keep_traits, keep_traits]
 
 
     # safer to get this directly from the pedigree
-    ntotal <- nrow(pedigree)
+    ntotal <- nrow(popn)
 
     # create names of trait variants
-    traitnames_BV <- paste0(traitnames, "_BV")
+    traitnames_GV <- str_c(traitnames, "_g")
 
-    traits <- copy(pedigree)
+    popn2 <- copy(popn)
 
     # split into parents and progeny
-    parent_ids  <- traits[sdp != "progeny", id]
-    progeny_ids <- traits[sdp == "progeny", id]
+    parent_ids  <- popn2[sdp != "progeny", id]
+    progeny_ids <- popn2[sdp == "progeny", id]
 
     # set the genetic values (BVs) for the parents first
-    traits[parent_ids, (traitnames_BV) := as.data.table(mvrnorm(.N, rep(0, ntraits), Sigma_G))]
+    popn2[parent_ids, (traitnames_GV) := as.data.table(mvrnorm(.N, rep(0, n_traits), cov_G))]
 
-    # set the genetic values of traits for the progeny
-    for (id in progeny_ids) {
+    # set the genetic values of popn for the progeny
+    walk(progeny_ids, \(id) {
         # get ids of parents
-        parents <- traits[id, c(sire, dam)]
+        parents <- popn2[id, c(sire, dam)]
 
         # get mean of parents' BVs
-        parent_BVs <- traits[parents, lapply(.SD, mean), .SDcols = traitnames_BV]
+        parent_GVs <- popn2[parents, map(.SD, mean), .SDcols = traitnames_GV]
 
         # generate new mvnorm values
-        progeny_BV <- mvrnorm(1L, as.numeric(parent_BVs), Sigma_G / 2)
+        progeny_GV <- mvrnorm(1L, as.numeric(parent_GVs), cov_G / 2)
 
         # assign values to progeny
-        set(traits, id, traitnames_BV, as.list(progeny_BV))
+        set(popn2, id, traitnames_GV, as.list(progeny_GV))
     }
 
     # generate environmental values
-    traits_EV <- mvrnorm(ntotal, rep(0, ntraits), Sigma_E)
+    popn_EV <- mvrnorm(ntotal, rep(0, n_traits), cov_E)
 
-    # calculate traits as sum of genetic and environmental components
+    # calculate popn as sum of genetic and environmental components
     # get log-normally distd values
-    traits[, (traitnames)] <- exp(traits[, ..traitnames_BV] + traits_EV)
+    popn2[, (traitnames)] <- exp(popn2[, ..traitnames_GV] + popn_EV)
 
-    traits
+    # Add weights
+    if ("weight" %notin% names(popn)) {
+        popn2[, weight := 1]
+        popn2[trial == 1, weight := rlnorm(.N, 3.430757, 0.2899917)]
+        popn2[trial == 2, weight := rlnorm(.N, 4.457181, 0.3330279)]
+    }
+
+    popn2
 }

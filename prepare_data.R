@@ -1,177 +1,147 @@
 source("censor_data.R")
-source("apply_time_step.R")
+source("discretise_time_sire.R")
+source("utils.R")
 
 # Tidy up ready for saving data to XML file
-prepare_data <- function(pop, params) {
-    message("Reformatting data for SIRE...")
+prepare_data <- function(popn, params) {
+    message("Reformatting data for SIRE ...")
 
     {
-        model_type    <- params$model_type
-        timings       <- params$timings
-        time_step     <- params$time_step
-        pass_Tsym     <- params$pass_Tsym
-        compartments  <- params$compartments
-        tmax          <- params$tmax
-        traitnames    <- params$traitnames
-        trial_fe      <- params$trial_fe
-        donor_fe      <- params$donor_fe
-        txd_fe        <- params$txd_fe
-        use_fb_data   <- params$use_fb_data
-        censor        <- params$censor
-        pass_events   <- params$pass_events
-        use_parasites <- params$use_parasites
+        time_step        <- params$time_step
+        compartments     <- params$compartments
+        tmax             <- params$tmax
+        traitnames       <- params$traitnames
+        model_traits     <- params$model_traits
+        trial_fe         <- params$trial_fe
+        donor_fe         <- params$donor_fe
+        txd_fe           <- params$txd_fe
+        weight_fe        <- params$weight_fe
+        weight1_fe       <- params$weight1_fe
+        weight2_fe       <- params$weight2_fe
+        use_weight       <- params$use_weight
+        weight_is_nested <- params$weight_is_nested
+        sim_new_data     <- params$sim_new_data
+        censor           <- params$censor
+        timings          <- params$timings
+        pass_events      <- params$pass_events
     }
     
-    # pass the last N >= 2 events, but force N=2 if using FB data
-    pass_events <- if (use_fb_data) 2 else max(pass_events, 2)
+    data <- copy(popn)
     
-    timings <- tail(timings, pass_events)
-    
-    # these are the columns we want for the data table
-    sir <- c("susceptibility", "infectivity", "recoverability")
-    sir1 <- c("s", "i", "r")
-    used <- sir %in% traitnames
-    if (!use_fb_data && any(used)) {
-        traitnames_BV <- paste0(sir[used], "_BV")
-        trait_cols <- paste0(sir1[used], "_a")
-    } else {
-        traitnames_BV <- trait_cols <- NULL
-    }
-
-    # We need "trial" in data, so create it if it's not already there
-    if (!"trial" %in% names(pop)) {
-        pop[, trial := 0L]
-    }
-    
-    # This corresponds to the order we're expecting to write them in
-    cols <- c("id", "sire", "dam", "sdp", "trial", "group", "donor", "parasites",
-              timings, traitnames_BV)
-    
-    # Make a copy of all the data
-    data <- pop[, ..cols] # pop[sdp != "dam", ..cols] # exclude dams
-    
-    # data[, id := 1:.N] # paste0("Ind", seq.int(0L, .N - 1L))]
-
-    # Whatever we got, call it "Tsym". Note: SIRE 2.0 calls it "It"
-    setnames(data, timings[length(timings) - 1], "Tsym")
-
-    # Traitnames go by s_a, i_a, r_a
-    if (!use_fb_data && any(used)) {
-        setnames(data, traitnames_BV, trait_cols)
-    }
+    # Sire and dam need "."s for missing values
+    data[, sire := fifelse(is.na(sire), ".", as.character(sire))]
+    data[, dam  := fifelse(is.na(dam),  ".", as.character(dam))]
     
     
-    # Fixed effects ----
-
-    # 0 = {parents, trial 1}, 1 = trial 2
-    if (trial_fe != "") {
-        data[, trial_fe := fifelse(trial == 2, 1, 0, 0)]
-    }
     
-    # 0 = {parents, recipients}, 1 = donors
-    if (donor_fe != "") {
-        data[, donor_fe := fifelse(donor == 1, 1, 0, 0)]
-    }
-
-    # 0 = {parents, trial 1, trial 2 recipients}, 1 = trial 2 donors
-    if (txd_fe != "") {
-        data[, txd_fe := fifelse(trial == 2 & donor == 1, 1, 0, 0)]
-    }
+    # Fixed effects
+    data[, trial_fe := fifelse(trial == 2, 1, 0, 0)]
+    data[, donor_fe := fifelse(donor == 1, 1, 0, 0)]
+    data[, txd_fe   := fifelse(trial == 2 & donor == 1, 1, 0, 0)]
     
-
-    # Handle time collisions ----
-    
-    if (time_step == 0) {
-        # With continuous time, adjacent timings can't be equal, else dt = 0.
-        
-        # data[Tsym == Trec & Tsym < 1,  Trec := Trec + 0.5]
-        # data[Tsym == Trec & Tsym >= 1, Tsym := Tsym - 0.5]
-        data[Tsym == 0, `:=`(Tsym = 0.5, Trec = max(Trec, 0.5))]
-        
-        for (i in seq_along(timings)[-1]) {
-            # get(timings[i]) is basically "Tsym" etc. If they're too close,
-            # nudge the next one along up by 0.5
-            data[get(timings[i-1]) >= get(timings[i]) - 0.5,
-                 (timings[i]) := get(timings[i-1]) + 0.5]
+    if ("weight" %in% names(data)) {
+        rec_fn <- if (use_weight == "log") log_recentre else recentre
+        if (weight_is_nested) {
+            data[, `:=`(weight1_fe = 0, weight2_fe = 0)]
+            data[trial == 1, weight1_fe := rec_fn(weight)]
+            data[trial == 2, weight2_fe := rec_fn(weight)]
+        } else {
+            data[, weight_fe := 0]
+            data[sdp == "progeny", weight_fe := rec_fn(weight)]
         }
-        # Just in case tmax has increased from this nudging
-        # tmax <- data[sdp == "progeny", max(c(Tsym, Trec), na.rm = TRUE), trial][, V1]
-        tmax <- get_tmax(data, params)
-        params$tmax <- tmax
-    } else {
-        # This is already taken care of by SIRE for discrete time
-    }
-
-    # Don't really want or need higher accuracy than this
-    for (t in timings) {
-        data[, (t) := round(get(t), 3)]
-    }
-    for (t in trait_cols) {
-        data[, (t) := signif(get(t), 4)]
     }
     
-    # Handle NA cases ----
-    
-    # SIRE 2.1 needs initial_comp, and also uses "NA" instead of "." for parent
-    # values. Here donors have value 1, receptors have value 0, parents have no
-    # value, so c("S", "E", "I", "R")[0, 1, NA] => ["S", "E", NA].
+    # Initial compartment
     data[, initial_comp := compartments[donor + 1]]
-
-    fix_NAs <- function(x, alt = "no") ifelse(is.na(x), alt, as.character(x))
-
-    cols1 <- c(timings, "group", trait_cols)
-
-    data[,                 (cols1) := lapply(.SD, as.character),  .SDcols = cols1]
-    data[sdp != "progeny", (cols1) := lapply(.SD, fix_NAs, "NA"), .SDcols = cols1]
-    data[sdp == "progeny", (cols1) := lapply(.SD, fix_NAs, "no"), .SDcols = cols1]
-
-    cols2 <- c("sire", "dam")
-    data[,                 (cols2) := lapply(.SD, as.character), .SDcols = cols2]
-    data[sdp != "progeny", (cols2) := lapply(.SD, fix_NAs, "."), .SDcols = cols2]
+    setcolorder(data, "initial_comp", after = "donor")
     
-    # In SIRE 2.1, transition time for S->E/I for donors does not occur within
-    # the observation period, need to be careful with SIR models
-    if (model_type %in% c("SIR", "SIR_res")) {
-        data[initial_comp == compartments[2], Tsym := "no"]
-    } else if ("Tinf" %in% timings) {
-        data[initial_comp == compartments[2], Tinf := "no"]
+    # Tidy up BVs
+    if (any(str_detect(names(data), "_g"))) {
+        TBVs <- intersect(str_c(traitnames, "_g"), names(data))
+        TBV1 <- str_c(str_sub(TBVs, 1, 1), "_g")
+        setnames(data, TBVs, TBV1)
+        # We don't really need more than 4 S.F.s
+        data[, (TBV1) := map(.SD, signif, 4), .SDcols = TBV1]
+    } else {
+        TBVs <- NULL
+        TBV1 <- NULL
     }
     
-    setcolorder(data, c(1:6, ncol(data)))
     
-    # Censoring ----
+    # Timings ----
     
-    if (use_fb_data) {
-        # Correct for cases when Trec < end (i.e. the individual died from
-        # infection) but Tsym is NA. Here Tsym is missing data, so needs to be
-        # replaced with "."
-        data[Tsym == "no" & !Trec %in% c("NA", "no") & Trec != tmax[trial], Tsym := "."]
-        
-        # No symptoms but parasites=T means it *could* have been infected. Since
-        # the specificity = 1 and the sensitivity < 1, parasites=F means it was
-        # definitely not infected).
-        if (use_parasites != "") {
-            # any donor (except 908 / 1830) with no symptoms and no parasites
-            id_to_keep <- data[group == 71, id[1]]
-            data[initial_comp == "E" & Tsym == "no" & !parasites & id != id_to_keep,
-                 `:=`(initial_comp = "S", donor_fe = 0, txd_fe = 0)]
-        }
-        
-        # In FB, Trecs at the trial ends are censored, not real Trecs, so set
-        # this to "no"
-        # data[Trec == as.character(tmax[trial]), Trec := "no"]
-    } else if (censor < 1) {
-        data <- censor_data(data, params)
+    # Set any timings not in pass_events to NA
+    walk(setdiff(timings, pass_events), \(ev) {
+        # Donors get to keep their Tinfs, but that's it
+        data[, (ev) := fifelse(ev == "Tinf" & donor == 1, 0, NA)]
+    })
+    
+    # If we've added a new column, group the timings together for ease of
+    # checking the data file.
+    setcolorder(data, timings, after = "initial_comp")
+    
+    
+    # Censoring
+    #
+    # This needs to be done before discretising, but might need to be redone if
+    # any of the timings are bunched together too much.
+    if (sim_new_data != "no" && censor < 1) {
+        walk(intersect(timings, names(data)), \(timing) {
+            data[get(timing) >= tmax[str_c("t", trial)], (timing) := NA]
+        })
     }
-
-    # Discrete time ----
+    
+    
+    # Discretise time
+    
+    # tidy up to 3 decimal places
+    cols <- intersect(timings, names(data))
+    data[, (cols) := map(.SD, round, 3), .SDcols = cols]
+    
     if (time_step > 0) {
-        data[, comp_status := apply_time_step(data, params)]
-        # data[, intersect(timings, names(data)) := NULL]
+        data[, comp_status := discretise_time_sire(data, params)]
+    } else {
+        # Check that Tinf < Tinc < Tsym < Tdet, otherwise bump up each timing to
+        # at least 0.5 more than the previous timing
+        walk(seq_along(timings)[-1], \(i) {
+            ti1 <- timings[[i - 1]]
+            ti2 <- timings[[i]]
+            data[get(ti1) >= get(ti2), (ti2) := get(ti1) + 0.5]
+            
+            # re-censor if anything has moved past tmax
+            data[get(ti2) >= tmax[str_c("t", trial)], (ti2) := NA]
+        })
     }
     
-    # Tidy up ----
-    data[, c("donor", "parasites") := NULL]
-
+    
+    # Convert columns to strings with "no" and "."
+    fix_NAs <- function(x, alt = "no") fifelse(is.na(x), alt, x)
+    
+    cols <- c(timings, "group", TBV1)
+    data[,                 (cols) := map(.SD, as.character),  .SDcols = cols]
+    data[sdp != "progeny", (cols) := map(.SD, fix_NAs, "NA"), .SDcols = cols]
+    data[sdp == "progeny", (cols) := map(.SD, fix_NAs, "no"), .SDcols = cols]
+    
+    # If we see "no" for an event, but a later event is not "no", it's actually
+    # missing, so change to "."
+    walk(rev(seq_along(timings)[-1]), \(i) {
+        ti1 <- timings[[i - 1]]
+        ti2 <- timings[[i]]
+        data[get(ti1) == "no" & get(ti2) != "no" & Tdeath != tmax[str_c("t", trial)], (ti1) := "."]
+    })
+    
+    # Donors inoculation event occurs outside of the observation times
+    data[donor == 1, (timings[[1]]) := "no"]
+    
+    
+    # Tidy up and remove unwanted columns (including trait PTs and EVs)
+    cols_to_del <- intersect(
+        c("GE", "status", "generation", "infected_by", "parasites", "donor", "weight",
+          model_traits, str_c(traitnames, "_EV")),
+        names(data))
+    
+    data[, (cols_to_del) := NULL]
+    
+    
     data
 }

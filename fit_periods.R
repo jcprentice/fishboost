@@ -1,89 +1,372 @@
+library(data.table)
 library(fitdistrplus)
+library(purrr)
 
-fb_data <- readRDS("fb_data/fb_data12.rds")
-
-{
-    x <- fb_data[sdp == "progeny", .(trial, Tsym, Trec)]
+get_RPs <- function() {
+    km_data <- readRDS("fb-final-old/results/km.rds")
+    x <- km_data$km_data[[1]]$data[src == "sim", .(trial, donor, Tsym, Tdeath)]
     
-    x[, Trec2 := Trec]
-    x[Trec2 %in% c(104, 160), Trec2 := NA]
-    
-    # Cut out values where both Tsym and Trec2 are NA
-    x <- x[!is.na(Tsym) | !is.na(Trec2)]
-    
-    minRP <- 0.1
-    
-    # Put in naive values
-    x[, `:=`(left = pmax(Trec - Tsym, minRP),
-             right = Trec2 - Tsym)]
-    
-    # Fix right
-    # Note: Trec2 = NA means Trec2 > 104 or 160
-    x[is.na(Tsym) & !is.na(Trec2), right := Trec2]
-    # x[is.na(Tsym) & !is.na(Trec2), right := minRP]
-    
-    # Fix left
-    x[is.na(Tsym) & !is.na(Trec2), left := Trec2 - minRP]
-    # x[is.na(Tsym) & !is.na(Trec2), left := minRP]
-    
-    # Fix zero RP
-    x[Tsym == Trec, `:=`(left = minRP, right = minRP)]
+    # Storage
+    dt <- list(Trial = 1:2,
+               Period = "RP",
+               Subset = c("All", "Seeders", "Contacts"),
+               mean = 0, rate = 0, shape = 0) |>
+        rev() |> expand.grid(stringsAsFactors = FALSE) |> rev() |> setDT()
+    vals <-  c("mean", "rate", "shape")
     
     
-    print(x[1:25, .(Tsym, Trec2, left, right, delta = right-left)])
+    # Cut out values where both Tsym and Tdeath2 are NA (need at least 1 value)
+    x <- x[!is.na(Tsym) | !is.na(Tdeath)]
     
-    
-    f1 <- fitdistcens(x[trial == 1] + 0.5, "gamma")
+    # Trial 1
+    f1 <- x[trial == 1 & !is.na(Tsym) &
+                 !is.na(Tdeath) & Tdeath > Tsym, Tdeath - Tsym] |>
+        fitdist("gamma")
     f1$estimate[["mean"]] = f1$estimate[["shape"]] / f1$estimate[["rate"]]
     message("Trial 1:")
-    print(round(f1$estimate, 1))
+    print(round(f1$estimate[vals], 2))
+    set(dt, 1L, vals, as.list(f1$estimate[vals]))
     
-    f2 <- fitdistcens(x[trial == 2] + 0.5, "gamma")
+    # Trial 1 seeders
+    f1s <- x[trial == 1 & donor == 1 & !is.na(Tsym) &
+                 !is.na(Tdeath) & Tdeath > Tsym, Tdeath - Tsym] |>
+        fitdist("gamma")
+    f1s$estimate[["mean"]] = f1s$estimate[["shape"]] / f1s$estimate[["rate"]]
+    message("Trial 1 seeders:")
+    print(round(f1s$estimate[vals], 2))
+    set(dt, 2L, vals, as.list(f1s$estimate[vals]))
+    
+    # Trial 1 contact
+    f1c <- x[trial == 1 & donor == 0 & !is.na(Tsym) &
+                 !is.na(Tdeath) & Tdeath > Tsym, Tdeath - Tsym] |>
+        fitdist("gamma")
+    f1c$estimate[["mean"]] = f1c$estimate[["shape"]] / f1c$estimate[["rate"]]
+    message("Trial 1 contact:")
+    print(round(f1c$estimate[vals], 2))
+    set(dt, 3L, vals, as.list(f1c$estimate[vals]))
+    
+    # Trial 2
+    f2 <- x[trial == 2 & !is.na(Tsym) &
+                 !is.na(Tdeath) & Tdeath > Tsym, Tdeath - Tsym] |>
+        fitdist("gamma")
     f2$estimate[["mean"]] = f2$estimate[["shape"]] / f2$estimate[["rate"]]
     message("Trial 2:")
-    print(round(f2$estimate, 1))
+    print(round(f2$estimate[vals], 2))
+    set(dt, 4L, vals, as.list(f2$estimate[vals]))
     
-    f12 <- fitdistcens(x + 0.5, "gamma")
-    f12$estimate[["mean"]] = f12$estimate[["shape"]] / f12$estimate[["rate"]]
-    message("Trial 1+2:")
-    print(round(f12$estimate, 1))
+    # Trial 2 seeders
+    f2s <- x[trial == 2 & donor == 1 & !is.na(Tsym) &
+                 !is.na(Tdeath) & Tdeath > Tsym, Tdeath - Tsym] |>
+        fitdist("gamma")
+    f2s$estimate[["mean"]] = f2s$estimate[["shape"]] / f2s$estimate[["rate"]]
+    message("Trial 2 seeders:")
+    print(round(f2s$estimate[vals], 2))
+    set(dt, 5L, vals, as.list(f2s$estimate[vals]))
+    
+    # Trial 2 contact
+    f2c <- x[trial == 2 & donor == 0 & !is.na(Tsym) &
+                 !is.na(Tdeath) & Tdeath > Tsym, Tdeath - Tsym] |>
+        fitdist("gamma")
+    f2c$estimate[["mean"]] = f2c$estimate[["shape"]] / f2c$estimate[["rate"]]
+    message("Trial 2 contact:")
+    print(round(f2c$estimate[vals], 2))
+    set(dt, 6L, vals, as.list(f2c$estimate[vals]))
+    
+    mget(c("dt", "f1", "f2", "f1s", "f1c", "f2s", "f2c"))
+}
+
+get_RPs_fb <- function(fix_seeders = c(10, 80)) {
+    # Process data
+    fb_data <- readRDS("fb_data/fb_12.rds")
+    x <- fb_data[sdp == "progeny", .(trial, donor, Tsym, Tdeath, parasites)]
+    
+    x[Tdeath == c(104, 160)[trial], Tdeath := NA]
+    if (any(fix_seeders > 0)) {
+        message("Reclassifying seeders")
+        x[donor == 1 & Tsym > fix_seeders[trial], donor := 0]
+    }
+    
+    # Storage
+    dt <- list(Trial = 1:2,
+               Period = "RP",
+               Subset = c("All", "Seeders", "Contacts"),
+               mean = 0, rate = 0, shape = 0) |>
+        rev() |> expand.grid(stringsAsFactors = FALSE) |> rev() |> setDT()
+    
+    vals <-  c("mean", "rate", "shape")
+    
+    # Cut out values where both Tsym and Tdeath2 are NA (need at least 1 value)
+    x <- x[!is.na(Tsym) | !is.na(Tdeath)]
+    
+    x[, `:=`(left = fcase(!is.na(Tsym) & !is.na(Tdeath), pmax(Tdeath - Tsym - 1, 0),
+                          !is.na(Tsym) & is.na(Tdeath), c(104, 160)[trial] - Tsym,
+                          is.na(Tsym) & !is.na(Tdeath), 0,
+                          default = NA),
+             right = fcase(!is.na(Tsym) & !is.na(Tdeath), pmax(Tdeath - Tsym + 1, 0),
+                           !is.na(Tsym) & is.na(Tdeath), NA,
+                           is.na(Tsym) & !is.na(Tdeath), Tdeath,
+                           default = NA))]
+    
+    # Trial 1
+    tmp <- x[trial == 1 & !is.na(Tsym) &
+                 !is.na(Tdeath) & Tdeath > Tsym, Tdeath - Tsym] |>
+        fitdist("gamma")
+    f1 <- fitdistcens(x[trial == 1, .(left, right)], "gamma",
+                       start = list(shape = tmp$estimate[["shape"]],
+                                    rate = tmp$estimate[["rate"]]))
+    f1$estimate[["mean"]] = f1$estimate[["shape"]] / f1$estimate[["rate"]]
+    message("Trial 1:")
+    print(round(f1$estimate[vals], 2))
+    set(dt, 1L, vals, as.list(f1$estimate[vals]))
+    
+    # Trial 1 seeders
+    tmp <- x[trial == 1 & donor == 1 & !is.na(Tsym) &
+                 !is.na(Tdeath) & Tdeath > Tsym, Tdeath - Tsym] |>
+        fitdist("gamma")
+    f1s <- fitdistcens(x[trial == 1 & donor == 1, .(left, right)], "gamma",
+                       start = list(shape = tmp$estimate[["shape"]],
+                                    rate = tmp$estimate[["rate"]]))
+    f1s$estimate[["mean"]] = f1s$estimate[["shape"]] / f1s$estimate[["rate"]]
+    message("Trial 1 seeders:")
+    print(round(f1s$estimate[vals], 2))
+    set(dt, 2L, vals, as.list(f1s$estimate[vals]))
+    
+    # Trial 1 contact
+    tmp <- x[trial == 1 & donor == 0 & !is.na(Tsym) &
+                 !is.na(Tdeath) & Tdeath > Tsym, Tdeath - Tsym] |>
+        fitdist("gamma")
+    f1c <- fitdistcens(x[trial == 1 & donor == 0, .(left, right)], "gamma",
+                       start = list(shape = tmp$estimate[["shape"]],
+                                    rate = tmp$estimate[["rate"]]))
+    f1c$estimate[["mean"]] = f1c$estimate[["shape"]] / f1c$estimate[["rate"]]
+    message("Trial 1 contact:")
+    print(round(f1c$estimate[vals], 2))
+    set(dt, 3L, vals, as.list(f1c$estimate[vals]))
+    
+    # Trial 2
+    tmp <- x[trial == 2 & !is.na(Tsym) &
+                 !is.na(Tdeath) & Tdeath > Tsym, Tdeath - Tsym] |>
+        fitdist("gamma")
+    f2 <- fitdistcens(x[trial == 2, .(left, right)], "gamma",
+                       start = list(shape = tmp$estimate[["shape"]],
+                                    rate = tmp$estimate[["rate"]]))
+    f2$estimate[["mean"]] = f2$estimate[["shape"]] / f2$estimate[["rate"]]
+    message("Trial 2:")
+    print(round(f2$estimate[vals], 2))
+    set(dt, 4L, vals, as.list(f2$estimate[vals]))
+    
+    # Trial 2 seeders
+    tmp <- x[trial == 2 & donor == 1 & !is.na(Tsym) &
+                 !is.na(Tdeath) & Tdeath > Tsym, Tdeath - Tsym] |>
+        fitdist("gamma")
+    f2s <- fitdistcens(x[trial == 2 & donor == 1, .(left, right)], "gamma",
+                       start = list(shape = tmp$estimate[["shape"]],
+                                    rate = tmp$estimate[["rate"]]))
+    f2s$estimate[["mean"]] = f2s$estimate[["shape"]] / f2s$estimate[["rate"]]
+    message("Trial 2 seeders:")
+    print(round(f2s$estimate[vals], 2))
+    set(dt, 5L, vals, as.list(f2s$estimate[vals]))
+    
+    # Trial 2 contact
+    tmp <- x[trial == 2 & donor == 0 & !is.na(Tsym) &
+                 !is.na(Tdeath) & Tdeath > Tsym, Tdeath - Tsym] |>
+        fitdist("gamma")
+    f2c <- fitdistcens(x[trial == 2 & donor == 0, .(left, right)], "gamma",
+                       start = list(shape = tmp$estimate[["shape"]],
+                                    rate = tmp$estimate[["rate"]]))
+    f2c$estimate[["mean"]] = f2c$estimate[["shape"]] / f2c$estimate[["rate"]]
+    message("Trial 2 contact:")
+    print(round(f2c$estimate[vals], 2))
+    set(dt, 6L, vals, as.list(f2c$estimate[vals]))
+    
+    mget(c("dt", "f1", "f2", "f1s", "f1c", "f2s", "f2c"))
 }
 
 
+get_DPs <- function() {
+    km_data <- readRDS("fb-final-old/results/km.rds")
+    x <- km_data$km_data[[1]]$data[src == "sim", .(trial, donor, Tsym)]
+    
+    # Storage
+    dt <- list(Trial = 1:2,
+               Period = "Tsym",
+               Subset = c("All", "Seeders", "Contacts"),
+               mean = 0, rate = 0, shape = 0) |>
+        rev() |> expand.grid(stringsAsFactors = FALSE) |> rev() |> setDT()
+    
+    vals <-  c("mean", "rate", "shape")
+    
+    # Cut out values where Tsym is NA
+    x <- x[!is.na(Tsym)]
+    
+    # Trial 1
+    f1 <- x[trial == 1 & !is.na(Tsym), Tsym] |>
+        fitdist("gamma")
+    f1$estimate[["mean"]] = f1$estimate[["shape"]] / f1$estimate[["rate"]]
+    message("Trial 2 contact:")
+    print(round(f1$estimate[vals], 2))
+    set(dt, 1L, vals, as.list(f1$estimate[vals]))
+    
+    # Trial 1 seeders
+    f1s <- x[trial == 1 & donor == 1 & !is.na(Tsym), Tsym] |>
+        fitdist("gamma")
+    f1s$estimate[["mean"]] = f1s$estimate[["shape"]] / f1s$estimate[["rate"]]
+    message("Trial 1 seeders:")
+    print(round(f1s$estimate[vals], 2))
+    set(dt, 2L, vals, as.list(f1s$estimate[vals]))
+    
+    # Trial 1 contact
+    f1c <- x[trial == 1 & donor == 0 & !is.na(Tsym), Tsym] |>
+        fitdist("gamma")
+    f1c$estimate[["mean"]] = f1c$estimate[["shape"]] / f1c$estimate[["rate"]]
+    message("Trial 1 contact:")
+    print(round(f1c$estimate[vals], 2))
+    set(dt, 3L, vals, as.list(f1c$estimate[vals]))
+    
+    # Trial 2
+    f2 <- x[trial == 2 & !is.na(Tsym), Tsym] |>
+        fitdist("gamma")
+    f2$estimate[["mean"]] = f2$estimate[["shape"]] / f2$estimate[["rate"]]
+    message("Trial 2 contact:")
+    print(round(f2$estimate[vals], 2))
+    set(dt, 4L, vals, as.list(f2$estimate[vals]))
+    
+    # Trial 2 seeders
+    f2s <- x[trial == 2 & donor == 1 & !is.na(Tsym), Tsym] |>
+        fitdist("gamma")
+    f2s$estimate[["mean"]] = f2s$estimate[["shape"]] / f2s$estimate[["rate"]]
+    message("Trial 2 seeders:")
+    print(round(f2s$estimate[vals], 2))
+    set(dt, 5L, vals, as.list(f2s$estimate[vals]))
+    
+    # Trial 2 contact
+    f2c <- x[trial == 2 & donor == 0 & !is.na(Tsym), Tsym] |>
+        fitdist("gamma")
+    f2c$estimate[["mean"]] = f2c$estimate[["shape"]] / f2c$estimate[["rate"]]
+    message("Trial 2 contact:")
+    print(round(f2c$estimate[vals], 2))
+    set(dt, 6L, vals, as.list(f2c$estimate[vals]))
+    
+    mget(c("dt", "f1", "f2", "f1s", "f1c", "f2s", "f2c"))
+}
 
-# Latent Periods
-LP  <- fb_data[!is.na(Tinf) & !is.na(Tsym),              Tsym - Tinf]
-LP1 <- fb_data[!is.na(Tinf) & !is.na(Tsym) & trial == 1, Tsym - Tinf]
-LP2 <- fb_data[!is.na(Tinf) & !is.na(Tsym) & trial == 2, Tsym - Tinf]
+get_DPs_fb <- function(fix_seeders = c(10, 80)) {
+    # Process data
+    fb_data <- readRDS("fb_data/fb_12.rds")
+    x <- fb_data[sdp == "progeny", .(trial, donor, Tsym, Tdeath)]
+    
+    x[Tdeath == c(104, 160)[trial], Tdeath := NA]
+    if (any(fix_seeders > 0)) {
+        message("Reclassifying seeders")
+        x[donor == 1 & Tsym > fix_seeders[trial], donor := 0]
+    }
+    
+    # Storage
+    dt <- list(Trial = 1:2,
+               Period = "Tsym",
+               Subset = c("All", "Seeders", "Contacts"),
+               mean = 0, rate = 0, shape = 0) |>
+        rev() |> expand.grid(stringsAsFactors = FALSE) |> rev() |> setDT()
+    
+    vals <-  c("mean", "rate", "shape")
+    
+    # Cut out values where both Tsym and Tdeath2 are NA (need at least 1 value)
+    x <- x[!is.na(Tsym) | !is.na(Tdeath)]
+    
+    x[, `:=`(left = fcase(!is.na(Tsym), pmax(Tsym - 1, 0),
+                          is.na(Tsym) & !is.na(Tdeath), 0,
+                          default = NA),
+             right = fcase(!is.na(Tsym), Tsym,
+                           is.na(Tsym) & !is.na(Tdeath), Tdeath,
+                           default = NA))]
+    
+    # Trial 1
+    tmp <- x[trial == 1 & !is.na(Tsym), Tsym] |>
+        fitdist("gamma")
+    f1 <- fitdistcens(x[trial == 1, .(left, right)], "gamma",
+                       start = list(shape = tmp$estimate[["shape"]],
+                                    rate = tmp$estimate[["rate"]]))
+    f1$estimate[["mean"]] = f1$estimate[["shape"]] / f1$estimate[["rate"]]
+    message("Trial 2 contact:")
+    print(round(f1$estimate[vals], 2))
+    set(dt, 1L, vals, as.list(f1$estimate[vals]))
+    
+    # Trial 1 seeders
+    tmp <- x[trial == 1 & donor == 1 & !is.na(Tsym), Tsym] |>
+        fitdist("gamma")
+    f1s <- fitdistcens(x[trial == 1 & donor == 1, .(left, right)], "gamma",
+                       start = list(shape = tmp$estimate[["shape"]],
+                                    rate = tmp$estimate[["rate"]]))
+    f1s$estimate[["mean"]] = f1s$estimate[["shape"]] / f1s$estimate[["rate"]]
+    message("Trial 1 seeders:")
+    print(round(f1s$estimate[vals], 2))
+    set(dt, 2L, vals, as.list(f1s$estimate[vals]))
+    
+    # Trial 1 contact
+    tmp <- x[trial == 1 & donor == 0 & !is.na(Tsym), Tsym] |>
+        fitdist("gamma")
+    f1c <- fitdistcens(x[trial == 1 & donor == 0, .(left, right)], "gamma",
+                       start = list(shape = tmp$estimate[["shape"]],
+                                    rate = tmp$estimate[["rate"]]))
+    f1c$estimate[["mean"]] = f1c$estimate[["shape"]] / f1c$estimate[["rate"]]
+    message("Trial 1 contact:")
+    print(round(f1c$estimate[vals], 2))
+    set(dt, 3L, vals, as.list(f1c$estimate[vals]))
+    
+    # Trial 2
+    tmp <- x[trial == 2 & !is.na(Tsym), Tsym] |>
+        fitdist("gamma")
+    f2 <- fitdistcens(x[trial == 2, .(left, right)], "gamma",
+                       start = list(shape = tmp$estimate[["shape"]],
+                                    rate = tmp$estimate[["rate"]]))
+    f2$estimate[["mean"]] = f2$estimate[["shape"]] / f2$estimate[["rate"]]
+    message("Trial 2 contact:")
+    print(round(f2$estimate[vals], 2))
+    set(dt, 4L, vals, as.list(f2$estimate[vals]))
+    
+    # Trial 2 seeders
+    tmp <- x[trial == 2 & donor == 1 & !is.na(Tsym), Tsym] |>
+        fitdist("gamma")
+    f2s <- fitdistcens(x[trial == 2 & donor == 1, .(left, right)], "gamma",
+                       start = list(shape = tmp$estimate[["shape"]],
+                                    rate = tmp$estimate[["rate"]]))
+    f2s$estimate[["mean"]] = f2s$estimate[["shape"]] / f2s$estimate[["rate"]]
+    message("Trial 2 seeders:")
+    print(round(f2s$estimate[vals], 2))
+    set(dt, 5L, vals, as.list(f2s$estimate[vals]))
+    
+    # Trial 2 contact
+    tmp <- x[trial == 2 & donor == 0 & !is.na(Tsym), Tsym] |>
+        fitdist("gamma")
+    f2c <- fitdistcens(x[trial == 2 & donor == 0, .(left, right)], "gamma",
+                       start = list(shape = tmp$estimate[["shape"]],
+                                    rate = tmp$estimate[["rate"]]))
+    f2c$estimate[["mean"]] = f2c$estimate[["shape"]] / f2c$estimate[["rate"]]
+    message("Trial 2 contact:")
+    print(round(f2c$estimate[vals], 2))
+    set(dt, 6L, vals, as.list(f2c$estimate[vals]))
+    
+    mget(c("dt", "f1", "f2", "f1s", "f1c", "f2s", "f2c"))
+}
 
-# Recovery Periods
-RP1 <- fb_data[!is.na(Tsym) & !is.na(Trec) & Trec < 104 & trial == 1, Trec - Tsym]
-RP2 <- fb_data[!is.na(Tsym) & !is.na(Trec) & Trec < 160 & trial == 2, Trec - Tsym]
-RP <- c(RP1, RP2)
+DPs <- get_DPs()
+RPs <- get_RPs()
 
-# Overall
-fitdist(LP + 0.5, "gamma")
-fitdist(RP + 0.5, "gamma")
+DPsfb1 <- get_DPs_fb(fix_seeders = c(0, 0))
+DPsfb2 <- get_DPs_fb(fix_seeders = c(10, 80))
 
-# Just Trial 1
-LP1fit <- fitdist(LP1 + 0.5, "gamma")
-RP1fit <- fitdist(RP1 + 0.5, "gamma")
+RPsfb1 <- get_RPs_fb(fix_seeders = c(0, 0))
+RPsfb2 <- get_RPs_fb(fix_seeders = c(10, 80))
 
-# These are the values we'll actually use
-r_eta_shape <- LP1fit$estimate[["shape"]]
-r_eta_rate  <- LP1fit$estimate[["rate"]]
-r_eta  <- r_eta_rate / r_eta_shape
-mean_LP <- 1 / r_eta
+Ps <- rbind(DPs$dt, RPs$dt)
+Psfb1 <- rbind(DPsfb1$dt, RPsfb1$dt)
+Psfb2 <- rbind(DPsfb2$dt, RPsfb2$dt)
 
-print(signif(c(LP = mean_LP, shape = r_eta_shape, rate = r_eta_rate), 3))
+setorder(Ps, "Trial")
+setorder(Psfb1, "Trial")
+setorder(Psfb2, "Trial")
 
-r_gamma_shape <- RP1fit$estimate[["shape"]]
-r_gamma_rate  <- RP1fit$estimate[["rate"]]
-r_gamma  <- r_gamma_rate / r_gamma_shape
-mean_RP <- 1 / r_gamma
-
-print(signif(c(RP = mean_RP, shape = r_gamma_shape, rate = r_gamma_rate), 3))
-
-# Just Trial 2
-fitdist(LP2 + 0.5, "gamma")
-fitdist(RP2 + 0.5, "gamma")
+cols <- c("mean", "rate", "shape")
+Ps[, (cols) := map(.SD, round, 2), .SDcols = cols]
+Psfb1[, (cols) := map(.SD, round, 2), .SDcols = cols]
+Psfb2[, (cols) := map(.SD, round, 2), .SDcols = cols]

@@ -1,193 +1,312 @@
-library(glue)
+{
+    library(data.table)
+    library(stringr)
+    library(purrr)
+    
+    source("widen_priors.R")
+    source("remove_bici_fes.R")
+}
+
+# This will read an existing fitted dataset and apply either the mean or median
+# parameter values, or sample from the posteriors. It saves the source so that
+# the corresponding BVs can be applied too (but we do that later).
 
 patch_params <- function(params, trace_row = 0) {
-    data_set        <- params$patch_data_set
-    scenario        <- params$patch_scenario
-    patch_with_mean <- params$patch_with_mean
-    
-    if (is.na(data_set) || data_set == "") {
-        message("No patches necessary")
+    {
+        patch_dataset <- params$patch_dataset %||% ""
+        patch_name    <- params$patch_name
+        patch_type    <- params$patch_type %||% "median"
+        patch_state   <- params$patch_state %||% FALSE
+        model_traits  <- params$model_traits
+        use_traits    <- params$use_traits
+        skip_patches  <- params$skip_patches
+        sim_new_data  <- params$sim_new_data
+        msgs          <- params$msgs
+    }
+
+    if (msgs) message("Patching parameters ...")
+
+    if (is.na(patch_dataset) || patch_dataset == "") {
+        if (msgs) message(" - no patches necessary")
         return(params)
     }
     
-    # Make changes to a copy of params and return that
+    if (msgs) message(str_glue(" - using {patch_type} posteriors from ",
+                               "'{patch_dataset}' scenario {patch_name} ..."))
+    
+    {
+        data_dir    <- str_glue("datasets/{patch_dataset}/data")
+        results_dir <- str_glue("datasets/{patch_dataset}/results")
+        out_dir     <- str_glue("{data_dir}/{patch_name}-out")
+        inf_out_dir <- str_glue("{out_dir}/output-inf")
+        sim_out_dir <- str_glue("{out_dir}/output-sim")
+    }
+    
+    # Make changes to a copy of params and later return that
     params2 <- copy(params)
     
-    message(glue("Patching params with {ptype} posteriors from '{data_set}' scenario {scenario}...",
-                 ptype = if (patch_with_mean) "mean" else "sampled"))
     
-    f <- glue("data/{data_set}/scen-{scenario}-1_out/trace_combine.txt")
-    if (!file.exists(f)) {
-        message("- missing trace file")
-        return(params)
-    }
-    trace_file <- fread(f)
-    trace_file[, names(trace_file)[grepl("Group effect", names(trace_file))] := NULL]
+    # If 'patch_state' is specified, use that, otherwise check if a trace file
+    # is present and store the row used.
     
-    # Extract list of posterior values from trace file
-    posteriors <- if (patch_with_mean) {
-        lapply(trace_file, mean)[-1]
-    } else {
-        if (trace_row <= 0) {
-            trace_row = sample(nrow(trace_file), 1)
+    etc_src <- if (sim_new_data == "etc_sim") "etc_sim" else "etc_inf"
+    
+    # Select patch ----
+    
+    # This might be already set, in which case skip
+    if (!is.numeric(patch_state) && patch_state == TRUE) {
+        f <- str_glue("{out_dir}/{etc_src}.rds")
+        patch_state <- if (!file.exists(f)) {
+            message("no state files found, continuing without")
+            FALSE
+        } else {
+            if (patch_type == "sampled") {
+                readRDS(f)$parameters[, sample(state, 1)]
+            } else {
+                0
+            }
         }
-        message(glue(" - using row {trace_row} from trace file"))
-        as.list(trace_file[trace_row])[-1]
     }
-    rm(trace_file)
+    params2$patch_state <- patch_state
+    
+    # Load patch ----
+    
+    # Use patch_state
+    if (is.numeric(patch_state)) {
+        if (msgs) message(str_glue(" - using state: {patch_state}"))
+        
+        f <- str_glue("{out_dir}/{etc_src}.rds")
+        tmp <- readRDS(f)$parameters[!str_starts(parameter, "^Group")]
+        tmp <- if (patch_state == 0) {
+            tmp[, .(value = get(patch_type)(value)), parameter]
+        } else {
+            tmp[state == patch_state]
+        }
+        patch_vals <- setNames(as.list(tmp$value), tmp$parameter)
+        rm(tmp)
+    }
+    
+    # Use trace file
+    # Caution: 0 == FALSE, so instead test if is logical, since we've already
+    # handled is TRUE
+    if (is.logical(patch_state)) {
+        # Get parameters from trace file
+        f <- str_glue("{out_dir}/extended_trace_combine.tsv")
+        if (!file.exists(f)) {
+            f <- str_remove(f, "extended_")
+            if (!file.exists(f)) {
+                stop("No trace file")
+            }
+        }
+        if (msgs) message(str_glue(" - reading trace file '{f}'"))
+        trace_file <- fread(f)
+        # trace_file[, str_subset(names(trace_file), "^\\d", negate = TRUE) := NULL]
+        
+        # Extract list of posterior values from trace file
+        patch_vals <- if (patch_type == "mean") {
+            map(trace_file, mean)
+        } else if (patch_type == "median") {
+            map(trace_file, median)
+        } else {
+            if (!trace_row %between% c(1, nrow(trace_file))) {
+                trace_row <- sample(nrow(trace_file), 1)
+            }
+            params2$trace_row <- trace_row
+            if (msgs) message(str_glue(" - using row {trace_row} from trace file"))
+            as.list(trace_file[trace_row])
+        }
+        rm(trace_file)
+    }
     
     
     # Load results file to get any parameters not saved in trace file
-    f <- glue("results/{data_set}/scen-{scenario}-1.RData")
-    results_exists <- file.exists(f)
-    if (results_exists) {
-        message(" - extracting parameters from results file")
-        tmp_env <- new.env()
-        load(f, envir = tmp_env)
-        priors <- tmp_env$params$priors
+    rf <- str_glue("{results_dir}/{patch_name}.rds")
+    # Save this for later
+    resfile_exists <- file.exists(rf)
+    if (resfile_exists) {
+        if (msgs) message(str_glue(" - extracting parameters from '{rf}'"))
+        tmp_params <- readRDS(rf)$params
+        priors <- tmp_params$priors
     } else {
-        message(" - no results file")
+        if (msgs) message(" - no results file")
         priors <- params$priors
     }
     
-    # Copy prior values, using true_val from the posteriors
-    params2$priors[, `:=`(type = priors$type,
-                          val1 = priors$val1,
-                          val2 = priors$val2,
-                          true_val = unlist(posteriors)[parameter],
-                          use = priors$use)]
+    # Correct for old type
+    priors[type == "Flat",  type := "uniform"]
+    priors[type == "Fixed", type := "constant"]
+    
+    # Determine what to patch ----
+    
+    # Copy prior values, using `true_val` from the patch_vals
+    
+    pp <- intersect(setdiff(names(patch_vals), skip_patches),
+                    params2$priors$parameter)
+    
+    # Now remove anything we don't want to patch
+    walk(skip_patches, \(x) {
+        pp <<- pp |>
+            str_subset(switch(x,
+                              "base" = "sigma|beta|period|shape",
+                              "LP" = "latent_period",
+                              "RP" = "removal_period",
+                              "DP" = "detection_period",
+                              "cov" = "cov_|^r_",
+                              "fes" = "trial|donor|txd",
+                              "weight" = "weight",
+                              "all" = ".",
+                              x),
+                       negate = TRUE)
+    })
+    
+    priors2 <- priors[parameter %in% pp]
+    
+    # Note: don't overwrite `use` or `type`. We want to patch the parameter
+    # values, but the model determines whether they get used or not.
+    params2$priors[parameter %in% priors2$parameter,
+                   true_val := unlist(patch_vals)[parameter]]
+    
+    # Ensure val1 <= true_val <= val2
+    params2$priors[, `:=`(val1 = pmin(val1, true_val),
+                          val2 = pmax(val2, true_val))]
+    
     
     # Patch from Trace file
     
     pars_patched <- "priors"
     
-    sir <- c(s = "susceptibility", i = "infectivity", r = "recoverability")
-    patched_covariances <- FALSE
-    for (GE in c("G", "E")) for (x in names(sir)) for (y in names(sir)) {
-        r_xy <- glue("{rcov}_{GE}_{x}{y}",
-                     rcov = ifelse(x == y, "cov", "r"))
-        cov_xx <- glue("cov_{GE}_{x}{x}")
-        cov_yy <- glue("cov_{GE}_{y}{y}")
-
-        if (!r_xy %in% names(posteriors))  next
-
-        cov_xy <- if (x == y) {
-            with(posteriors, get(cov_xx))
-        } else {
-            with(posteriors, get(r_xy) * sqrt(get(cov_xx) * get(cov_yy)))
-        }
-
-        params2[[glue("Sigma_{GE}")]][sir[[x]], sir[[y]]] <- cov_xy
-        patched_covariances <- TRUE
-    }
-    if (patched_covariances) {
+    # Covariance Matrices ----
+    
+    # We overwrite params2's Sigma_G and Sigma_E with new values, remembering
+    # that r_*_** are correlations, not covariances, so they need to be
+    # transformed first.
+    if ("cov" %notin% skip_patches) {
+        priors1 <- params2$priors$true_val |>
+            setNames(params2$priors$parameter) |>
+            as.list()
+        patched_covariances <- FALSE
+        
+        params2$Sigma_G[] <- 0
+        params2$Sigma_E[] <- 0
+        params2$cov_G[] <- 0
+        params2$cov_E[] <- 0
+        
+        out <- make_matrices_from_priors(priors1)
+        
+        # Copy the used values, discarding the rest (even if non-zero)
+        used <- model_traits[str_split_1(use_traits, "")]
+        
+        params2$Sigma_G[used, used] <- out$Sigma_G[used, used]
+        params2$Sigma_E[used, used] <- out$Sigma_E[used, used]
+        params2$cov_G[used, used] <- out$cov_G[used, used]
+        params2$cov_E[used, used] <- out$cov_E[used, used]
+        
         pars_patched <- c(pars_patched, "covariances")
     }
     
+    params2$vars <- diag(params2$Sigma_G)
+    params2$cors <- params2$Sigma_G[lower.tri(params2$Sigma_G)]
+
     
-    # if (all(c("r_G_si", "r_G_sr", "r_G_ir") %in% names(posteriors))) {
-    #     pars_patched <- c(pars_patched, "covariances")
-    #     
-    #     # for indexing Sigma
-    #     sir <- c("susceptibility", "infectivity", "recoverability")
-    #     
-    #     cors_G <- matrix(with(posteriors, c(1, r_G_si, r_G_sr, r_G_si, 1, r_G_ir, r_G_sr, r_G_ir, 1)), 3, 3)
-    #     covs_G <- diag(with(posteriors, sqrt(c(cov_G_ss, cov_G_ii, cov_G_rr))), 3, 3)
-    #     Sigma_G <- covs_G %*% cors_G %*% covs_G
-    #     dimnames(Sigma_G) <- list(sir, sir)
-    #     
-    #     cors_E <- matrix(with(posteriors, c(1, r_E_si, r_E_sr, r_E_si, 1, r_E_ir, r_E_sr, r_E_ir, 1)), 3, 3)
-    #     covs_E <- diag(with(posteriors, sqrt(c(cov_E_ss, cov_E_ii, cov_E_rr))), 3, 3)
-    #     Sigma_E <- covs_E %*% cors_E %*% covs_E
-    #     dimnames(Sigma_E) <- list(sir, sir)
-    #     
-    #     params$Sigma_G[sir, sir] <- Sigma_G
-    #     params$Sigma_E[sir, sir] <- Sigma_E
-    #     
-    #     for (p in c("r_G_si", "r_G_sr", "r_G_si", "r_G_ir", "r_G_sr", "r_G_ir",
-    #                 "r_G_si", "r_G_sr", "r_G_si", "r_G_ir", "r_G_sr", "r_G_ir",
-    #                 "cov_G_ss", "cov_G_ii", "cov_G_rr",
-    #                 "cov_E_ss", "cov_E_ii", "cov_E_rr")) {
-    #         params$priors[parameter == "p", true_val := get(p)]
-    #     }
-    # }
+    # Rates and LPs ----
     
-    
-    
-    
-    if ("beta" %in% names(posteriors)) {
-        params2$r_beta <- posteriors$beta
+    if ("beta" %in% pp) {
+        params2$r_beta <- patch_vals$beta
         pars_patched <- c(pars_patched, "beta")
     }
-    if ("latent_period" %in% names(posteriors)) {
-        params2$r_eta <- params2$r_eta_rate <- 1 / posteriors$latent_period
+    if ("latent_period" %in% pp) {
+        params2$latent_period <- patch_vals$latent_period
         pars_patched <- c(pars_patched, "latent period")
     }
-    if ("eta_shape" %in% names(posteriors)) {
-        params2$r_eta_shape <- posteriors$eta_shape
-        params2$r_eta_rate <- params2$r_eta_rate * posteriors$eta_shape
-        pars_patched <- c(pars_patched, "eta shape")
+    if ("LP_shape" %in% pp) {
+        params2$LP_shape <- patch_vals$LP_shape
+        params2$LP_scale <- patch_vals$latent_period / params2$LP_shape
+        pars_patched <- c(pars_patched, "LP scale", "LP shape")
     }
-    if ("detection_period" %in% names(posteriors)) {
-        params2$r_rho <- params2$r_rho_rate <- 1 / posteriors$detection_period
+    if ("detection_period" %in% pp) {
+        params2$detection_period <- 1 / patch_vals$detection_period
         pars_patched <- c(pars_patched, "detection period")
     }
-    if ("rho_shape" %in% names(posteriors)) {
-        params2$r_rho_shape <- posteriors$rho_shape
-        params2$r_rho_rate <- params2$r_rho_rate * posteriors$rho_shape
-        pars_patched <- c(pars_patched, "rho shape")
+    if ("DP_shape" %in% pp) {
+        params2$DP_shape <- patch_vals$DP_shape
+        params2$DP_scale <- patch_vals$detection_period / params2$DP_shape
+        pars_patched <- c(pars_patched, "DP scale", "DP shape")
     }
-    if ("recovery_period" %in% names(posteriors)) {
-        params2$r_gamma <- params2$r_gamma_rate <- 1 / posteriors$recovery_period
-        pars_patched <- c(pars_patched, "recovery period")
+    if ("removal_period" %in% pp) {
+        params2$removal_period <- patch_vals$removal_period
+        pars_patched <- c(pars_patched, "removal period")
     }
-    if ("gamma_shape" %in% names(posteriors)) {
-        params2$r_gamma_shape <- posteriors$gamma_shape
-        params2$r_gamma_rate <- params2$r_gamma_rate * posteriors$gamma_shape
-        pars_patched <- c(pars_patched, "gamma shape")
+    if ("RP_shape" %in% pp) {
+        params2$RP_shape <- patch_vals$RP_shape
+        params2$RP_scale <- patch_vals$removal_period / params2$RP_shape
+        pars_patched <- c(pars_patched, "RP scale", "RP shape")
     }
-    if ("sigma" %in% names(posteriors)) {
-        # params2$group_effect <- posteriors$sigma
+    if ("sigma" %in% pp) {
+        # params2$group_effect <- patch_vals$sigma
         pars_patched <- c(pars_patched, "group effect")
     }
     
+    # Fixed effects ----
     
-    for (fe_type in c("trial", "donor", "txd")) {
-        for (fe_trait in params$all_traitnames) {
+    # Handle nested Weight FEs
+    weight_is_nested <- any(str_detect(names(patch_vals), "weight1"))
+    weight <- if (weight_is_nested) c("weight1", "weight2") else "weight"
+
+    fe_types <- c(
+        if ("fes" %notin% skip_patches) c("trial", "donor", "txd"),
+        if ("weight" %notin% skip_patches) weight
+    )
+    
+    if (weight_is_nested) {
+        params2$priors[str_starts(parameter, "weight_"), use := FALSE]
+    }
+    
+    for (fe_type in fe_types) {
+        for (fe_trait in model_traits) {
             # build name e.g. trial_l
-            fe_name <- paste0(fe_type, "_", substr(fe_trait, 1, 1))
-            if (fe_name %in% names(posteriors)) {
-                params2$fe_vals[fe_type, fe_trait] <- posteriors[[fe_name]]
+            fe_name <- str_c(fe_type, "_", str_sub(fe_trait, 1, 1))
+            if (fe_name %in% pp) {
+                params2$fe_vals[fe_type, fe_trait] <- patch_vals[[fe_name]]
                 pars_patched <- c(pars_patched, fe_name)
             }
         }
     }
     
-    if (results_exists) {
-        # Ensure FEs match
-        params2$trial_fe <- tmp_env$params$trial_fe
-        params2$donor_fe <- tmp_env$params$donor_fe
-        params2$txd_fe   <- tmp_env$params$txd_fe
-        pars_patched    <- c(pars_patched, "fixed effects")
+    # BICI fixes
+    
+    if (params$sim_new_data %in% c("bici")) {
+        params2 <- remove_bici_fes(params2)
+    }
+    
+    if (resfile_exists) {
+        if (FALSE) {
+            # FIXME: this seems to be breaking, so just skip it
+            
+            # Ensure FEs match
+            for (fe in fe_types) {
+                fe_type <- str_c(fe, "_fe")
+                if (fe_type %in% names(tmp_params)) {
+                    params2[[fe_type]] <- tmp_params[[fe_type]]
+                }
+            }
+            pars_patched <- c(pars_patched, "fixed effects")
+        }
         
         # shape parameters
-        params2$r_eta_shape <- tmp_env$params$r_eta_shape
-        params2$r_rho_shape <- tmp_env$params$r_rho_shape
-        params2$r_gamma_shape <- tmp_env$params$r_gamma_shape
+        # params2$LP_shape <- tmp_params$LP_shape
+        # params2$DP_shape <- tmp_params$DP_shape
+        # params2$RP_shape <- tmp_params$RP_shape
         
         # I think this is necessary?
-        params2$time_step <- tmp_env$params$time_step
-        params2$censor <- tmp_env$params$censor
+        params2$time_step <- tmp_params$time_step
+        params2$censor <- tmp_params$censor
         pars_patched <- c(pars_patched, "time_step", "censor")
     }
     
-    # Check to make sure priors are in bounds, don't bother with sigma
-    tmp <- as.list(params2$priors[parameter == "sigma"])
-    params2$priors[val1 >= true_val, val1 := true_val - 2]
-    params2$priors[val2 <= true_val, val2 := true_val + 2]
-    params2$priors[parameter == "sigma", (colnames(params$priors)) := tmp]
+    # Ensure priors are wide enough to include true_vals
+    widen_priors(params2$priors)
     
-    message(" - ", paste(pars_patched, collapse = ", "))
+    if (msgs) message(" - ", str_flatten_comma(pars_patched))
     
     params2
 }

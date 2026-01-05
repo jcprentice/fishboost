@@ -11,93 +11,189 @@ editor_options:
 
 ## Overview
 
-Create simulated epidemic data and send to SIRE 2.0. The intention is to replace simulated data with Turbot data.
+Create simulated epidemic data and send to SIRE 2.2. The intention is to replace simulated data with Turbot data.
 
 R functions based on Richard Bailey's originals. [SIRE 2.0](https://github.com/theITEAM/SIRE2.0/) modified from Chris Pooley's original.
 
 
 ## Load Libraries and source files
 ```{r include = FALSE}
-library(data.table) # used for all data table manipulations
-library(Matrix)     # allows Matrix
-library(xml2)       # used to generate XML file
-# library(corpcor)    # efficient estimation of Cov and (partial) Corr
-library(MASS)       # needed for mvnorm
-# library(MCMCglmm)
-library(ggplot2)    # plotting
-library(tictoc)     # check performance
-library(codetools)  # check for global variables
-library(here)       # useful according to Hadley Wickham
-
-source("make_parameters.R")
-source("get_R0.R")
-source("make_pedigree.R")
-source("make_grm.R")
-source("make_traits_from_grm.R")
-source("make_traits_from_pedigree.R")
-source("set_groups.R")
-source("simulate_epidemic.R")
-source("init_populations.R")
-source("prepare_data.R")
-source("data_table_to_tsv_string.R")
-source("generate_sire_xml.R")
-source("make_plots.R")
-source("utils.R")
-# source("sire_data.R")
+source("libraries.R")
+source("source_files.R")
 ```
 
 ## Generate pedigree, GRM, and traits
 Given a set of initial parameters, first generate a pedigree with the required structure, and from that generate the corresponding *A matrix*. Then generate a population with appropriate traits, either using the pedigree or the A matrix (since we may want to be able to use a GRM later).
 ```{r}
-    # params <- make_parameters(epi_type = "SEIR", name = "seir1", cov = TRUE, setup = "")
-    params <- make_parameters(epi_type = "SIR", name = "sir1", cov = TRUE, setup = "")
+params <- make_parameters(
+    model_type = "SEIDR", # "SIR", "SEIR", "SIDR", or "SEIDR"
+    name = "expt1",
+    setup = "fishboost", # chris, small, fishboost, fb1, fb2, single
+    use_traits = "sit", # "all", "none", "sit", "si" etc.
+    vars = 0.5, # c(0.5, 1.2, 0.5)
+    covars = 0.2, # 0.2, "positive", "negative", "mixed", "sir_only" etc.
+    group_layout = "fishboost", # "random", "family", "striped", "fishboost"
+    trial_fe = "lidt",
+    donor_fe = "lidt",
+    txd_fe = "lidt",
+    weight_fe = "slidt",
+    weight_is_nested = TRUE,
+    use_fb_data = FALSE
+)
 
-    pedigree <- make_pedigree(params)
-    # this is an A-matrix, not actually a GRM
-    GRM <- make_grm(pedigree)
+# Temporary override of some parameters
+params[c("nchains", "burnin", "thin", "nsample_per_gen")] <- c(2, 1e4, 2e3, 1, 10)
+# params$anneal <- "on"
+# params$anneal_power <- 4
+# params$pass_events <- 2
+# params$link_traits <- "stitt"
+# params$sim_link_donor <- "slill"
+# params$link_donor <- "slill"
+params$time_step <- 1
+params$censor <- 0.8
+params$use_weight <- "log"
+params$use_grm <- ""
+params$weight_is_nested <- TRUE
 
-    # traits <- make_traits_from_grm(GRM, pedigree, params)
-    traits <- make_traits_from_pedigree(pedigree, params)
+# params$patch_dataset <- "fb-final"
+# params$patch_scenario <- 1
+# params$traits_source <- "posterior"
+# params$patch_state <- FALSE
 
-    # check_cov(traits2, params)
+params <- params |>
+    # Patch params with posterior mean values from data set/scenario
+    patch_params() |>
+    # Check if weights have been nested correctly
+    fix_nested_weights() |>
+    # Link traits (needs to be done after params is constructed)
+    apply_links()
+
+# Quick check of how things are looking
+summarise_params(params)
+```
+## Generate pedigree and population
+```{r}
+if (params$use_fb_data) {
+    str <- c(fishboost = 12, fb1 = 1, fb2 = 2)[[params$setup]]
+    popn <- readRDS(glue("fb_data/fb_data{str}.rds"))
+    
+    # Create a GRM or A matrix
+    GRM <- make_grm(popn, params)
+} else {
+    popn <- make_pedigree(params)
+    
+    # Create a GRM or A matrix
+    GRM <- make_grm(popn, params)
+    
+    # Set groups, trial, donors, and group effect
+    popn <- set_groups(popn, params)
+    
+    # popn <- make_traits_from_grm(GRM, pedigree, params)
+    popn <- set_traits(popn, params)
+    
+    # Set donor and trial effects
+    # cols <- c("id", "weight", "trial", "donor", "susceptibility", "infectivity", "tolerance", "latency", "detectability")
+    # params$use_weight <- "no"
+    # popn1 <- apply_fixed_effects(popn, params)
+    # t1 <- popn1[id %in% ids, ..cols]
+    # params$use_weight <- "linear"
+    # popn2 <- apply_fixed_effects(popn, params)
+    # t2 <- popn2[id %in% ids, ..cols]
+    # params$use_weight <- "log"
+    # popn3 <- apply_fixed_effects(popn, params)
+    # t3 <- popn3[id %in% ids, ..cols]
+    
+    popn <- apply_fixed_effects(popn, params)
+}
 ```
 
-## Simulate an epidemic and plot the results
+## Simulate and plot epidemic ----
 ```{r}
-traits <- set_groups(traits, params)
-pop    <- simulate_epidemic(traits, params)
-get_R0(pop)
-
-# Plot the epidemic ----
-plot_model(pop, params)
+if (params$use_fb_data) {
+    # If Tinf, Tinc etc. are not in popn, create missing column(s) and set to NA
+    missing_timings <- setdiff(params$timings, names(popn))
+    if (length(missing_timings) > 0) {
+        popn[, (missing_timings) := NA_real_]
+    }
+    
+    params$tmax <- get_tmax(popn, params)
+    popn[Tdeath == params$tmax[trial], Tdeath := NA]
+    
+    plt <- plot_model(popn, params)
+    # plt_fb1 <- plot_SxxDR(popn, params)
+} else {
+    tic(); popn <- simulate_epidemic(popn, params); toc()
+    popn[sdp == "progeny", parasites := !is.na(Tinf)]
+    
+    params$estimated_R0 <- get_R0(popn)
+    params$tmax <- get_tmax(popn, params)
+    
+    ### Plot the epidemic ----
+    plt <- plot_model(popn, params)
+}
 ```
 
-## Generate the XML file for SIRE 2.0
+## Create directories ----
 ```{r}
-# Discretised version of pop (Tinf, Trec -> "[S,1][I,2][R,3]")
-# dpop <- discretise(pop, params)
+with(params, {
+    for (d in c(data_dir, results_dir, gfx_dir))
+        if (!dir.exists(d))
+            dir.create(d, recursive = TRUE)
+})
+```
 
-
-# pop is offspring only, so need to recombine parent data
+## Generate XML File and run SIRE ----
+```{r}
 # Tidy up ready for saving data to XML file
-# Handy to have tmax stored here, because it's harder to get afterwards
-data_and_tmax <- prepare_data(pop, params)
+data <- prepare_data(popn, params)
 
+sire_xml <- generate_sire22_xml(data, params, GRM)
+# sire_xml <- get(glue("generate_{params$sire_version}_xml"))(data, params, GRM)
 
-# Generate the XML file for SIRE 2.0
-generate_sire_xml(data_and_tmax, GRM, params)
+cmd <- with(params, glue(
+    ifelse(params$algorithm == "pas",
+           "mpirun -n {nchains} --oversubscribe ", ""),
+    "../{sire_version}/sire {data_dir}/{name}.xml 0"))
 
-# copy the XML file to the SIRE 2.0 folder to run
-system(paste("cp", params$filename, "../sire2/"))
-
-## Run SIRE 2.0 ----
-cmd <- paste0("../sire2/sire ", params$filename, " 0")
-message("Running SIRE 2.0 ...")
-
-# message(paste0("> system(\"", cmd, "\")"))
-system(cmd)
-
-# In case we need to test if the output is unchanged from the unmodified SIRE 2.0
-# system("../SIRE2.0/Execute/sire foo.xml 0")
+# Run SIRE
+message(glue("Running: {cmd} ..."))
+tic(); out <- system(cmd); time_taken <- toc()
 ```
 
+
+## Retrieve results and save ----
+```{r}
+message("Retrieving results ...")
+
+# note: sire 2.0 needs "dat_dir/name-", instead of "name_out/"
+file_prefix <- with(params, glue("{data_dir}/{name}_out"))
+
+if (params$sire_version == "sire22") {
+    parameter_estimates <- fread(glue("{file_prefix}/posterior.csv")) # 2.1 uses posteriors.csv
+    file_name <- glue("{file_prefix}/ebvs.csv") # 2.1 uses estimated_bvs.csv
+    estimated_BVs       <- if (file.exists(file_name)) fread(file_name) else NULL
+    pred_accs           <- fread(glue("{file_prefix}/pred_accs.csv"))
+} else {
+    parameter_estimates <- fread(glue("{file_prefix}/posteriors.csv"))
+    estimated_BVs       <- fread(glue("{file_prefix}/estimated_bvs.csv"))
+    pred_accs           <- fread(glue("{file_prefix}/pred_accs.csv"))
+}
+
+
+msg_pars(parameter_estimates)
+print(parameter_estimates[!startsWith(parameter, "Group effect")])
+if (!params$use_fb_data) {
+    print(pred_accs)
+}
+
+ranks <- get_ranks(popn, estimated_BVs, params)
+
+### Save results ----
+if (!dir.exists(params$results_dir)) {
+    dir.create(params$results_dir, recursive = TRUE)
+}
+
+save(params, popn, parameter_estimates, estimated_BVs, pred_accs, ranks, time_taken,
+     file = with(params, glue("{results_dir}/{name}.RData")))
+}
+```

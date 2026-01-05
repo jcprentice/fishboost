@@ -1,18 +1,22 @@
 # Find tmax for each trial
-get_tmax <- function(pop, params) {
+get_tmax <- function(popn, params) {
     censor <- params$censor
     time_step <- params$time_step
+    sim_new_data <- params$sim_new_data
     
-    tmax <- if (TRUE) {
-        # Find tmax for based on all individuals, including uninfected
-        (pop[sdp == "progeny", .(trial, Trec)]
-         # [is.na(Trec), Trec := Inf]
-         [, quantile(Trec, censor, na.rm = TRUE), trial]
-         [, V1])
-    } else {
-        # Find tmax based only on infected individuals
-        pop[sdp == "progeny", quantile(Trec, censor, na.rm = TRUE), trial][, V1]
+    if (sim_new_data == "no") {
+        return(c(t1 = 104, t2 = 160))
     }
+    
+    x1 <- popn[sdp == "progeny", .(id, trial, Tdeath)]
+    
+    x1[, Tdeath := fifelse(is.na(Tdeath),
+                           max(Tdeath, na.rm = TRUE),
+                           Tdeath),
+       trial]
+    
+    x2 <- x1[, quantile(Tdeath, censor, na.rm = TRUE), trial]
+    tmax <- setNames(x2$V1, str_c("t", x2$trial))
     
     # Want the nearest time step if time is measured in discrete intervals
     if (time_step > 0) {

@@ -8,55 +8,52 @@ spearmans_rc <- function(x, y) {
 
 
 # Return EBVs ranked, show rank distance vs true ranks
-get_ranks <- function(pop, estimated_BVs, params, verbose = FALSE) {
+get_ranks <- function(popn, estimated_BVs, params, verbose = FALSE) {
     {
-        traitnames   <- params$traitnames
+        use_traits   <- params$use_traits
         sire_version <- params$sire_version
     }
 
     # make a copy of this so we can add missing columns
-    pop2 <- copy(pop)
-
-    sir <- c("susceptibility", "infectivity", "recoverability")
-    used <- sir %in% traitnames
+    popn2 <- copy(popn)
 
     # individual effect names (what SIRE 2.1 calls them)
     
-    if (sire_version == "sire22") {
-        ie_names <- c("s_a EBV", "i_a EBV", "r_a EBV")
+    ie_names <- if (sire_version == "bici") {
+        c("sg", "ig", "tg")
     } else {
-        ie_names <- c("s_a", "i_a", "r_a")
+        c("s_g EBV", "i_g EBV", "t_g EBV")
     }
 
-    setnames(estimated_BVs, ie_names, sir, skip_absent = TRUE)
+    setnames(estimated_BVs, ie_names, c("sus", "inf", "tol"), skip_absent = TRUE)
 
     # add missing columns
-    if (!used[1]) {
-        estimated_BVs[, susceptibility := 0]
-        pop2[, susceptibility_BV := 0]
+    if (!str_detect(use_traits, "s")) {
+        estimated_BVs[, sus := 0]
+        popn2[, sus_g := 0]
     }
-    if (!used[2]) {
-        estimated_BVs[, infectivity := 0]
-        pop2[, infectivity_BV := 0]
+    if (!str_detect(use_traits, "i")) {
+        estimated_BVs[, inf := 0]
+        popn2[, inf_g := 0]
     }
-    if (!used[3]) {
-        estimated_BVs[, recoverability := 0]
-        pop2[, recoverability_BV := 0]
+    if (!str_detect(use_traits, "t")) {
+        estimated_BVs[, tol := 0]
+        popn2[, tol_g := 0]
     }
 
-    ids <- seq.int(params$nsires)
+    ids <- seq_len(params$nsires)
 
     BVs <- estimated_BVs[ids, .(id,
-                                est_sus = susceptibility,
-                                est_inf = infectivity,
-                                est_rec = recoverability)]
+                                est_sus = sus,
+                                est_inf = inf,
+                                est_tol = tol)]
 
     # Can't make comparisons if using Fishboost data
-    if (params$use_fb_data == FALSE) {
-        BVs2 <- pop2[ids, .(id,
-                           sus = susceptibility_BV,
-                           inf = infectivity_BV,
-                           rec = recoverability_BV)]
+    if (params$sim_new_data != "no") {
+        BVs2 <- popn2[ids, .(id,
+                           sus = sus_g,
+                           inf = inf_g,
+                           tol = tol_g)]
 
         BVs <- merge(BVs2, BVs, by = "id")
 
@@ -64,10 +61,10 @@ get_ranks <- function(pop, estimated_BVs, params, verbose = FALSE) {
             message("Spearman's rank distance for:")
             message(" - susceptibility = ", signif(cor.test(BVs$sus, BVs$est_sus, method = "spearman")$estimate, 3))
             message(" - infectivity    = ", signif(cor.test(BVs$inf, BVs$est_inf, method = "spearman")$estimate, 3))
-            message(" - recoverability = ", signif(cor.test(BVs$rec, BVs$est_rec, method = "spearman")$estimate, 3))
+            message(" - tolerance      = ", signif(cor.test(BVs$tol, BVs$est_tol, method = "spearman")$estimate, 3))
         }
     }
 
-    ranks <- BVs[, lapply(.SD, rank)]
+    ranks <- BVs[, map(.SD, rank)]
 }
 

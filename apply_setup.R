@@ -3,15 +3,27 @@
 
 apply_setup <- function(setup, params) {
     switch(setup,
-           "fishboost" = {
-               nsires <- 29L; ndams <- 25L; nprogeny <- 1800L;
+           "fb_12_drop71" = {
+               nsires <- 28L; ndams <- 25L; nprogeny <- 1750L;
                dpsire <- 1L; ppdam <- 72L;
-               ngroups <- 72L; I0 <- 5L;
-           }, "fb1" = {
-               nsires <- 14L; ndams <- 14L; nprogeny <- 900L;
+               ngroups <- 70L; I0 <- 5L;
+           }, "fb_1_drop71" = {
+               nsires <- 14L; ndams <- 14L; nprogeny <- 875L;
                dpsire <- 1L; ppdam <- 72L;
-               ngroups <- 36L; I0 <- 5L;
-           }, "fb2" = {
+               ngroups <- 35L; I0 <- 5L;
+           }, "fb_2_drop71" = {
+               nsires <- 17L; ndams <- 14L; nprogeny <- 875L;
+               dpsire <- 1L; ppdam <- 72L;
+               ngroups <- 35L; I0 <- 5L;
+           }, "fb_12" = {
+               nsires <- 29L; ndams <- 25L; nprogeny <- 1775L;
+               dpsire <- 1L; ppdam <- 72L;
+               ngroups <- 71L; I0 <- 5L;
+           }, "fb_1" = {
+               nsires <- 14L; ndams <- 14L; nprogeny <- 875L;
+               dpsire <- 1L; ppdam <- 72L;
+               ngroups <- 35L; I0 <- 5L;
+           }, "fb_2" = {
                nsires <- 18L; ndams <- 14L; nprogeny <- 900L;
                dpsire <- 1L; ppdam <- 72L;
                ngroups <- 36L; I0 <- 5L;
@@ -35,13 +47,10 @@ apply_setup <- function(setup, params) {
     ntotal <- nprogeny + nparents
     group_size <- nprogeny / ngroups
 
-    new_vals <- mget(c("setup", "nsires", "ndams", "nprogeny", "nparents",
-                       "ntotal", "dpsire", "ppdam", "group_size", "ngroups",
-                       "I0"))
+    vars <- c("setup", "nsires", "ndams", "nprogeny", "nparents", "ntotal",
+              "dpsire", "ppdam", "group_size", "ngroups", "I0")
 
-    for (n in names(new_vals)) {
-        params[[n]] <- new_vals[[n]]
-    }
+    params[vars] <- mget(vars)
 
     params
 }

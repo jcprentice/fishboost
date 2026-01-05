@@ -7,10 +7,10 @@ source("make_time_series.R")
 source("make_plots.R")
 source("add_latency.R")
 
-fb_data <- readRDS("fb_data/fb_data12.rds")
+fb_data <- readRDS("fb_data/fb_12.rds")
 
 # Work with copy of data ----
-fb <- fb_data[sdp == "progeny", .(id, sdp, trial, group, donor, Tinf, Tsym, Trec)]
+fb <- fb_data[sdp == "progeny", .(id, sdp, trial, group, donor, Tinf, Tsym, Tdeath)]
 fb[, Tinf := fifelse(donor == 1, 0, NA_real_)]
 
 
@@ -30,7 +30,7 @@ dt_all <- fb[!is.na(Tsym), .(Trial = as.factor(trial), Tsym)]
 d_donors <- fb[donor == 1 & !is.na(Tsym), .N, trial][, N] / 180^2
 d_all    <- fb[!is.na(Tsym), .N, trial][, N] / 900^2
 
-my_breaks <- seq.int(0L, 154L, by = 1L)
+my_breaks <- seq(0L, 154L, by = 1L)
 n_breaks  <- length(my_breaks) - 1L
 
 scale_donors <- rep(d_donors, each = n_breaks)
@@ -59,4 +59,4 @@ plt_all <- ggplot(data = dt_all, aes(x = Tsym, fill = Trial, colour = Trial)) +
          x = "Time until symptoms (days)",
          y = "Density")
 
-plot_grid(plotlist = list(plt_donors, plt_all), ncol=1)
+plot_grid(plotlist = list(plt_donors, plt_all), ncol = 1)

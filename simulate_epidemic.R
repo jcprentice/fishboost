@@ -5,9 +5,9 @@ source("models/model_SEIR_res.R")
 source("models/model_SIDR.R")
 source("models/model_SEIDR.R")
 
-simulate_epidemic <- function(traits, params) {
+simulate_epidemic <- function(popn, params) {
     # this just turns "simulate_epidemic(...) into "model_SIR(...)"
-    simulate_fn <- get(paste0("model_", params$model_type))
-    simulate_fn(traits, params)
+    simulate_fn <- get(str_c("model_", params$model_type))
+    simulate_fn(popn, params)
 }
 

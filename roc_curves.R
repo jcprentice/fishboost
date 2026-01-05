@@ -1,4 +1,5 @@
 library(data.table)
+library(stringr)
 library(pROC)
 library(ggplot2)
 library(cowplot)
@@ -13,15 +14,16 @@ cutoff <- 80
 slider <- 80
 
 point_colour <- function(true, estimated, cutoff, slider) {
-    fifelse(true > cutoff & estimated > slider, "True Pos",
-            fifelse(true <= cutoff & estimated <= slider, "True Neg",
-                    fifelse(true <= cutoff & estimated > slider, "False Pos", "False Neg")))
+    fcase(true > cutoff & estimated > slider,   "True Pos",
+          true <= cutoff & estimated <= slider, "True Neg",
+          true <= cutoff & estimated > slider,  "False Pos",
+          default =                             "False Neg")
 }
 
 
 
 
-for (slider in seq.int(0L, 100L, by = 10L)) {
+for (slider in seq(0L, 100L, by = 10L)) {
     X <- data.table(true = rank(x),
                     estimated = rank(y))
 
@@ -56,7 +58,7 @@ for (slider in seq.int(0L, 100L, by = 10L)) {
         coord_cartesian(xlim = c(0, 100), ylim = c(0, 100)) +
         labs(x = "True Rank",
              y = "Estimated Rank",
-             title = paste0("Slider = ", slider)) +
+             title = str_c("Slider = ", slider)) +
         scale_colour_manual(values = c("red", "green", "darkgreen", "darkred"),
                           labels = con_vals,
                           drop = FALSE)
@@ -75,11 +77,10 @@ for (slider in seq.int(0L, 100L, by = 10L)) {
                    colour = "red") +
         labs(x = "1 - Specificity",
              y = "Sensitivity",
-             title = paste0("Slider = ", slider))
+             title = str_c("Slider = ", slider))
 
     plts <- plot_grid(plotlist = list(plt1, plt2), ncol = 2)
 
-    ggsave(glue("gfx/roc{slider}.png"),
-           plts,
-           width = 1000, height = 500, units = "px")
+    ggsave(str_glue("gfx/roc{slider}.png"),
+           plts, width = 1000, height = 500, units = "px")
 }

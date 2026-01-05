@@ -1,53 +1,121 @@
+# Write sparse matrix so that SIRE can read it
+write_sparse_matrix <- function(M, file) {
+    dt <- as.data.table(summary(M))
+    # Matrix is symmetric, but SIRE needs both halves specified
+    dt <- rbind(dt, dt[i != j, .(i = j, j = i, x)])
+    setorder(dt, i, j)
+    fwrite(dt, file = file,
+           sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+    dt
+}
+
+
+# Write sparse matrix so that SIRE can read it
+write_dt_as_sparse <- function(dt, file) {
+    dt <- rbind(dt, dt[i != j, .(i = j, j = i, x)])
+    setorder(dt, i, j)
+    fwrite(dt, file = file,
+           sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+    dt
+}
+
+
 # Format a table as a TSV file for including in the XML file
-table_to_tsv_string <- function(x) {
+table_to_tsv_string <- function(x, row_names = FALSE, col_names = FALSE,
+                                quote = FALSE) {
     x |>
-        write.table(row.names = FALSE, col.names = FALSE,
-                    quote = FALSE, sep = "\t", eol = "\n") |>
+        write.table(row.names = row_names, col.names = col_names,
+                    quote = quote, sep = "\t", eol = "\n") |>
         capture.output() |>
-        paste0(collapse = "\n") |>
-        {\(x) paste0("\n", x, "\n")}()
+        str_flatten("\n") |>
+        {\(x) str_c("\n", x, "\n")}()
+}
+
+# message a list
+capture_message <- function(x) {
+    x |> print() |> capture.output() |> str_flatten("\n") |> message()
 }
 
 
 # Need this safe version of sample() as sometimes length(x) = 1, which leads to
-# the "convenience feature", which isn't actually all that convenient.
+# the "convenience feature", which so inconvenient that they even warn you about
+# it in the documentation
 safe_sample <- function(x, ...) {
-    if (length(x) > 1) {
+    if (length(x) > 1L) {
         sample(x, ...)
-    } else if (length(x) <= 1) {
+    } else if (length(x) <= 1L) {
         x
     }
 }
 
+# Merge lists A and B, being careful to not overwrite anything in A from B
+safe_merge <- function(A, B) {
+    c(A, B[setdiff(names(B), names(A))])
+}
 
-# slightly nicer way to print an object's size
+
+# Slightly nicer way to print an object's size
 obsize <- function(x) {
     print(object.size(x), units = "auto")
 }
 
+nuniq <- function(x) length(unique(x))
 
-# turn SIRE's 6 values into a covariance matrix
-make_cov_matrix <- function(x) {
-    traits <- c("sus", "inf", "rec")
-    matrix(x[c(1, 2, 3,
-               2, 4, 5,
-               3, 5, 6)],
-           nrow = 3, ncol = 3,
-           dimnames = list(traits, traits))
+# Get all unique characters in a string
+uniq_char <- function(x) {
+    unique(str_split_1(x, ""))
 }
 
 
-# clamp values
+# Clamp values
 clamp <- function(x, xmin = -Inf, xmax = Inf) {
-    max(min(x, xmax), xmin)
+    x |> max(xmin) |> min(xmax)
 }
 
-# message with parameters
+# head_tail
+ht <- function(x, n = 3L) c(head(x, n), tail(x, n))
+
+# Test if in range
+in_range <- function(x, a, b, inc = "ab") {
+    switch(inc,
+           "ab" = a <= x & x <= b,
+           "a" = a <= x & x < b,
+           "b" = a < x & x <= b,
+           a < x & x < b)
+}
+
+# Message with parameters
 msg_pars <- function(x) {
-    x[!startsWith(parameter, "Group effect"),
-      .(pars = rename_pars(parameter), mean)] |>
+    x[!str_starts(parameter, "Group effect"),
+      .(pars = rename_pars(parameter),
+        mean = signif(mean, 3L),
+        hdi95_min = signif(hdi95min, 2L),
+        hdi95_max = signif(hdi95max, 2L))] |>
         as.data.frame() |>
         capture.output() |>
-        paste0(collapse = "\n") |>
+        str_flatten("\n") |>
         message()
 }
+
+# Recentering weights
+recentre <- function(x, digits = 5L) {
+    y <- x - mean(x, na.rm = TRUE)
+    if (digits >= 0L) {
+        y <- round(y, digits)
+    }
+    y
+}
+
+log_recentre <- function(x, digits = 5L) {
+    lx <- log(x)
+    y <- lx - mean(lx, na.rm = TRUE)
+    if (digits >= 0L) {
+        y <- round(y, digits)
+    }
+    y
+}
+
+# We often just want the first letter of a string
+str_1st <- function(x) str_sub(x, 1L, 1L)
+str_last <- function(x) str_sub(x, -1L)
+

@@ -7,5 +7,5 @@ tbl <- tibble(
                    right = FALSE, labels = FALSE, include.lowest = TRUE)))
 
 ggplot(tbl) +
-    geom_ribbon(aes(x = x, ymin = 0, ymax = y, fill = q)) +
+    geom_area(aes(x = x, y = y, fill = q)) +
     scale_fill_viridis_d()

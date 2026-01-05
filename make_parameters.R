@@ -1,504 +1,537 @@
-library(data.table)
+{
+    library(data.table)
+    library(stringr)
+    
+    source("widen_priors.R")
+    source("utils.R")
+}
 
-# Generate parameter list
+#' Generate a list of parameters
+#'
+#' @param model_type Epidemic model: "SIR", "SIDR", "SEIR", "SEIDR"
+#' @param name Filename for data
+#' @param dataset Folder suffix for data (default "")
+#' @param scenario Integer for scenario
+#' @param replicate Integer for replicate
+#' @param setup Population layout
+#' @param use_traits Which traits to use (this is going to be "clever") use
+#'   "all" or "none", or a subset using the first letter of each trait
+#'   "sildt" = "sus", "inf", "lat", "det", "tol"
+#' @param vars Variances: diagonal of cov matrix, either a single value, or a
+#'   list wrapped named vector or a vector compatible with the number of possible traits
+#' @param cors Correlations for Sigma matrix, should be either
+#'   - a single numerical value 0.2
+#'   - a list-wrapped vector, either namd, or compatible with the lower triangle order
+#'   i.e. in col order as list(si, sl, sd, st, il, id, it, ld, lt, dt)
+#' @param group_layout How to arrange individuals into groups: "random",
+#'   "striped", "family", "fishboost"
+#' @param group_effect Include group effect if >= 0, simulate if appropriate and
+#'   check, ignore if < 0
+#' @param trial_fe List of fixed effects to check for donors, trial, and weight.
+#'   Should also simulate these if not using FB dataset. A string with the first
+#'   letters of traits, e.g. "lidt"
+#' @param donor_fe
+#' @param txd_fe
+#' @param weight_fe
+#' @param weight_is_nested should weight be nested across trials? (default TRUE),
+#' @param sim_new_data Simulate new data in "r" or "bici". Alternatively, "no"
+#'   for using FB data, or "etc_sim" or "etc_inf" for getting data from an
+#'   existing dataset (specified in patches)
+#' @returns a list containing all the parameters
+
 make_parameters <- function(
-    # Epidemic model: "SIR", "SIDR", "SEIR", "SEIDR", "...-res" for reservoir model
-    model_type = "SEIDR",
-    # Filename for data
-    name = "expt",
-    # Folder suffix for data (default "")
-    data_set = "",
-    # Population layout
-    setup = "fishboost",
-    # Which traits to use (this is going to be "clever")
-    # use "all" or "none", or a subset using the first letter of each trait
-    # "slidr" = "sus", "lat", "inf", "det", "rec"
-    use_traits = "sir",
-    # Variances: diagonal of cov matrix, either a single value, or a vector, in
-    # which case it should be compatible with "use_traits"
-    vars = 1,
-    # Cov matrix, numerical: 0.2, c(0.2, 0.2), or string: "chris", "positive", "sir_only"
-    covars = 0.2,
-    # How to arrange individuals into groups: "random", "striped", "family", "fishboost"
-    group_layout = "fishboost",
-    # Include group effect: if >= 0 simulate if appropriate and check, ignore if < 0
-    group_effect = -1,
-    # List of fixed effects for SIRE to check for donors and trial. Should also
-    # simulate these if not using FB data_set A string with the first letters of traits.
-    trial_fe = "none",
-    donor_fe = "none",
-    txd_fe = "none",
-    # Simulate new data or use Fishboost data
-    use_fb_data = FALSE
+        model_type = "SEIDR", name = "scen-1-1", dataset = "testing",
+        scenario = 1L, replicate = 1L, setup = "fb_12_rpw", use_traits = "sit",
+        vars = 1.0, cors = 0.2, group_layout = "fishboost", group_effect = -1,
+        trial_fe = "none", donor_fe = "none", txd_fe = "none",
+        weight_fe = "none", weight_is_nested = TRUE, sim_new_data = "bici"
 ) {
-
     message("Setting parameters ...")
-
+    
     # Fix input NAs ----
-
+    
     # Handy in case of debugging
     if (FALSE) {
-        model_type <- "SEIDR"; name <- "expt"; data_set <- ""; setup <- "fishboost";
-        use_traits <- "si"; vars <- 1; covars <- 0.2; group_layout <- "random";
-        group_effect <- -1; trial_fe <- "lid"; donor_fe <- "lid"; txd_fe <- "lid";
-        use_fb_data <- FALSE;
+        model_type <- "SEIDR"; name <- "scen-1-1"; dataset <- "testing";
+        scenario <- 1L; replicate = 1L; setup <- "fb_12_rpw"; use_traits <- "sit";
+        vars <- 1; cors <- 0.2; group_layout <- "fishboost"; group_effect <- -1;
+        trial_fe <- "ildt"; donor_fe <- "ildt"; txd_fe <- "ildt";
+        weight_fe <- "sildt"; weight_is_nested <- TRUE; sim_new_data <- "bici";
     }
     
-    # Handy for batch
     if (FALSE) {
-        model_type <- protocol$model; data_set <- protocol$data_set; name <- protocol$name;
-        use_traits <- protocol$use_traits; vars <- protocol$vars; covars <- protocol$covars;
-        setup <- protocol$setup; group_layout <- protocol$group_layout; group_effect <- protocol$group_effect;
-        donor_fe <- protocol$donor_fe; trial_fe <- protocol$trial_fe; txd_fe <- protocol$txd_fe;
-        use_fb_data <- protocol$use_fb_data
+        model_type <- protocol$model_type; dataset <- protocol$dataset; name <- protocol$name;
+        scenario <- protocol$scenario; replicate = protocol$scenario; use_traits <- protocol$use_traits;
+        vars <- protocol$vars; cors <- protocol$cors; setup <- protocol$setup;
+        group_layout <- protocol$group_layout; group_effect <- protocol$group_effect;
+        trial_fe <- protocol$trial_fe; donor_fe <- protocol$donor_fe; txd_fe <- protocol$txd_fe;
+        weight_fe <- protocol$weight_fe; weight_is_nested <- protocol$weight_is_nested;
+        sim_new_data <- protocol$sim_new_data;
     }
-
-    # Check if value is unassigned, NA, or NULL, and replace with sensible defaults
-    get_default <- function(x, x_def) {
-        if (is.na(x) || is.null(x)) x_def else x
+    
+    # Fix any parameters incorrectly assigned as NULL
+    {
+        model_type    <- model_type %||% "SEIDR"
+        name          <- name %||% "scen-1-1"
+        dataset       <- dataset %||% "testing"
+        scenario      <- scenario %||% 1L
+        replicate     <- replicate %||% 1L
+        setup         <- setup %||% "fb_12_rpw"
+        use_traits    <- use_traits %||% "sit"
+        vars          <- vars %||% 1
+        cors          <- cors %||% 0.2
+        group_layout  <- group_layout %||% "fishboost"
+        trial_fe      <- trial_fe %||% "none"
+        donor_fe      <- donor_fe %||% "none"
+        txd_fe        <- txd_fe %||% "none"
+        weight_fe     <- weight_fe %||% "none"
+        sim_new_data  <- sim_new_data %||% "bici"
     }
+    
+    # Description
+    description <- "Basic test model"
 
-    model_type   <- get_default(model_type, "SIR")
-    name         <- get_default(name, paste0(tolower(model_type), 1L))
-    data_set     <- get_default(data_set, "")
-    setup        <- get_default(setup, "none")
-    use_traits   <- get_default(use_traits, "sir")
-    vars         <- get_default(vars, 1)
-    covars       <- get_default(covars, 0.5)
-    group_layout <- get_default(group_layout, "fishboost")
-    trial_fe     <- get_default(trial_fe, "none")
-    donor_fe     <- get_default(donor_fe, "none")
-    txd_fe       <- get_default(txd_fe, "none")
-    use_fb_data  <- get_default(use_fb_data, FALSE)
-
+    label <- str_c("s", scenario)
+    
     # Set output directories ----
-
-    # Directories should be something like "data", "data-sim-xyz/", or
-    # "data-fb-xyz/", so make sure that "-" is in there
-    data_dir    <- paste0("data", if (data_set != "") "-" else "", data_set)
-    results_dir <- sub("data", "results", data_dir)
-
-
-    # Population setup ----
-    message(" - Setup is: '", setup, "'")
-    message(" - Group layout is: '", group_layout, "'")
-
-    # Note: in balanced populations, dpsire = dams per sire, ppdam = progeny per dam
-    switch(setup,
-           "fishboost" = {
-               nsires <- 29L; ndams <- 25L; nprogeny <- 1775L;
-               dpsire <- 1L; ppdam <- 72L;
-               ngroups <- 71L; I0 <- 5L;
-           }, "fb1" = {
-               nsires <- 14L; ndams <- 14L; nprogeny <- 875L;
-               dpsire <- 1L; ppdam <- 72L;
-               ngroups <- 35L; I0 <- 5L;
-           }, "fb2" = {
-               nsires <- 18L; ndams <- 14L; nprogeny <- 900L;
-               dpsire <- 1L; ppdam <- 72L;
-               ngroups <- 36L; I0 <- 5L;
-           }, "chris" = {
-               nsires <- 100L; ndams <- 2000L; nprogeny <- 2000L;
-               dpsire <- 20L; ppdam <- 1L;
-               ngroups <- 200L; I0 <- 1L;
-           }, "small" = {
-               nsires <- 3L; ndams <- 6L; nprogeny <- 12L;
-               dpsire <- 2L; ppdam <- 2L;
-               ngroups <- 4L; I0 <- 1L;
-           }, {
-               nsires <- 3L; ndams <- 6L; nprogeny <- 12L;
-               dpsire <- 2L; ppdam <- 2L;
-               ngroups <- 4L; I0 <- 1L;
-           }
-    )
-
-    # Derived numbers
-    nparents <- nsires + ndams
-    ntotal <- nprogeny + nparents
-    group_size <- nprogeny / ngroups
-
-
-    # Traits ----
-    message(" - Model type is: '", model_type, "'")
-
-    # traitnames        list of traits that the model uses
-    # corr_signs        for when covariance is mixed, should more disease = higher (+1) or lower (-1)
-    # compartments      names of compartments
-    # timings           name for time when individual enters compartment
-    # use_parameters    subset of parameters to pass to SIRE 2.1
-
-    # Check for reservoir model
-    reservoir <- endsWith(tolower(model_type), "-res")
-    if (reservoir) {
-        model_type <- sub("-res", "", model_type)
+    
+    # Directories should be something like "dataset/data", "dataset/results", or
+    # "testing" if just testing (and convert to basic string)
+    if (dataset == "") {
+        dataset <- "testing"
     }
-
+    
+    {
+        base_dir    <- c(str_glue("datasets/{dataset}"))
+        gfx_dir     <- c(str_glue("{base_dir}/gfx"))
+        data_dir    <- c(str_glue("{base_dir}/data"))
+        results_dir <- c(str_glue("{base_dir}/results"))
+        meta_dir    <- c(str_glue("{base_dir}/meta"))
+        output_dir  <- c(str_glue("{data_dir}/{name}-out"))
+        states_dir  <- c(str_glue("{output_dir}/states"))
+        config      <- c(str_glue("{data_dir}/{name}"))
+    }
+    
+    # Population setup ----
+    message(str_glue(" - Setup is: '{setup}'\n",
+                     " - Group layout is: '{group_layout}'"))
+    
+    # Note: the FB dataset isn't balanced
+    # otherwise dpsire = dams per sire, ppdam = progeny per dam
+    tmp <- switch(
+        setup,           # sires dams  progeny groups trials I0
+        "fb_12"        = c(29,   25,   1775,   71,    2,     5),
+        "fb_1"         = c(14,   14,   875,    35,    1,     5),
+        "fb_2"         = c(18,   14,   900,    36,    1,     5),
+        "fb_12_drop71" = c(29,   25,   1750,   70,    2,     5),
+        "fb_1_drop71"  = c(14,   14,   875,    35,    1,     5),
+        "fb_2_drop71"  = c(18,   14,   875,    35,    1,     5),
+        "fb_12_rpw"    = c(28,   25,   1750,   70,    2,     5),
+        "fb_1_rpw"     = c(14,   14,   875,    35,    1,     5),
+        "fb_2_rpw"     = c(17,   14,   875,    35,    1,     5),
+        "chris"        = c(100,  2000, 2000,   200,   1,     5),
+        "small"        = c(3,    6,    12,     4,     1,     1),
+        "single"       = c(100,  2000, 2000,   1,     1,     5),
+                         c(28,   25,   1750,   70,    2,     5)) |>
+        as.integer() |> 
+        setNames(c("nsires", "ndams", "nprogeny", "ngroups", "ntrials", "I0")) |>
+        as.list()
+    
+    nsires <- tmp$nsires; ndams <- tmp$ndams; nprogeny <- tmp$nprogeny
+    ngroups <- tmp$ngroups; ntrials <- tmp$ntrials; I0 <- tmp$I0
+    
+    
+    iceil <- function(x) as.integer(ceiling(x))
+    
+    # Derived numbers
+    {
+        nparents <- nsires + ndams
+        ntotal <- nprogeny + nparents
+        dpsire <- iceil(ndams / nsires)
+        ppdam <- iceil(nprogeny / ndams)
+        group_size <- iceil(nprogeny / ngroups)
+    }
+    
+    # No trial FEs if only one trial
+    if (ntrials == 1) {
+        trial_fe <- txd_fe <- sim_trial_fe <- sim_txd_fe <- ""
+        weight_is_nested <- FALSE
+    }
+    
+    # Traits ----
+    message(str_glue(" - Model type is: '{model_type}'"))
+    
     # Compartments are just the letters in model_type (ignore repeated S)
-    compartments <- unique(strsplit(model_type, "")[[1]])
-
-    complete_traitnames <- c("susceptibility", "latency", "infectivity", "detectability", "recoverability")
-
+    compartments <- uniq_char(model_type)
+    
+    all_traits <- c(s = "sus", i = "inf", l = "lat", d = "det", t = "tol")
+    
     # Set up which traits a model will use, if traits are +vely or -vely
     # correlated, what the event times are called, and which parameters we need
     # to make SIRE aware of.
-    switch(
-        model_type,
-        "SEIDR" = {
-            all_traitnames <- c("susceptibility", "latency", "infectivity", "detectability", "recoverability")
-            corr_signs <- c(1, 1, -1, 1, 1)
-            # corr_signs <- c(1, -1, 1, -1, -1)
-            timings <- c("Tinf", "Tinc", "Tsym", "Trec")
-            use_parameters <- c("beta", "latent_period", "eta_shape", "detection_period",
-                                "rho_shape", "recovery_period", "gamma_shape")
-        }, "SIDR" = {
-            all_traitnames <- s("susceptibility", "infectivity", "detectability", "recoverability")
-            corr_signs <- c(1, 1, -1, -1)
-            timings <- c("Tinf", "Tsym", "Trec")
-            use_parameters <- c("beta", "detection_period", "rho_shape", "recovery_period", "gamma_shape")
-        }, "SEIR" = {
-            all_traitnames <- c("susceptibility", "latency", "infectivity", "recoverability")
-            corr_signs <- c(1, -1, 1, -1)
-            timings <- c("Tinf", "Tsym", "Trec")
-            use_parameters <- c("beta", "latent_period", "eta_shape", "recovery_period", "gamma_shape")
-        }, "SIR" = {
-            all_traitnames <- c("susceptibility", "infectivity", "recoverability")
-            corr_signs <- c(1, 1, -1)
-            timings <- c("Tinf", "Trec")
-            use_parameters <- c("beta", "recovery_period", "gamma_shape")
-        }, "SIS" = {
-            all_traitnames <- c("susceptibility", "infectivity", "recoverability")
-            corr_signs <- c(1, 1, -1)
-            timings <- c("Tinf", "Trec")
-            use_parameters <- c("beta", "recovery_period", "gamma_shape")
-        }, "SI" = {
-            all_traitnames <- c("susceptibility", "infectivity")
-            corr_signs <- c(1, 1)
-            timings <- c("Tinf")
-            use_parameters <- c("beta")
-        }, {
-            stop(" - Unknown model!")
-        }
-    )
+    switch(model_type,
+           "SEIDR" = {
+               model_traits <- all_traits
+               timings <- c("Tinf", "Tinc", "Tsym", "Tdeath")
+           }, "SIDR" = {
+               model_traits <- all_traits[c("s", "i", "d", "t")]
+               timings <- c("Tinf", "Tsym", "Tdeath")
+           }, "SEIR" = {
+               model_traits <- all_traits[c("s", "i", "l", "t")]
+               timings <- c("Tinf", "Tsym", "Tdeath")
+           }, "SIR" = {
+               model_traits <- all_traits[c("s", "i", "t")]
+               timings <- c("Tinf", "Tdeath")
+           }, "SIS" = {
+               model_traits <- all_traits[c("s", "i", "t")]
+               timings <- c("Tinf", "Tdeath")
+           }, "SI" = {
+               model_traits <- all_traits[c("s", "i")]
+               timings <- c("Tinf")
+           }, {
+               stop(" - Unknown model!")
+        })
     
-
     ## Genetic and Environmental covariances ----
     
-    # Sigma_G <- matrix(0, 5, 5, dimnames = list(all_traitnames, all_traitnames))
-
     # Likely using only a subset of traits
-    traitnames <- if (use_traits == "all") {
-        all_traitnames
-    } else if (use_traits == "none") {
-        NULL
+    use_traits <- if (use_traits %in% c("", "none", NA)) {
+        ""
     } else {
-        all_traitnames[match(strsplit(use_traits, "")[[1]], substr(all_traitnames, 1, 1))]
+        str_to_lower(use_traits)
     }
     
+    n_traits <- length(model_traits)
+    n_traits_used <- str_length(use_traits)
+    traits_used <- model_traits[str_split_1(use_traits, "")]
     
-    names(corr_signs) <- all_traitnames
-    corr_signs <- unname(corr_signs[traitnames])
-    
-    ntraits <- length(traitnames)
-    nall_traits <- length(all_traitnames)
-
-    message(" - ", ntraits, " traits: ", paste0(traitnames, collapse = ", "))
-    
-    # Assume default of var(i) = 0.5 and cov(i, j) = 0
-    Sigma_G <- diag(vars[vars > 0], nall_traits, nall_traits)
-    dimnames(Sigma_G) <- list(all_traitnames, all_traitnames)
-    Sigma_E <- Sigma_G
-
-
-    # Useful to have these indices (since they depend on the model). I could
-    # just write out the trait name each time, but this is easier!
-    iS <- which(all_traitnames == "susceptibility")
-    iI <- which(all_traitnames == "infectivity")
-    iR <- which(all_traitnames == "recoverability")
-
-    iSIR <- c(iS, iI, iR)
-    iSI  <- c(iS, iI)
-    
-    # covars is either a vector (possibly of length 1) or a string
-    if (is.numeric(covars)) {
-        Sigma_G[upper.tri(Sigma_G)] <- covars
-        Sigma_G[lower.tri(Sigma_G)] <- t(Sigma_G)[lower.tri(Sigma_G)]
-        Sigma_E <- Sigma_G
+    if (n_traits_used > 0) {
+        message(" - ", n_traits_used, " GE traits: ", str_flatten_comma(traits_used))
     } else {
-        switch(
-            covars,
-            "chris" = {
-                diag(Sigma_G) <- 1e-6;
-                diag(Sigma_E) <- 1e-6;
-                Sigma_G[iSIR, iSIR] <- c(+0.33,  +0.3,  -0.044,
-                                         +0.3,   +1.68, -0.5,
-                                         -0.044, -0.5,  +0.6);
-                Sigma_E[iSIR, iSIR] <- c(+0.77,  +0.56, -0.25,
-                                         +0.56,  +1.12, -0.4,
-                                         -0.25,  -0.4,  +0.9)
-            }, "positive" = {
-                Sigma_G[] <- 0.4
-                diag(Sigma_G) <- 1.0
-            }, "negative" = {
-                Sigma_G[] <- -0.4
-                diag(Sigma_G) <- 1.0
-            }, "mixed" = {
-                Sigma_G[] <- 0.4
-                diag(Sigma_G) <- 1.0
-                Sigma_G <- Sigma_G * corr_signs %*% t(corr_signs)
-            }, "sir_weak" = {
-                Sigma_G[iSIR, iSIR] <- 0.1
-                diag(Sigma_G) <- 1e-6
-                diag(Sigma_G[iSIR, iSIR]) <- 1.0
-                Sigma_G <- Sigma_G * corr_signs %*% t(corr_signs)
-            }, "sir_no_cor" = {
-                diag(Sigma_G) <- 1e-6
-                diag(Sigma_G[iSIR, iSIR]) <- 1.0
-            }, "sir_pos_cor" = {
-                Sigma_G[iSIR, iSIR] <- 0.4
-                diag(Sigma_G) <- 1e-6
-                diag(Sigma_G[iSIR, iSIR]) <- 1.0
-            }, "si_no_cor" = {
-                diag(Sigma_G) <- 1e-6
-                diag(Sigma_G[iSI, iSI]) <- 1.0
-            }, "si_pos_cor" = {
-                Sigma_G[iSI, iSI] <- 0.4
-                diag(Sigma_G) <- 1e-6
-                diag(Sigma_G[iSI, iSI]) <- 1.0
-            }, "sir_only" = {
-                diag(Sigma_G) <- 1e-6
-                diag(Sigma_G[iSIR, iSIR]) <- 1.0
-            } # none is default and already done
-        )
+        message(" - 0 GE traits used")
     }
-
-    message(" - Covariance is: '", paste0(covars, collapse = ", "), "'")
-
-    # Sigma_G and Sigma_E are the same in all cases except for Chris's
-    if (covars != "chris") {
-        Sigma_E <- Sigma_G
-    }
-
-
-    ### Heritability and correlation ----
-
-    h2 <- Sigma_G / (Sigma_G + Sigma_E)
-    cor_G <- cov2cor(Sigma_G)
-    cor_E <- cov2cor(Sigma_E)
-
-
+    
+    ## Covariance matrices ----
+    
+    out <- make_matrices(all_traits, use_traits, vars, cors)
+    Sigma_G <- Sigma_E <- out$Sigma
+    cov_G <- cov_E <- out$cov
+    
+    # This should expand vars and cors to be the full matrix values, possibly
+    # with replicates
+    vars <- Sigma_G |> diag()
+    cors <- Sigma_G[lower.tri(Sigma_G)] |> setNames(out$cns)
+    
+    ge_opts <- "" # c("gt_only", "pt_only", "e1", "no_ev_xyz")
+    
+    
     # Epidemic parameters ----
-
+    
     ## Infection coefficient ----
-    r_beta <- 0.2
-
-    ## Reservoir ----
-    r_zeta   <- 0.05 # shedding
-    r_lambda <- 0.5 # decay
-
+    r_beta <- 0.5
+    
+    # Infectivity model
+    # 1: standard
+    # 2: I is 10% as infectious as D
+    # 3: donors are 10% as infectious as recipients
+    # 4: donors are `id_ratio` as infectious as recipients
+    inf_model <- 1L
+    
+    # Infectivity ratio
+    inf_ratio <- if (inf_model == 1) 1 else 0.1
+    
     # Note for Gamma dist:
     # shape = mean^2 / var
     # rate  = mean / var
-
-    ## Latent Periods ----
-
-        latent_period <-  2
-
-    ### Incubation period ----
-
+    
+    ## Compartment Periods ----
+    
+    ### Latency period E->I ----
+    
     # Calculated for an SEIDR model based on donors in trial 1 (+ 0.5)
     # fitdist(Tsym + 0.5, "gamma")
-    r_eta <- 1 / latent_period
-    r_eta_shape <- 1 # 1.46 # 2.0 # 10.0
-    r_eta_rate  <- r_eta * r_eta_shape # 0.232 # r_eta_shape / latent_period
-    eta_type <- "exp"
-
-
-    ### Asymptomatic infectious period ----
-
+    latent_period <- 10
+    LP_shape <- 1 # 1.46 # 2.0 # 10.0
+    LP_scale <- latent_period / LP_shape # 0.232 # LP_shape / latent_period
+    LP_dist <- "exp"
+    
+    
+    ### Detection period I->D ----
+    
     # This is currently identical to the latency
-    r_rho <- 1 / latent_period
-    r_rho_shape <- 1 # 1.46 # 2.0 # 10.0
-    r_rho_rate  <- r_rho * r_rho_shape # 0.232 # r_eta_shape / latent_period
-    rho_type <- "exp"
-
-
-    ## Recovery ----
-
+    detection_period <- 10
+    DP_shape <- 1 # 1.46 # 2.0 # 10.0
+    DP_scale <- detection_period / DP_shape # 0.232 # LP_shape / latent_period
+    DP_dist <- "exp"
+    
+    
+    ### Removal ----
+    
     # fitdist(RP + 0.5, "gamma")
-    recovery_period <- 8
-    r_gamma <- 1 / recovery_period
-    r_gamma_shape <- 1
-    r_gamma_rate <- r_gamma_shape / recovery_period # 0.149
-    gamma_type <- "exp"
-
-
+    removal_period <- 10
+    RP_shape <- 1
+    RP_scale <- removal_period / RP_shape # 0.149
+    RP_dist <- "exp"
+    
+    
     ## Fixed effects ----
-
+    
     # prevent fread interpreting these as NA
-    if (trial_fe == "none") trial_fe <- ""
-    if (donor_fe == "none") donor_fe <- ""
-    if (txd_fe   == "none") txd_fe   <- ""
+    if (trial_fe  %in% c("none", "", NA)) trial_fe  <- ""
+    if (donor_fe  %in% c("none", "", NA)) donor_fe  <- ""
+    if (txd_fe    %in% c("none", "", NA)) txd_fe    <- ""
+    if (weight_fe %in% c("none", "", NA)) weight_fe <- ""
     
     # when simulating, copy these values, or override them after params is
     # created if they should be different
-    sim_trial_fe <- trial_fe
-    sim_donor_fe <- donor_fe
-    sim_txd_fe   <- txd_fe
+    sim_trial_fe  <- trial_fe
+    sim_donor_fe  <- donor_fe
+    sim_txd_fe    <- txd_fe
+    sim_weight_fe <- weight_fe
     
-    # tell SIRE to include these variables
-    use_parameters <- c(
-        use_parameters,
-        if (trial_fe == "") NULL else paste0("trial_", strsplit(trial_fe, "")[[1]]),
-        if (donor_fe == "") NULL else paste0("donor_", strsplit(donor_fe, "")[[1]]),
-        if (txd_fe   == "") NULL else paste0("txd_",   strsplit(txd_fe,   "")[[1]])
-    )
-
-    # c(0, 3,     1.5, 1, 0,
-    #   0, 1.75, -1,   1, 0)
-    #                   s   l   i  d  r
-    fe_vals <- matrix(c(0,  1, -1, 1, 0,  # trial
-                        0, -1,  1, 1, 0,  # donor
-                        0,  1,  1, 1, 0), # txd
-                        # 0, -3, 2, 3, 2), # donor
-                      nrow = 3, ncol = 5, byrow = TRUE,
-                      dimnames = list(c("trial", "donor", "txd"),
-                                      complete_traitnames))
-
+    # A default set of FEs
+    
+    #                    sus   inf   lat   det   tol
+    fe_vals <- matrix(c(+0.0, -0.8, -2.9, +2.9, -0.2,  # trial
+                        +0.0, -2.1, -1.2, +1.2, -1.4,  # donor
+                        +0.0, -2.4, +3.3, +1.4, +1.7,  # txd
+                        -0.1, +0.2, -0.8, +0.7, +0.2,  # weight
+                        +0.1, -0.6, -0.2, +1.6, +0.3,  # weight1
+                        -0.2, +1.6, +4.0, +0.1, +0.1), # weight2
+                      ncol = 5, nrow = 6, byrow = TRUE,
+                      dimnames = list(fe = c("trial", "donor", "txd", "weight", "weight1", "weight2"),
+                                      traits = unname(all_traits)))
+    
     ## Map traits and FEs ----
     
-    # "xxxxx" will be copied onto "slidr", so "srirr" means that lat, det, rec
-    # will all use rec. sim means simulate with, otherwise it's what SIRE sees
-    sim_link_traits <- "slidr"
-    sim_link_trial <- "slidr"
-    sim_link_donor <- "slidr"
-    sim_link_txd <- "slidr"
-
-    link_traits <- "slidr"
-    link_trial <- "slidr"
-    link_donor <- "slidr"
-    link_txd <- "slidr"
-    
-    # Shape parameters
-    sim_link_shapes <- "ldr"
-    link_shapes <- "ldr"
+    # "xxxxx" will be copied onto "sildt", so "sittt" means that lat, det, tol
+    # will all use the same tol value. sim_ is for simulating new data in R,
+    # otherwise it's what SIRE or BICI is passed
+    {
+        sim_link_traits <- "sildt"
+        sim_link_trial  <- "sildt"
+        sim_link_donor  <- "sildt"
+        sim_link_txd    <- "sildt"
+        sim_link_weight <- "sildt"
+        
+        link_traits <- "sildt"
+        link_trial  <- "sildt"
+        link_donor  <- "sildt"
+        link_txd    <- "sildt"
+        link_weight <- "sildt"
+        
+        # Shape parameters for lat, det, tol
+        sim_link_shapes <- "ldt"
+        link_shapes <- "ldt"
+    }    
     
     ## R0 ----
-
+    
     # This should target R0 around 5?
-    R0 <- r_beta / (r_gamma + if ("D" %in% compartments) r_rho else 0)
-
+    R0 <- r_beta * (removal_period + if ("D" %in% compartments) detection_period else 0)
+    
+    
     # MCMC settings ----
     
-    # Which version of SIRE TO USE
-    sire_version <- "sire22"
+    # Which version of SIRE to call
+    sire_version <- "bici" # "sire22"
+    bici_cmd <- "inf"
     
-    nchains <- 10L
-
+    nchains <- 16L
+    
     ## Samples ----
-    nsample <- as.integer(1e6)
-    burnin  <- as.integer(nsample / 5)
-    thin    <- as.integer(max(nsample / 1e4, 1))
-
-    nsample_per_gen <- 1e3L
-
-    nthreads <- 1L
+    nsample  <- 1e4 # total no. of samples SIRE should take
+    burnprop <- 0.2 # burn-in proportion of chain 
+    thinto   <- 1e4 # no. of samples to output
+    burnin   <- nsample * burnprop
+    thin     <- max(nsample / thinto, 1)
     
-    use_pas <- TRUE
-    if (use_pas) {
-        algorithm <- "pas"; anneal <- NULL; anneal_power <- NULL
-    } else {
-        algorithm <- "mcmc"; anneal <- "on"; anneal_power <- 4
-    }
+    # This should be tweaked to give ~ 25% anneal time
+    nsample_per_gen <- max(3e-3 * nsample, 1)
+    
+    sample_states <- 0L # how many states (per chain) to sample
+    ie_output <- "true" # if ss > 0, include IE samples in extended_trace_combine.tsv
+    
+    # Should SIRE use the PAS method (N chains for a single call) or regular MCMC?
+    algorithm    <- "pas" # "mcmc"
+    anneal       <- "on"  # not used in "pas"
+    anneal_power <- 4     # not used in "pas"
     
     phi <- 1.0
+    
+    # Priors ----
+    
+    ge <- max(group_effect, 0)
 
-    ## Priors ----
+    # Do we use a Jeffreys or a uniform prior for covariance
+    cov_prior <- c("jeffreys", "uniform")[[1]]
+    single_prior <- c("inverse", "uniform")[[1]]
     
-    if (FALSE) {
-        keep_traits <- all_traitnames[all_traitnames %in% traitnames]
-        drop_traits <- all_traitnames[!all_traitnames %in% traitnames]
+    
+    priors <- rowwiseDT(
+        parameter=,         type=,        val1=, val2=, true_val=,
         
-        Sigma_G[drop_traits, drop_traits] <- NA
-        Sigma_E[drop_traits, drop_traits] <- NA
-        cor_G[drop_traits, drop_traits] <- NA
-        cor_E[drop_traits, drop_traits] <- NA
-    }
-    
-    priors <- as.data.table(dplyr::tribble(
-        ~parameter,         ~type,  ~val1, ~val2, ~true_val,       ~use,
+        "beta",             single_prior, 0,     2.0,   r_beta,
+        "latent_period",    single_prior, 0,     40,    latent_period,
+        "detection_period", single_prior, 0,     160,   detection_period,
+        "removal_period",   single_prior, 0,     20,    removal_period,
+        "LP_shape",         "uniform",    0.5,   5,     LP_shape,
+        "DP_shape",         "uniform",    0.5,   5,     DP_shape,
+        "RP_shape",         "uniform",    0.5,   5,     RP_shape,
         
-        "beta",             "Flat", 0,     1.0,   r_beta,          TRUE,
-        "latent_period",    "Flat", 0,     160,   latent_period,   FALSE,
-        "eta_shape",        "Flat", 0.99,  1.01,  r_eta_shape,     FALSE,
-        "detection_period", "Flat", 0,     160,   latent_period,   FALSE,
-        "rho_shape",        "Flat", 0.99,  1.01,  r_rho_shape,     FALSE,
-        "recovery_period",  "Flat", 0,     20,    recovery_period, FALSE,
-        "gamma_shape",      "Flat", 0.5,   5,     r_gamma_shape,   FALSE,
-        "sigma",            "Flat", 0,     0.3,   group_effect,    TRUE,
-        
-        # parameter  type    val1  val2  true_val         use
-        "cov_G_ss", "Flat",  1e-3, 5,    Sigma_G[iS, iS], TRUE,
-        "cov_G_ii", "Flat",  1e-3, 4,    Sigma_G[iI, iI], TRUE,
-        "cov_G_rr", "Flat",  1e-3, 1,    Sigma_G[iR, iR], TRUE,
-        "r_G_si",   "Flat", -0.95, 0.95, cor_G[iS, iI],   TRUE,
-        "r_G_sr",   "Flat", -0.95, 0.95, cor_G[iS, iR],   TRUE,
-        "r_G_ir",   "Flat", -0.95, 0.95, cor_G[iI, iR],   TRUE,
-        "cov_E_ss", "Flat",  1e-3, 5,    Sigma_E[iS, iS], TRUE,
-        "cov_E_ii", "Flat",  1e-3, 4,    Sigma_E[iI, iI], TRUE,
-        "cov_E_rr", "Flat",  1e-3, 1,    Sigma_E[iR, iR], TRUE,
-        "r_E_si",   "Flat", -0.95, 0.95, cor_E[iS, iI],   TRUE,
-        "r_E_sr",   "Flat", -0.95, 0.95, cor_E[iS, iR],   TRUE,
-        "r_E_ir",   "Flat", -0.95, 0.95, cor_E[iI, iR],   TRUE,
-        
-        # parameter type   val1 val2 true_val                            use
-        "trial_l", "Flat", -4,  8,   fe_vals["trial", "latency"],        grepl("l", trial_fe),
-        "trial_i", "Flat", -3,  5,   fe_vals["trial", "infectivity"],    grepl("i", trial_fe),
-        "trial_d", "Flat", -2,  7,   fe_vals["trial", "detectability"],  grepl("d", trial_fe),
-        "trial_r", "Flat", -1,  1,   fe_vals["trial", "recoverability"], grepl("r", trial_fe),
-        "donor_l", "Flat", -6,  6,   fe_vals["donor", "latency"],        grepl("l", donor_fe),
-        "donor_i", "Flat", -4,  4,   fe_vals["donor", "infectivity"],    grepl("i", donor_fe),
-        "donor_d", "Flat", -4,  8,   fe_vals["donor", "detectability"],  grepl("d", donor_fe),
-        "donor_r", "Flat", -4,  2,   fe_vals["donor", "recoverability"], grepl("r", donor_fe),
-        "txd_l",   "Flat", -4, 10,   fe_vals["txd",   "latency"],        grepl("l", txd_fe),
-        "txd_i",   "Flat", -6,  6,   fe_vals["txd",   "infectivity"],    grepl("i", txd_fe),
-        "txd_d",   "Flat", -4,  12,  fe_vals["txd",   "detectability"],  grepl("d", txd_fe),
-        "txd_r",   "Flat",  0,  4,   fe_vals["txd",   "recoverability"], grepl("r", txd_fe)
-    ))
-    
-    # Drop unwanted traits from cov matrices
-    if (FALSE) {
-        Sigma_G <- Sigma_G[keep_traits, keep_traits, drop = FALSE]
-        Sigma_E <- Sigma_E[keep_traits, keep_traits, drop = FALSE]
-        cor_G <- cor_G[keep_traits, keep_traits, drop = FALSE]
-        cor_E <- cor_E[keep_traits, keep_traits, drop = FALSE]
-        h2 <- h2[keep_traits, keep_traits, drop = FALSE]
-    }
-    
-    # Some priors set to not use with SIRE, update if we really do want them
-    
-    # # First remove exp / gamma shaped periods
-    # cut_types <- c(if (eta_type == "exp") "eta_shape" else NULL,
-    #                if (rho_type == "exp") "rho_shape" else NULL,
-    #                if (gamma_type == "exp") "gamma_shape" else NULL)
-    # use_parameters <- use_parameters[!use_parameters %in% cut_types]
+        # parameter                 type          val1 val2 true_val
+        "beta_Tr1",                 single_prior, 0,   2,   r_beta,
+        "beta_Tr2",                 single_prior, 0,   2,   r_beta,
+        "latent_period_Tr1,Don",    single_prior, 0,   50,  latent_period,
+        "latent_period_Tr1,Rec",    single_prior, 0,   50,  latent_period,
+        "latent_period_Tr2,Don",    single_prior, 0,   120, latent_period,
+        "latent_period_Tr2,Rec",    single_prior, 0,   50,  latent_period,
+        "detection_period_Tr1,Don", single_prior, 0,   50,  detection_period,
+        "detection_period_Tr1,Rec", single_prior, 0,   50,  detection_period,
+        "detection_period_Tr2,Don", single_prior, 0,   160, detection_period,
+        "detection_period_Tr2,Rec", single_prior, 0,   50,  detection_period,
+        "removal_period_Tr1,Don",   single_prior, 0,   30,  removal_period,
+        "removal_period_Tr1,Rec",   single_prior, 0,   30,  removal_period,
+        "removal_period_Tr2,Don",   single_prior, 0,   30,  removal_period,
+        "removal_period_Tr2,Rec",   single_prior, 0,   30,  removal_period,
+        "infrat",                   "uniform",    0,    1,  inf_ratio,
 
-    # Then set all use values
+        # parameter type       val1 val2    true_val
+        "sigma",    "inverse", 0,   2 * ge, ge,
+        
+        # parameter type       val1  val2 true_val
+        "cov_G_ss", "uniform",    0,   4, Sigma_G["sus", "sus"],
+        "cov_G_ii", "uniform",    0,   4, Sigma_G["inf", "inf"],
+        "cov_G_ll", "uniform",    0,   2, Sigma_G["lat", "lat"],
+        "cov_G_dd", "uniform",    0,   2, Sigma_G["det", "det"],
+        "cov_G_tt", "uniform",    0, 1.5, Sigma_G["tol", "tol"],
+        "r_G_si",   "uniform", -0.9, 0.9, Sigma_G["sus", "inf"],
+        "r_G_sl",   "uniform", -0.9, 0.9, Sigma_G["sus", "lat"],
+        "r_G_sd",   "uniform", -0.9, 0.9, Sigma_G["sus", "det"],
+        "r_G_st",   "uniform", -0.9, 0.9, Sigma_G["sus", "tol"],
+        "r_G_il",   "uniform", -0.9, 0.9, Sigma_G["inf", "lat"],
+        "r_G_id",   "uniform", -0.9, 0.9, Sigma_G["inf", "det"],
+        "r_G_it",   "uniform", -0.9, 0.9, Sigma_G["inf", "tol"],
+        "r_G_ld",   "uniform", -0.9, 0.9, Sigma_G["lat", "tol"],
+        "r_G_lt",   "uniform", -0.9, 0.9, Sigma_G["lat", "tol"],
+        "r_G_dt",   "uniform", -0.9, 0.9, Sigma_G["det", "tol"],
+        "cov_E_ss", "uniform",    0,   4, Sigma_E["sus", "sus"],
+        "cov_E_ii", "uniform",    0,   4, Sigma_E["inf", "inf"],
+        "cov_E_ll", "uniform",    0,   4, Sigma_E["lat", "lat"],
+        "cov_E_dd", "uniform",    0,   4, Sigma_E["det", "det"],
+        "cov_E_tt", "uniform",    0,   1, Sigma_E["tol", "tol"],
+        "r_E_si",   "uniform", -0.9, 0.9, Sigma_E["sus", "inf"],
+        "r_E_sl",   "uniform", -0.9, 0.9, Sigma_E["sus", "lat"],
+        "r_E_sd",   "uniform", -0.9, 0.9, Sigma_E["sus", "det"],
+        "r_E_st",   "uniform", -0.9, 0.9, Sigma_E["sus", "tol"],
+        "r_E_il",   "uniform", -0.9, 0.9, Sigma_E["inf", "lat"],
+        "r_E_id",   "uniform", -0.9, 0.9, Sigma_E["inf", "det"],
+        "r_E_it",   "uniform", -0.9, 0.9, Sigma_E["inf", "tol"],
+        "r_E_ld",   "uniform", -0.9, 0.9, Sigma_E["lat", "tol"],
+        "r_E_lt",   "uniform", -0.9, 0.9, Sigma_E["lat", "tol"],
+        "r_E_dt",   "uniform", -0.9, 0.9, Sigma_E["det", "tol"],
+        
+        # parameter  type       val1 val2 true_val
+        "trial_i",   "uniform", -5, 3, fe_vals["trial", "inf"],
+        "trial_l",   "uniform", -5, 3, fe_vals["trial", "lat"],
+        "trial_d",   "uniform", -4, 4, fe_vals["trial", "det"],
+        "trial_t",   "uniform", -4, 4, fe_vals["trial", "tol"],
+        
+        "donor_i",   "uniform", -7, 1, fe_vals["donor", "inf"],
+        "donor_l",   "uniform", -5, 3, fe_vals["donor", "lat"],
+        "donor_d",   "uniform", -4, 4, fe_vals["donor", "det"],
+        "donor_t",   "uniform", -5, 3, fe_vals["donor", "tol"],
+        
+        "txd_i",     "uniform", -5, 3, fe_vals["txd", "inf"],
+        "txd_l",     "uniform", -1, 7, fe_vals["txd", "lat"],
+        "txd_d",     "uniform", -2, 6, fe_vals["txd", "det"],
+        "txd_t",     "uniform", -2, 6, fe_vals["txd", "tol"],
+        
+        "weight_s",  "uniform", -4, 4, fe_vals["weight", "sus"],
+        "weight_i",  "uniform", -4, 4, fe_vals["weight", "inf"],
+        "weight_l",  "uniform", -4, 4, fe_vals["weight", "lat"],
+        "weight_d",  "uniform", -4, 4, fe_vals["weight", "det"],
+        "weight_t",  "uniform", -4, 4, fe_vals["weight", "tol"],
+        
+        "weight1_s", "uniform", -3, 3, fe_vals["weight1", "sus"],
+        "weight1_i", "uniform", -3, 3, fe_vals["weight1", "inf"],
+        "weight1_l", "uniform", -3, 3, fe_vals["weight1", "lat"],
+        "weight1_d", "uniform", -3, 3, fe_vals["weight1", "det"],
+        "weight1_t", "uniform", -3, 3, fe_vals["weight1", "tol"],
+        
+        "weight2_s", "uniform", -3, 3, fe_vals["weight2", "sus"],
+        "weight2_i", "uniform", -1, 7, fe_vals["weight2", "inf"],
+        "weight2_l", "uniform",  0, 8, fe_vals["weight2", "lat"],
+        "weight2_d", "uniform", -3, 3, fe_vals["weight2", "det"],
+        "weight2_t", "uniform", -3, 3, fe_vals["weight2", "tol"]
+    )
+    
+    # Roughly fix some priors
+    widen_priors(priors)
+    
+    priors[, use := FALSE]
+    
+    # This will be all be redone with set_use_flags(), but make_parameters()
+    # should give as correct a result as possible.
+    
+    
+    used <- str_1st(model_traits)
+    
+    use_parameters <- c(
+        "beta",
+        if ("l" %in% used) "latent_period",
+        if ("d" %in% used) "detection_period",
+        if ("t" %in% used) "removal_period",
+        if ("l" %in% used && LP_dist == "gamma") "LP_shape",
+        if ("d" %in% used && DP_dist == "gamma") "DP_shape",
+        if ("p" %in% used && RP_dist == "gamma") "RP_shape",
+        if (group_effect > 0) "sigma"
+    )
     priors[parameter %in% use_parameters, use := TRUE]
     
-
-    # remove priors if traits not used
-    if (!"susceptibility" %in% traitnames) {
-        priors[parameter %in% c("cov_G_ss", "r_G_si", "r_G_sr", "cov_E_ss", "r_E_si", "r_E_sr"), use := FALSE]
+    GE_traits <- used |>
+        intersect(str_split_1(use_traits, "")) |>
+        intersect(str_split_1(link_traits, ""))
+    
+    pwalk(expand.grid(x = used, y = used), \(x, y) {
+        priors[str_ends(parameter, str_glue("_[GE]_{x}{y}")),
+               use := all(c(x, y) %in% GE_traits)]
+    })
+    
+    fe_str <- function(base) {
+        # fe_str("trial") -> "trial_[ildt]"
+        # fe_str("weight") -> "weight[12]_[ildt]"
+        
+        base_str <- get(str_glue("{base}_fe"))
+        link_str <- get(str_glue("link_{base}"))
+        
+        if (base_str %in% c("", "none")) return("XYZ")
+        
+        used |>
+            intersect(str_split_1(base_str, "")) |>
+            intersect(str_split_1(link_str, "")) |>
+            str_flatten() |>
+            str_glue("{base}{wt}_[{fe}]",
+                     fe = _,
+                     wt = if (base == "weight" && weight_is_nested)
+                         "[12]" else "")
     }
-    if (!"infectivity" %in% traitnames) {
-        priors[parameter %in% c("cov_G_ii", "r_G_si", "r_G_ir", "cov_E_ii", "r_E_si", "r_E_ir"), use := FALSE]
-    }
-    if (!"recoverability" %in% traitnames) {
-        priors[parameter %in% c("cov_G_rr", "r_G_sr", "r_G_ir", "cov_E_rr", "r_E_sr", "r_E_ir"), use := FALSE]
-    }
-
+    
+    priors[str_detect(parameter, fe_str("trial")),  use := TRUE]
+    priors[str_detect(parameter, fe_str("donor")),  use := TRUE]
+    priors[str_detect(parameter, fe_str("txd")),    use := TRUE]
+    priors[str_detect(parameter, fe_str("weight")), use := TRUE]
+    
+    
     # Additional settings ----
+    
+    popn_format <- c("intervals", "times")[[2]]
 
+    seed <- 0
+
+    # Number of times to simulate in BICI
+    nreps <- 50
+    
     # What we pass to SIRE 2.0, choice of
     # "Tinf": actual infection time
     # "Tsym": time of symptoms
@@ -506,62 +539,90 @@ make_parameters <- function(
     # "estimated_Tinf_per_individual": Tsym with all gaps covered
     pass_Tsym <- "Tsym"
     
-    # pass event times, pass the last N of timings (Tinf, Tinc, Tdet, Trec)
-    pass_events <- 2 # pass time Tdet and Trec
-    
-    time_step <- 0
+    # pass event times, pass the last N of timings (Tinf, Tinc, Tsym, Tdeath)
+    pass_events <- c("Tsym", "Tdeath") # pass time Tsym and Tdeath
 
+    # time step between data
+    time_step <- 0
+    # time step for inference
+    time_step_bici <- 1
+    
     censor <- 1.0
     
-    # how to handle the parasites column, if parasites == F, then restrict
-    # "S|E|I" to "S|E" or even "S". If parasites == T, but no symptoms, then
-    # restrict to "S|E|I", "E|I", or "I".
-    use_parasites <- ""
+    ## Fixes for FB data set
+    fix_donors <- c() # c("time", "no_Tsym_survivors", "set_to_R")
+    # All donors who fail to show symptoms by this point are demoted
+    t_demote <- c(20, 80)
+    # if Tsym == Tdeath, then bump Tsym back by 1/2
+    fix_eq_time <- TRUE
 
-    # Patch data with values from from data_set / scenario posterior
-    patch_data_set <- ""
-    patch_scenario <- 1
-    # Use means / randomly sample from posterior
-    patch_with_mean <- FALSE
-    # Patch traits with posterior EBVs
-    patch_traits <- FALSE
+    
+    # Patch data with values from dataset / scenario posterior
+    patch_dataset <- ""
+    patch_name <- "scen-1-1"
+    # Use mean / median / randomly sample from posterior
+    patch_type <- c("mean", "median", "sampled")[[1]]
+    # Use states to patch EBVs and parameters (otherwise use trace files)
+    patch_state <- FALSE
+    
+    # Use weight if available
+    use_weight <- "no" # "log" or "linear"
+    
+    # Use inverse H matrix, GRM, or none
+    use_grm <- "" # {A,H} + {,_inv} + {,_nz}
+    
+    # How to build popn?
+    # "pedigree" / "grm" = generate new values based on relationship
+    # "posterior" = patch from posteriors given in "patch_xyz"
+    traits_source <- c("pedigree", "grm", "posterior")[[1]]
     
     # Show plots during run
     show_plots <- TRUE
-
+    
+    # show messages
+    msgs <- TRUE
+    
     # Show details
     DEBUG <- FALSE
-
-
+    
+    
     # Create params list ----
     #
     # This will be a list for passing to functions
     params <- mget(
-        # inputs
-        c("data_set", "name", "data_dir", "results_dir", "model_type",
-          "use_fb_data", "setup", "vars", "covars", "group_layout", "use_traits",
-          # population
-          "nsires", "ndams", "nparents", "nprogeny", "ngroups", "ntotal",
+        # Inputs
+        c("description", "dataset", "scenario", "name", "label", "replicate", "seed",
+          "data_dir", "results_dir", "gfx_dir", "meta_dir", "output_dir", "states_dir", "config",
+          "model_type", "sim_new_data", "setup", "vars", "cors", "group_layout", "use_traits",
+          # Population parameters
+          "ntrials", "nsires", "ndams", "nparents", "nprogeny", "ngroups", "ntotal",
           "dpsire", "ppdam", "group_size", "I0",
-          # model traits
-          "compartments", "reservoir", "timings", "all_traitnames", "traitnames",
-          "ntraits", "Sigma_E", "Sigma_G", "cor_G", "cor_E", "h2",
-          "sim_link_traits", "sim_link_trial", "sim_link_donor", "sim_link_txd", "sim_link_shapes",
-          "link_traits", "link_trial", "link_donor", "link_txd", "link_shapes",
-          # model parameters (rates)
-          "r_beta", "r_zeta", "r_lambda",                                              # infection
-          "latent_period", "r_eta", "r_eta_shape", "r_eta_rate", "eta_type",           # latency
-          "r_rho", "r_rho_shape", "r_rho_rate", "rho_type",                            # detection
-          "recovery_period", "r_gamma", "r_gamma_shape", "r_gamma_rate", "gamma_type", # recovery
-          "R0", "group_effect", "fe_vals",
-          "sim_trial_fe", "sim_donor_fe", "sim_txd_fe", "trial_fe", "donor_fe", "txd_fe",
-          # mcmc & extra
-          "sire_version", "algorithm", "anneal", "anneal_power", "nchains",
-          "nsample", "burnin", "thin", "nthreads", "phi", "nsample_per_gen",
-          "priors", "time_step", "censor", "use_parasites", "pass_events",
-          "patch_data_set", "patch_scenario", "patch_with_mean", "patch_traits",
-          "show_plots", "DEBUG"))
-
+          # Model traits
+          "compartments", "timings", "all_traits", "model_traits",
+          "n_traits", "Sigma_E", "Sigma_G", "cov_G", "cov_E", "ge_opts",
+          "sim_link_traits", "sim_link_trial", "sim_link_donor", "sim_link_txd",
+          "sim_link_weight", "sim_link_shapes",
+          "link_traits", "link_trial", "link_donor", "link_txd", "link_weight", "link_shapes",
+          # Main model parameters
+          "r_beta", "inf_ratio", "inf_model", "group_effect", "R0", # infection
+          "latent_period",    "LP_shape", "LP_scale", "LP_dist", # latency
+          "detection_period", "DP_shape", "DP_scale", "DP_dist", # detection
+          "removal_period",   "RP_shape", "RP_scale", "RP_dist", # removal
+          "fe_vals", "trial_fe", "donor_fe", "txd_fe",
+          "sim_trial_fe", "sim_donor_fe", "sim_txd_fe",
+          "weight_fe", "sim_weight_fe", "weight_is_nested",
+          # MCMC & extra
+          "priors", "cov_prior", "single_prior",
+          "sire_version", "popn_format", "bici_cmd", "algorithm",
+          "anneal", "anneal_power",
+          "nchains", "nsample", "burnprop", "thinto", "nchains",
+          "phi", "nsample_per_gen", "sample_states",
+          "ie_output", "time_step", "time_step_bici", "censor", "nreps",
+          "fix_donors", "t_demote", "fix_eq_time",
+          "pass_events", "patch_dataset", "patch_name", "patch_type", "patch_state",
+          "use_weight", "use_grm", "traits_source",
+          "show_plots", "msgs", "DEBUG"))
+    
     params
 }
 
@@ -569,20 +630,30 @@ make_parameters <- function(
 # Handy summary ----
 summarise_params <- function(params) {
     with(params, {
-        if (use_fb_data) {
+        if (sim_new_data == "no") {
             message("Using Fishboost data")
         } else {
-            message(glue("Simulating new data with {model_type} model"))
+            message(str_glue("Simulating new data with {model_type} model"))
         }
 
-        message(glue(
+        ext <- if (str_detect(sire_version, "bici")) "bici" else "xml"
+        param_file <- str_glue("{data_dir}/{name}.{ext}")
+        
+        message(str_glue(
             " - Demography is:\n",
             "     {nsires} sires, {ndams} dams, {nprogeny} progeny ",
             "({ntotal} total), {ngroups} groups ({group_size} per group)\n",
-            "     R0 = {signif(R0, 5)}\n",
+            "     R0 = {r0}\n",
+            " - FEs are\n",
+            "     Trial = {trial_fe}, Donor = {donor_fe}, TxD = {txd_fe}, Weight = {weight_fe}\n",
             " - Running MCMC with:\n",
-            "     {nsample} samples / {burnin} burnin / {thin} thin / {nthreads} threads\n",
-            " - Data will be saved to '{data_dir}/{name}.xml'"
+            "     {ns} updates / {th} samples / {burnprop} burnin / {nchains} chains\n",
+            " - Data will be saved to '{param_file}'",
+            r0 = signif(R0, 3),
+            ns = format(nsample, scientific = FALSE, big.mark = ","),
+            th = format(thinto, scientific = FALSE, big.mark = ",")
         ))
+        message("Sigma_G = ")
+        capture_message(Sigma_G[model_traits, model_traits])
     })
 }

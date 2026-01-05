@@ -1,13 +1,13 @@
 library(data.table)
 
-fb_traits <- readRDS("fb_data/fb_traits.rds")
+fb12 <- readRDS("fb_data/fb_12.rds")
 
 # Split into trials 1 and 2
-fb1 <- fb_traits[sdp != "progeny" | trial == 1]
-fb2 <- fb_traits[sdp != "progeny" | trial == 2]
+fb1 <- fb12[sdp != "progeny" | trial == 1]
+fb2 <- fb12[sdp != "progeny" | trial == 2]
 
 # Get list of parent IDs
-parents <- fb_traits[sdp != "progeny", id]
+parents <- fb12[sdp != "progeny", id]
 
 # Split parents by appearance in each trial
 parents1 <- parents[parents %in% fb1[, sort(unique(c(sire, dam)))]]
@@ -30,5 +30,6 @@ fb2[, `:=`(sire = match(sire, unique(id)),
 fb2[, group := group - 36L]
 
 # Save
-saveRDS(fb1, "fb_data/fb_traits1.rds")
-saveRDS(fb2, "fb_data/fb_traits2.rds")
+saveRDS(fb1, "fb_data/fb_1.rds")
+saveRDS(fb2, "fb_data/fb_2.rds")
+

@@ -1,123 +1,100 @@
-library(data.table) # used for all data table manipulations
-library(glue)
+{
+    library(data.table)
+    library(purrr)
+    library(stringr)
 
-source("make_parameters.R")
+    source("utils.R")
+}
 
 # Overview ----
 
 # Are we testing convergence or coverage?
-convergence <- TRUE # only need convergence for FB data set
-print(glue("convergence = {convergence}"))
+# (Coverage only makes sense with simulated data.)
+n <- 2
+goal <- c("convergence", "coverage")[[n]]
+message("Goal = ", goal)
 
-data_set <- glue("sim-events-{cvg}",
-                 cvg = if (convergence) 1 else 2)
-
+dataset <- "sim-test"
 
 # Variable parameters ----
-protocol <- data.table(description = "FB Trial 1+2, SEIDR, parasites SEI, Traits SIR, FEs LIDR, GE 0.1",
-                       setup = "fishboost",
-                       use_parasites = "SEI",
-                       censor = 0.8,
-                       use_traits = "sir",
-                       trial_fe = "lidr",
-                       txd_fe = "lidr",
-                       donor_fe = "lidr",
-                       group_effect = 0.1,
-                       prior__latent_period__type = "Fixed",
-                       prior__latent_period__val1 = 10,
-                       gamma_type = "gamma",
-                       r_gamma_shape = 2,
-                       time_step = 1,
-                       use_fb_data = FALSE)
+protocol <- rbind(
+    data.table(description = "FB_12_drop71, Traits SIT, FEs ILDT, RP ~ exp, pedigree"), # 1
+    data.table(description = "FB_1_drop71, Traits SIT, FEs ILDT, RP ~ exp, pedigree"), # 6
+    data.table(description = "FB_2_drop71, Traits SIT, FEs ILDT, RP ~ exp, pedigree"), # 7
+    
+    fill = TRUE
+)
 
+protocol[, setup := str_split_i(description, ", ", 1) |> str_to_lower()]
 
-protocol[, label := paste0("s1", letters[1:.N])]
+protocol[str_detect(description, "pedigree"), use_grm := ""]
+protocol[str_detect(description, "GRM"), use_grm := "H"]
+
+f <- function(s)  s |> str_split_1(", ") |> str_subset("Seed") |> str_split_i(" ", 2) |> as.numeric()
+protocol[, seed := f(description), .I]
+
+protocol[str_detect(description, "FEs ILDT"),
+         `:=`(trial_fe = "ildt", donor_fe = "ildt", txd_fe = "ildt",
+              weight_fe = "sildt")]
+
+# Common options ----
+source("param_generators/common2.R")
+
+common <- list(sim_new_data = "r",
+               vars = list(1,1,0.5),
+               use_traits = "sit",
+               use_weight = "log",
+               weight_is_nested = TRUE,
+               # expand_priors = 4,
+               group_effect = 0.1,
+               prior__latent_period__type = "Flat",
+               prior__latent_period__val1 = 0,
+               prior__latent_period__val2 = 10,
+               prior__detection_period__val2 = 30,
+               prior__trial_l__val1 = -8,
+               prior__trial_l__val2 = 0,
+               prior__trial_d__val1 = 0,
+               prior__trial_d__val2 = 8,
+               prior__donor_l__val1 = -2,
+               prior__donor_l__val2 = 7,
+               prior__txd_l__val1 = 0,
+               prior__txd_l__val2 = 8,
+               prior__txd_d__val1 = -4,
+               prior__txd_d__val2 = 4,
+               censor = 0.8,
+               sire_version = "bici",
+               nsample = 1e5,
+               # sample_states = 100,
+               ie_output = "true") |>
+    safe_merge(common2)
+
+# Labels
+protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-if (TRUE) {
-    co_str <- if (convergence) ", convergence" else ", coverage"
-    protocol[, description := paste0(description, co_str)]
-}
+protocol[, description := str_c(description, ", ", goal)]
 
 ## Add replicates ----
-n_replicates <- if (convergence) 1L else 20L
+n_replicates <- if (goal == "convergence") 1 else 20
 protocol[, scenario := .I]
 protocol <- protocol[rep(1:.N, each = n_replicates)]
-protocol[, replicate := 1:n_replicates, by = scenario]
-protocol[, data_set := data_set]
+protocol[, replicate := 1:.N, scenario]
+protocol[, dataset := dataset]
+protocol[, name := str_c("scen-", scenario, "-", replicate)]
 
-# Fixed parameters ----
-
-# Save params along with protocol so we know the defaults for all entries
-params <- make_parameters(model_type = "SEIDR",
-                          setup = "fishboost",
-                          use_traits = "sir",
-                          vars = 1.0,
-                          covars = "none",
-                          group_layout = "fishboost",
-                          group_effect = -1,
-                          use_fb_data = FALSE)
-
-params$use_fb_data <- FALSE
-params$trial_fe <- "none"
-params$donor_fe <- "none"
-params$txd_fe <- "none"
-params$group_effect <- -1
-params$link_traits <- "slidr"
-params$sim_link_trial <- "slidr"
-params$sim_link_donor <- "slidr"
-params$sim_link_shapes <- "ldr"
-params$link_trial <- "slidr"
-params$link_donor <- "slidr"
-params$link_shapes <- "ldr"
-params$pass_events <- 2
-params$seed <- if (convergence) -1L else 1L
-params$nthreads <- if (convergence) 16L else 4L
-params$phi <- 0.95
-nsample <- 1e6L
-params$nsample <- as.integer(nsample)
-params$burnin <- as.integer(nsample / 5)
-params$thin <- as.integer(max(nsample / 1e4, 1))
-params$nsample_per_gen <- as.integer(nsample * 2.5 / 1e3)
-params$anneal <- "on"
-params$anneal_power <- 4
-params$sire_version <- "sire22"
-
-# Add missing columns ----
-
-replace_NAs <- function(col, val = "") {
-    # Make sure columns exist and overwrite NA values with something useful
-    if (col %in% names(protocol)) {
-        protocol[is.na(get(col)), (col) := val]
-    } else {
-        protocol[, (col) := val]
-    }
-}
-
-missing_cols <- c("model_type", "data_set", "name", "use_traits", "vars", "covars",
-                  "use_fb_data", "setup", "group_effect", "trial_fe", "donor_fe", "txd_fe",
-                  "seed", "sire_version", "nsample_per_gen", #"anneal", "anneal_power",
-                  "phi", "nsample", "burnin", "thin", "nthreads")
-for (mc in missing_cols) {
-    replace_NAs(mc, params[[mc]])
-}
-
-# Tidy up ----
-
-# Give default values for data name, setup, covars, group_layout, ...
-protocol[, name := paste0("scen-", scenario, "-", replicate)]
+if (goal == "coverage") protocol[, seed := replicate]
 
 # Prefer to have these columns in this order at the start
-cols <-  c("data_set", "description", "scenario", "replicate", "label",
-           "name", "use_fb_data", "model_type", "setup")
 setcolorder(protocol, intersect(cols, names(protocol)))
 
-message(glue("protocol file '{data_set}' has {nrow(protocol)} rows x {ncol(protocol)} cols"))
-
+message(str_glue("Protocol file '{dataset}' has:",
+                 "- {nrow(protocol)} scenarios",
+                 "- each with {ncol(protocol)} parameters",
+                 "- and a further {length(common)} common parameters",
+                 .sep = "\n"))
 
 # Save to file ----
 saveRDS(list(protocol = protocol,
-             params = params),
-        file = glue("param_sets/{data_set}.rds"))
+             common = common),
+        file = str_glue("param_sets/{dataset}.rds"))
 
-# fwrite(protocol, file = "protocol-sim.tsv", sep = "\t", quote = TRUE)

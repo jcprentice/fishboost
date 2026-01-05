@@ -1,37 +1,27 @@
 library(data.table)
-library(glue)
+library(purrr)
+library(stringr)
 
-data_set <- "fb-parasites2"
+dataset <- "fb-final"; scens <- 1:8
 
-parasites <- c("S", "SE", "SEI", "unused")
-trial <- c(1, 2, 12)
-num_scens <- length(parasites) * length(trial)
+pars <- c("latent_period", "detection_period",
+          "donor_l", "trial_l", "txd_l", "donor_d", "trial_d", "txd_d")
 
-# Expected periods for each category
-X <- data.table(scenario = 1:num_scens,
-                parasites = rep(parasites,
-                                each = length(trial)),
-                trial = rep(trial, length(parasites)))
+X <- map_df(scens, \(i) {
+    f <- str_glue("datasets/{dataset}/results/scen-{i}-1.rds")
+    x <- readRDS(f)$parameter_estimates
+    PEs <- x[parameter %in% pars,
+             .(parameter, value = round(mean, 1))]
+    c(scen = i, setNames(PEs$value, PEs$parameter))
+}) |>
+    setDT() |>
+    setnames(c("latent_period", "detection_period"), c("LP", "DP"))
 
-pars <- c("Latent_Period", "Detection_Period",
-          "Donor_L", "Trial_L", "TxD_L", "Donor_D", "Trial_D", "TxD_D")
 
-for (i in 1:num_scens) {
-    load(glue("results/{data_set}/scen-{i}-1.RData"))
-    for (Par in pars) {
-        par <- tolower(Par);
-        if (par %in% parameter_estimates$parameter) {
-            pe <- parameter_estimates[parameter == par, round(mean, 1)]
-            X[scenario == i, (Par) := pe]
-        }
-    }
-}
-
-setnames(X, pars[1:2], c("LP", "DP"))
-
-for (scen in 1:num_scens) {
+walk(scens, \(i) {
     # Load FEs
-    data <- fread(glue("data/{data_set}/scen-{scen}-1-data.tsv"))[sdp == "progeny"]
+    f <- str_glue("datasets/{dataset}/data/scen-{i}-1-data.tsv")
+    data <- fread(f)[sdp == "progeny"]
     
     has_trial <- "trial_fe" %in% names(data)
     
@@ -44,8 +34,8 @@ for (scen in 1:num_scens) {
         ntypes <- length(idxs)
         
         # Convert into posterior values
-        ml <- ml %*% diag(as.numeric(X[scenario == scen, .(Trial_L, Donor_L, TxD_L)]), nrow = 3, ncol = 3)
-        md <- md %*% diag(as.numeric(X[scenario == scen, .(Trial_D, Donor_D, TxD_D)]), nrow = 3, ncol = 3)
+        ml <- ml %*% diag(as.numeric(X[scen == i, .(trial_l, donor_l, txd_l)]), nrow = 3, ncol = 3)
+        md <- md %*% diag(as.numeric(X[scen == i, .(trial_d, donor_d, txd_d)]), nrow = 3, ncol = 3)
         
         # Subtract means
         ml <- ml - matrix(1, nrow(ml), ncol(ml)) %*% diag(colMeans(ml), nrow = 3, ncol = 3)
@@ -54,13 +44,13 @@ for (scen in 1:num_scens) {
         # Extract typical unique individual and add expected values to X
         rls <- rowSums(ml)[idxs]
         rds <- rowSums(md)[idxs]
-        LPs <- c(exp(rls) * X[scenario == scen, LP],
-                 exp(rds) * X[scenario == scen, DP])
-        
-        names(LPs) <- glue("{DR}{trial}_{period}",
-                           DR = rep(c("Donor", "Recip"), 4),
-                           trial = rep(1:2, each = 2, 2),
-                           period = rep(c("LP", "DR"), each = 4))
+        LPs <- setNames(c(exp(rls) * X[scen == i, LP],
+                          exp(rds) * X[scen == i, DP]) |>
+                            round(1),
+                        str_glue("{dr}{trial}_{period}",
+                                 dr = rep(c("Donor", "Recip"), 4),
+                                 trial = rep(1:2, each = 2, 2),
+                                 period = rep(c("LP", "DP"), each = 4)))
     } else {
         # Turn into matrix
         ml <- md <- as.matrix(data[, .(donor_fe)])
@@ -70,8 +60,8 @@ for (scen in 1:num_scens) {
         ntypes <- length(idxs)
         
         # Convert into posterior values
-        ml <- ml * X[scenario == scen, Donor_L]
-        md <- md * X[scenario == scen, Donor_D]
+        ml <- ml * X[scen == i, Donor_L]
+        md <- md * X[scen == i, Donor_D]
         
         # Subtract means
         ml <- ml - colMeans(ml)
@@ -80,26 +70,25 @@ for (scen in 1:num_scens) {
         # Extract typical unique individual and add expected values to X
         rls <- rowSums(ml)[idxs]
         rds <- rowSums(md)[idxs]
-        LPs <- c(exp(rls) * X[scenario == scen, LP],
-                 exp(rds) * X[scenario == scen, DP])
         
-        names(LPs) <- glue("{DR}{trial}_{period}",
-                           DR = rep(c("Donor", "Recip"), 2),
-                           trial = data$trial[[1]],
-                           period = rep(c("LP", "DP"), each = 2))
+        LPs <- setNames(c(exp(rls) * X[scen == i, LP],
+                          exp(rds) * X[scen == i, DP]) |>
+                            round(1),
+                        str_glue("{DR}{trial}_{period}",
+                                 DR = rep(c("Donor", "Recip"), 2),
+                                 trial = data$trial[[1]],
+                                 period = rep(c("LP", "DP"), each = 2)))
     }
     
-    for (lp in names(LPs)) {
-        X[scenario == scen, (lp) := round(LPs[[lp]], 3)]
-    }
-}
+    walk(names(LPs), ~ X[scenario == i, (.x) := round(LPs[[.x]], 3)])
+})
 
-message("Data set: ", data_set)
+message(str_glue("Data set: '{dataset}'"))
 message("Latent Periods")
-print(X[, .(scenario, parasites, trial, LP,
-            Donor_L, Trial_L, TxD_L,
+print(X[, .(scenario, LP,
+            donor_l, trial_l, txd_l,
             Donor1_LP, Recip1_LP, Donor2_LP, Recip2_LP)])
 message("Detection Periods")
-print(X[, .(scenario, parasites, trial, DP,
-            Donor_D, Trial_D, TxD_D,
+print(X[, .(scenario, DP,
+            donor_d, trial_d, txd_d,
             Donor1_DP, Recip1_DP, Donor2_DP, Recip2_DP)])

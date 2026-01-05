@@ -1,5 +1,5 @@
-get_R0 <- function(pop) {
-    x <- table(pop$generation)
+get_R0 <- function(popn) {
+    x <- table(popn$generation)
 
     R0 <- if (length(x) > 1) x[[2]] / x[[1]] else 0
 

@@ -1,0 +1,124 @@
+# -------- DATA DIRECTORY --------
+
+
+# Using BICI v0.6
+data-dir folder="scen-4-1-out"
+description text="description.txt"
+
+
+# -------- SETUP --------
+
+
+# Inference options
+inference diagnostics="on" start=0 end=148 timestep=1 seed=1 algorithm="PAS-MCMC" update=100 npart=16 param-output=100 state-output=100
+
+# Simulation options
+simulation start=0 end=150 number=100 timestep=1 seed=1
+
+# Posterior simulation options
+post-sim start=0 end=150 number=100 seed=1
+
+
+# -------- MODEL SPECIES --------
+
+species name="Fish" type="individual"
+
+# Model compartments
+class name="DS" index="a"
+comp name="S"
+comp name="E"
+comp name="I"
+comp name="D"
+comp name="R"
+
+# Model transitions
+trans name="S->E" value="exp(rate:G_g*<weight1s><weight2s>[sa][se]beta_b{I|D,g; <weight1i><weight2i>[ia][ie]}/1)"
+trans name="E->I" value="exp(mean:<weight1l><weight2l>LP_b,c)"
+trans name="I->D" value="exp(mean:<weight1d><weight2d>DP_b,c)"
+trans name="D->R" value="exp(mean:<weight1t><weight2t>[ta][te]RP_b,c)"
+
+# Trial
+class name="Trial" index="b"
+comp name="Tr1"
+comp name="Tr2"
+
+# Donor
+class name="Donor" index="c"
+comp name="Don"
+comp name="Rec"
+
+# Group
+class name="Group" index="g"
+comp-all fix="true" file="comp-group.tsv"
+
+# Data for inference and simulation
+add-ind-inf file="add-ind.tsv"
+remove-ind-inf file="remove-ind.tsv"
+comp-data name="DS observations" class="DS" file="comp-data-DS.tsv"
+
+# Simulation data
+add-ind-sim file="add-ind.tsv"
+remove-ind-sim file="remove-ind.tsv"
+
+
+# -------- INDIVIDUAL / FIXED / GROUP EFFECTS --------
+
+
+# Individual effects
+ind-group-data name="sire" file="sire.tsv"
+ind-group-data name="dam" file="dam.tsv"
+ind-group-data name="progeny" file="progeny.tsv"
+
+# Using pedigree
+
+ind-effect name="gen" ie="sa,ia,ta" pedigree="pedigree.tsv"
+ind-effect name="env" ie="se,ie,te"
+
+# Fixed effects
+fixed-effect name="weight1s" X="X-vector-weight1.tsv"
+fixed-effect name="weight1i" X="X-vector-weight1.tsv"
+fixed-effect name="weight1l" X="X-vector-weight1.tsv"
+fixed-effect name="weight1d" X="X-vector-weight1.tsv"
+fixed-effect name="weight1t" X="X-vector-weight1.tsv"
+fixed-effect name="weight2s" X="X-vector-weight2.tsv"
+fixed-effect name="weight2i" X="X-vector-weight2.tsv"
+fixed-effect name="weight2l" X="X-vector-weight2.tsv"
+fixed-effect name="weight2d" X="X-vector-weight2.tsv"
+fixed-effect name="weight2t" X="X-vector-weight2.tsv"
+
+
+# -------- MODEL PRIORS --------
+
+param name="beta_b" value="value-beta.tsv" prior="inverse(0.01,1.5)"
+param name="LP_b,c" value="value-LP.tsv" prior-split="prior-LP.tsv"
+param name="DP_b,c" value="value-DP.tsv" prior-split="prior-DP.tsv"
+param name="RP_b,c" value="value-RP.tsv" prior="inverse(1,20)"
+param name="G_g" dist="log-normal(1,cv^G)"
+param name="cv^G" value="0.1" prior="inverse(0.01,0.2)"
+param name="\Omega^gen_z,z'" value="[[
+sa,ia,ta
+1,0.2, 0.2828427
+.,1, 0.2828427
+.,.,0.5
+]]" prior="mvn-jeffreys(0.01,4)"
+
+param name="\Omega^env_z,z'" value="[[
+se,ie,te
+1,0.2, 0.2828427
+.,1, 0.2828427
+.,.,0.5
+]]" prior="mvn-jeffreys(0.01,4)"
+
+param name="\mu^weight1s" value="0" prior="uniform(-4,4)"
+param name="\mu^weight1i" value="-0.6" prior="uniform(-4,4)"
+param name="\mu^weight1l" value="-0.7" prior="uniform(-4,4)"
+param name="\mu^weight1d" value="0.4" prior="uniform(-4,4)"
+param name="\mu^weight1t" value="0.2" prior="uniform(-4,4)"
+param name="\mu^weight2s" value="-0.1" prior="uniform(-4,4)"
+param name="\mu^weight2i" value="0.9" prior="uniform(-4,4)"
+param name="\mu^weight2l" value="-1" prior="uniform(-4,4)"
+param name="\mu^weight2d" value="1.1" prior="uniform(-4,4)"
+param name="\mu^weight2t" value="0.1" prior="uniform(-4,4)"
+
+# OUTPUT INFERENCE
+

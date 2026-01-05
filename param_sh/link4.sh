@@ -1,0 +1,26 @@
+#!/bin/sh
+# Grid Engine options (lines prefixed with #$)
+#  These options are:
+#  job name: -N
+#  use the current working directory: -cwd
+#  runtime limit of 5 minutes: -l h_rt
+#  memory limit of 1 Gbyte: -l h_vmem
+#$ -N link4
+#$ -pe sharedmem 16
+#$ -R y
+#$ -P roslin_wilson
+#$ -cwd
+#$ -o out
+#$ -e estr
+#$ -l h_rt=100:00:00     # <-- ** make sure this is correct!!! **
+
+# Initialise the environment modules
+. /etc/profile.d/modules.sh
+
+module load R/4.5
+module load openmpi/5.0.7
+
+# Run the program
+
+mpirun -n 16 --oversubscribe ../sire22/sire fb-final/data/scen-4-1.xml 1
+

@@ -1,6 +1,10 @@
-censor_data <- function(data, params) {
+censor_data <- function(popn, params) {
     tmax <- params$tmax
 
-    data[!Tsym %in% c("NA", "no"), Tsym := fifelse(as.numeric(Tsym) >= tmax[trial], "no", Tsym)]
-    data[!Trec %in% c("NA", "no"), Trec := fifelse(as.numeric(Trec) >= tmax[trial], "no", Trec)]
+    popn2 <- copy(popn)
+
+    popn2[Tsym   %notin% c("NA", "no"), Tsym   := fifelse(as.numeric(Tsym)   >= tmax[str_c("t", trial)], "no", Tsym)]
+    popn2[Tdeath %notin% c("NA", "no"), Tdeath := fifelse(as.numeric(Tdeath) >= tmax[str_c("t", trial)], "no", Tdeath)]
+
+    popn2
 }

@@ -1,0 +1,122 @@
+
+# -------- DESCRIPTION --------
+
+version = "BICI v0.3"
+description text = "datasets/testing/data/expt1-data_files/description.txt"
+
+# -------- MCMC OPTIONS --------
+
+data-dir folder = "datasets/testing/data/expt1_out"
+inference algorithm = "PAS-MCMC" sample = 10000 param-output = 10000 burnin-frac = 0.2 state-output = 0 nchain = 16 gen-update = 25
+
+# -------- MODEL SPECIES --------
+
+species name = "Turbot" type = "individual"
+
+# -------- MODEL COMPARTMENTS --------
+
+comp name = "S"
+comp name = "E"
+comp name = "I"
+comp name = "D"
+comp name = "R"
+
+# -------- MODEL TRANSITIONS --------
+
+trans name = "S->E" value = "exp(rate:GEFEIEbeta×{I+D}/25)" individual_effect = "s_a,s_e" individual_effect = "i_a,i_e" fixed_effect = "weight1_s,weight2_s"
+trans name = "E->I" value = "exp(rate:FElatent_period)" fixed_effect = "trial_l,donor_l,txd_l,weight1_l,weight2_l"
+trans name = "I->D" value = "exp(rate:FEdetection_period)" fixed_effect = "trial_d,donor_d,txd_d,weight1_d,weight2_d"
+trans name = "D->R" value = "gamma(mean:FEremoval_period,cv:gamma_cv)" individual_effect = "t_a,t_e" fixed_effect = "trial_t,donor_t,txd_t,weight1_t,weight2_t"
+
+# -------- ADD FES OR IES TO INFECTIVITY HERE --------
+
+trial_i,donor_i,txd_i,weight1_i,weight2_i
+
+# -------- GENETIC COVARIANCE BETWEEN DIFFERENT INDIVIDUAL EFFECTS --------
+
+covariance individual_effect = "s_a,i_a,t_a" relationship_matrix = "A" variance = "
+cov_G_ss
+cov_G_ii
+cov_G_tt
+" correlation = "
+1	r_G_si	r_G_st
+r_G_si	1	r_G_it
+r_G_st	r_G_it	1
+"
+
+# -------- ENVIRONMENTAL COVARIANCE BETWEEN DIFFERENT INDIVIDUAL EFFECTS --------
+
+covariance individual_effect = "s_e,i_e,t_e" relationship_matrix = "I" variance = "
+cov_E_ss
+cov_E_ii
+cov_E_tt
+" correlation = "
+1	r_E_si	r_E_st
+r_E_si	1	r_E_it
+r_E_st	r_E_it	1
+"
+
+# -------- INFERENCE AND OBSERVATION PERIODS --------
+
+ = "inference_FIXME" group = "36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71" tmin = 0 tmax = 160
+ = "observation_FIXME" group = "36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71" tmin = 0 tmax = 160
+
+# -------- MODEL PRIORS --------
+
+param name = "beta" value = 0.147365 prior = "uniform(0,1)"
+param name = "latent_period" constant = 8
+param name = "eta_shape" value = 1 prior = "uniform(0.2,5)"
+param name = "detection_period" value = 2.78432 prior = "uniform(0,20)"
+param name = "rho_shape" value = 1 prior = "uniform(0.2,5)"
+param name = "removal_period" value = 6.93291 prior = "uniform(0,20)"
+param name = "gamma_shape" value = 1.96469 prior = "uniform(0.5,5)"
+param name = "cov_G_ss" value = 0.747871 prior = "uniform(0,4)"
+param name = "cov_G_ii" value = 0.00640273 prior = "uniform(0,4)"
+param name = "cov_G_tt" value = 0.044773 prior = "uniform(0,1)"
+param name = "r_G_si" value = -0.403515 prior = "uniform(-0.95,0.95)"
+param name = "r_G_st" value = -0.0589869 prior = "uniform(-0.95,0.95)"
+param name = "r_G_it" value = 0.611928 prior = "uniform(-0.95,0.95)"
+param name = "cov_E_ss" value = 3.13382 prior = "uniform(0,4)"
+param name = "cov_E_ii" value = 3.58429 prior = "uniform(0,4)"
+param name = "cov_E_tt" value = 0.447045 prior = "uniform(0,1)"
+param name = "r_E_si" value = -0.745265 prior = "uniform(-0.95,0.95)"
+param name = "r_E_st" value = 0.889115 prior = "uniform(-0.95,0.95)"
+param name = "r_E_it" value = -0.4681 prior = "uniform(-0.95,0.95)"
+param name = "trial_i" value = -0.982976 prior = "uniform(-5,3)"
+param name = "trial_l" value = -1.85989 prior = "uniform(-5,3)"
+param name = "trial_d" value = 1.70641 prior = "uniform(-4,4)"
+param name = "trial_t" value = -0.254905 prior = "uniform(-4,4)"
+param name = "donor_i" value = -3.31455 prior = "uniform(-7,1)"
+param name = "donor_l" value = -1.40226 prior = "uniform(-5,3)"
+param name = "donor_d" value = 3.95439 prior = "uniform(-4,4)"
+param name = "donor_t" value = -1.3583 prior = "uniform(-5,3)"
+param name = "txd_i" value = -1.76593 prior = "uniform(-5,3)"
+param name = "txd_l" value = 3.57959 prior = "uniform(-1,7)"
+param name = "txd_d" value = -0.924688 prior = "uniform(-2,6)"
+param name = "txd_t" value = 1.78846 prior = "uniform(-2,6)"
+param name = "weight1_s" value = -0.313574 prior = "uniform(-4,4)"
+param name = "weight1_i" value = -0.561126 prior = "uniform(-4,4)"
+param name = "weight1_l" value = -0.597818 prior = "uniform(-4,4)"
+param name = "weight1_d" value = -3.99114 prior = "uniform(-4,4)"
+param name = "weight1_t" value = 0.352592 prior = "uniform(-4,4)"
+param name = "weight2_s" value = -0.678062 prior = "uniform(-4,4)"
+param name = "weight2_i" value = 2.02593 prior = "uniform(-4,4)"
+param name = "weight2_l" value = 3.21588 prior = "uniform(-4,4)"
+param name = "weight2_d" value = -0.573332 prior = "uniform(-4,4)"
+param name = "weight2_t" value = -0.0305136 prior = "uniform(-4,4)"
+
+# -------- INFORMATION ABOUT INDIVIDUALS --------
+
+datatable file = "datasets/testing/data/expt1-data.tsv" id = "id" sire = "sire" dam = "dam" group = "group" initial_comp = "initial_comp" prediction_accuracy = "sdp" comp_status = "comp_status" trial_i = "trial_fe" trial_l = "trial_fe" trial_d = "trial_fe" trial_t = "trial_fe" donor_i = "donor_fe" donor_l = "donor_fe" donor_d = "donor_fe" donor_t = "donor_fe" txd_i = "txd_fe" txd_l = "txd_fe" txd_d = "txd_fe" txd_t = "txd_fe" weight1_s = "weight1_fe" weight1_i = "weight1_fe" weight1_l = "weight1_fe" weight1_d = "weight1_fe" weight1_t = "weight1_fe" weight2_s = "weight2_fe" weight2_i = "weight2_fe" weight2_l = "weight2_fe" weight2_d = "weight2_fe" weight2_t = "weight2_fe"
+
+# -------- PREDICTION ACCURACIES FOR SIRES --------
+
+prediction_accuracy name = "sire" ind = "1..29"
+
+# -------- PREDICTION ACCURACIES FOR DAMS --------
+
+prediction_accuracy name = "dam" ind = "30..54"
+
+# -------- PREDICTION ACCURACIES FOR PROGENY --------
+
+prediction_accuracy name = "progeny" ind = "55..1829"

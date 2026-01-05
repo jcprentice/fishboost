@@ -1,155 +1,183 @@
 # Full Pipeline ----
 #
 # Either use the Fishboost data set or simulate a new data set, and then send it
-# to SIRE 2.2 for parameter inference.
-#
-# SIRE 2.2 (modified from Chris Pooley's original)
+# to SIRE or BICI (Chris Pooley) for parameter inference.
 
 ## Load libraries and source files ----
 
-source("libraries.R")
-source("source_files.R")
+suppressPackageStartupMessages({
+    source("libraries.R")
+    source("source_files.R")
+})
+
+time_start <- now()
 
 # for testing only
 # set.seed(0)
 
+cmd_args <- commandArgs(trailingOnly = TRUE)
+run_from_script <- length(cmd_args) > 0
 
 ## Set parameters ----
 
 {
     params <- make_parameters(
         model_type = "SEIDR", # "SIR", "SEIR", "SIDR", or "SEIDR"
-        name = "expt1",
-        setup = "fishboost", # chris, small, fishboost, fb1, fb2
-        use_traits = "sir", # "all", "none", "sir", "si" etc.
-        vars = 0.5, # c(0.5, 1.2, 0.5)
-        covars = 0.2, # 0.2, "positive", "negative", "mixed", "sir_only" etc.
+        dataset = "testing",
+        name = "scen-1-1",
+        setup = "fb_12_rpw", # chris, small, fb_12, fb_1, fb_2, single
+        use_traits = "sit", # "all", "none", "sit", "si" etc.
+        vars = 0.5, # c(0.5, 1.5, 0, 0, 0.5)
+        cors = 0.2, # c(0.2, ..., 0.2)
         group_layout = "fishboost", # "random", "family", "striped", "fishboost"
-        trial_fe = "lidr",
-        donor_fe = "lidr",
-        # txd_fe = "lidr",
-        use_fb_data = TRUE
+        trial_fe = "ildt",
+        donor_fe = "ildt",
+        txd_fe = "ildt",
+        weight_fe = "sildt",
+        weight_is_nested = TRUE,
+        sim_new_data = "bici"
     )
     
     # Temporary override of some parameters
     # params$group_effect <- 0.3
-    params$nthreads <- 2L
-    params$nsample <- 1e4L
-    params$burnin <- 2e3L
-    params$thin <- 1e0L
-    params$nsample_per_gen <- 1e1L
-    params$anneal <- "on"
-    params$anneal_power <- 4
-    params$pass_events <- 2
-    # params$link_traits <- "srirr"
-    # params$sim_link_donor <- "slill"
-    # params$link_donor <- "slill"
+    # params$priors[parameter == "latent_period", `:=`(type = "Fixed", val1 = 5, true_val = 5)]
+    
+    if (!run_from_script) {
+        params$nchains <- 2L
+        params$nsample <- 1e2L
+    }
+    params$sample_states <- 100L
+    params$ie_output <- "true"
+    params$pass_events <- c("Tsym", "Tdeath")
+    # params$link_traits <- "sittt"
+    # params$sim_link_donor <- "sittt"
+    # params$link_donor <- "sittt"
     params$time_step <- 1
     params$censor <- 0.8
+    params$use_weight <- "log"
+    params$use_grm <- "pedigree"
+    params$weight_is_nested <- TRUE
+    # params$fix_donors <- c(params$fix_donors, "set_to_R")
+    
+    params$sire_version <- "bici"
+    # params$sire_version <- "sire22"
+    
+    # Tidy up LP, DP, RP, including rate, shape, and priors
+    params <- tidy_up_periods(params)
     
     # Patch params with posterior mean values from data set/scenario
-    params$patch_data_set <- "fb-parasites"
-    params$patch_scenario <- 1
-    params <- patch_params(params)
-
-    # link traits (needs to be done after params is constructed)
-    params <- apply_links(params)
+    params$patch_dataset <- "" # "fb-test"
+    params$patch_name <- "scen-1-1"
+    params$traits_source <- "posterior"
+    params$patch_type <- "median"
+    params$patch_state <- TRUE
+    params$skip_patches <- c("") #, "covariance")
+    
+    # params$ge_opts <- "e1" # Optional genetic effects
+    
+    params <- params |>
+        patch_params() |>  # Patch params with posteriors from dataset / scenario
+        # set_ge_opts() |>   # Genetic covariance options
+        set_use_flags() |> # Ensure priors are correctly enabled
+        apply_links()      # Fix any traits that need to be linked
     
     # Quick check of how things are looking
     summarise_params(params)
 }
 
 
-## Generate pedigree and traits ----
+## Generate pedigree and popn ----
 
-if (params$use_fb_data) {
-    fb_traits <- switch(params$setup,
-                        "fishboost" = readRDS("fb_data/fb_data12.rds"),
-                        "fb1"       = readRDS("fb_data/fb_data1.rds"),
-                        "fb2"       = readRDS("fb_data/fb_data2.rds"))
-    
-    # fb_traits[Tsym == 1, Tsym := 2]
-    
-    # Create a GRM
-    GRM <- NULL #make_grm(fb_traits)
-    
-    # We don't know the BVs, so just set them to whatever (SIRE doesn't seem to like NA)
-    # fb_traits[, `:=`(susceptibility_BV = NA_real_,
-    #                  infectivity_BV    = NA_real_,
-    #                  recoverability_BV = NA_real_)]
-    
+if (params$sim_new_data != "no") {
+    popn <- make_pedigree(params) |>
+        set_groups(params) |> # Set groups, trial, donors, and group effect
+        set_traits(params) |>
+        apply_fixed_effects(params)
 } else {
-    pedigree <- make_pedigree(params)
+    popn <- readRDS(str_glue("fb_data/{params$setup}.rds"))
     
-    # This is an A-matrix, not actually a GRM
-    GRM <- NULL #make_grm(pedigree)
+    params$fix_donors <- "no_Tsym_survivors" # c("time", "no_Tsym_survivors")
     
-    # traits <- make_traits_from_grm(GRM, pedigree, params)
-    if (params$patch_traits) {
-        traits <- patch_in_traits(pedigree, params)
-    } else {
-        traits <- make_traits_from_pedigree(pedigree, params)
-    }
-    
-    # Set groups, trial, donors, and group effect
-    traits <- set_groups(traits, params)
-    
-    # Set donor and trial effects
-    traits <- apply_fixed_effects(traits, params)
+    # Create a GRM or A matrix
+    GRM <- make_grm(popn, params$use_grm)
 }
 
 
 ## Simulate and plot epidemic ----
 
-if (params$use_fb_data) {
-    pop <- fb_traits
+if (params$sim_new_data == "r") {
+    tic(); popn <- simulate_epidemic(popn, params); toc()
+    popn[sdp == "progeny", parasites := !is.na(Tinf)]
     
-    # If Tinf, Tinc etc. are not in pop, create missing column(s) and set to NA
-    missing_timings <- setdiff(params$timings, names(pop))
-    if (length(missing_timings) > 0) {
-        pop[, (missing_timings) := NA_real_]
-    }
-    
-    params$tmax <- get_tmax(pop, params)
-    pop[Trec == params$tmax[trial], Trec := NA]
-    
-    plt <- plot_model(pop, params)
-    # plt_fb1 <- plot_SxxDR(pop, params)
+    params$estimated_R0 <- get_R0(popn)
+    params$tmax <- get_tmax(popn, params)
+
+    message("Tmax = ", str_flatten_comma(params$tmax))
+} else if (params$sim_new_data == "bici") {
+    params$tmax <- c(t1 = 200, t2 = 200)
 } else {
-    pop <- simulate_epidemic(traits, params)
-    pop[sdp == "progeny", parasites := !is.na(Tinf)]
+    # If Tinf, Tinc etc. are not in popn, create missing column(s) and set to NA
+    missing_timings <- setdiff(params$timings, names(popn))
+    if (length(missing_timings) > 0) {
+        popn[, (missing_timings) := NA_real_]
+        setcolorder(popn, params$timings, after = "donor")
+    }
+    params$tmax <- get_tmax(popn, params)
     
-    params$estimated_R0 <- get_R0(pop)
-    params$tmax <- get_tmax(pop, params)
+    # Correct for donors not properly infected
+    popn <- fix_fb_data(popn, params)
     
-    ### Plot the epidemic ----
-    plt <- plot_model(pop, params)
+    popn[Tdeath >= params$tmax[trial], Tdeath := NA]
 }
 
 
-# Generate XML File and run SIRE ----
+### Plot the epidemic ----
+
+plt <- plot_model(popn, params)
+
+
+
+## Generate config files ----
 
 {
-    if (!dir.exists(params$data_dir)) {
-        dir.create(params$data_dir)
+    # Create directories
+    walk(params[str_ends(names(params), "_dir")], ~ {
+        if (!dir.exists(.x)) dir.create(.x, recursive = TRUE)
+    })
+
+    # Clean up old config files and generate fresh one
+    if (str_detect(params$sire_version, "bici")) {
+        cleanup_bici_files(params)
+        bici_txt <- generate_bici_script(popn, params)
+    } else {
+        cleanup_sire_files(params)
+        sire_xml <- generate_sire_xml(popn, params)
     }
+}
+
+
+## Run SIRE ----
+
+{
+    cmd <- with(params, str_glue(
+        if (algorithm == "pas")
+            "mpirun -n {nchains} --output :raw --oversubscribe " else "",
+        if (sire_version == "bici") {
+            "../BICI/bici-{platform} {data_dir}/{name}.bici {bici_cmd}"
+        } else {
+            "../{sire_version}/sire-{platform} {data_dir}/{name}.xml 0"    
+        },
+        platform = Sys.info()[["sysname"]]
+    ))
+    message(str_glue("Running:\n$ {cmd}"))
     
-    # Tidy up ready for saving data to XML file
-    params$use_parasites <- "SE" # S, SE, or SEI
-    params$time_step
-    data3 <- prepare_data(pop, params)
+    tic()
+    out <- system(cmd)
+    time_taken <- toc()
     
-    # generate_sire2x_xml(data, params, GRM)
-    sire_xml <- get(glue("generate_{params$sire_version}_xml"))(data, params, GRM)
-    
-    cmd <- with(params, glue("../{sire_version}/sire {data_dir}/{name}.xml 0"))
-    if (params$algorithm == "pas") {
-        cmd <- glue("mpirun -n {params$nchains} --oversubscribe {cmd}")
+    if (out != 0) {
+        stop(str_glue("{params$sire_version} failed to finish"))
     }
-    
-    # Run SIRE
-    message(glue("Running: {cmd} ..."))
-    time_taken <- system.time(system(cmd))
 }
 
 
@@ -158,33 +186,59 @@ if (params$use_fb_data) {
 {
     message("Retrieving results ...")
     
-    # note: sire 2.0 needs "dat_dir/name-", instead of "name_out/"
-    file_prefix <- with(params, glue("{data_dir}/{name}_out"))
+    name <- params$name
+    dataset <- params$dataset
+    output_dir <- params$output_dir
+    results_dir <- params$results_dir
+    sire_version <- params$sire_version
+    bici_cmd <- params$bici_cmd
     
-    if (params$sire_version == "2.2") {
-        parameter_estimates <- fread(glue("{file_prefix}/posterior.csv")) # 2.1 uses posteriors.csv
-        file_name <- glue("{file_prefix}/ebvs.csv") # 2.1 uses estimated_bvs.csv
-        estimated_BVs       <- if (file.exists(file_name)) fread(file_name) else NULL
-        pred_accs           <- fread(glue("{file_prefix}/pred_accs.csv"))
+    if (sire_version == "bici") {
+        if (bici_cmd == "inf") {
+            # pe_name <- str_glue("{output_dir}/posterior.csv")
+            # parameter_estimates <- fread(pe_name)
+            parameter_estimates <- rebuild_bici_posteriors(dataset, name)
+            
+            ebvs_name     <- str_glue("{output_dir}/ebvs.csv")
+            estimated_BVs <- if (file.exists(ebvs_name)) fread(ebvs_name)
+            
+            pa_name   <- str_glue("{output_dir}/pred_accs.csv")
+            pred_accs <- if (file.exists(pa_name)) fread(pa_name)
+        }
     } else {
-        parameter_estimates <- fread(glue("{file_prefix}/posteriors.csv"))
-        estimated_BVs       <- fread(glue("{file_prefix}/estimated_bvs.csv"))
-        pred_accs           <- fread(glue("{file_prefix}/pred_accs.csv"))
+        # pe_name <- str_glue("{output_dir}/posterior.csv")
+        # parameter_estimates <- fread(pe_name)
+        parameter_estimates <- rebuild_sire_posteriors(dataset, name)
+        flatten_sire_states(dataset, name)
+        
+        ebvs_name     <- str_glue("{output_dir}/ebvs.csv")
+        estimated_BVs <- if (file.exists(ebvs_name)) fread(ebvs_name)
+        
+        pa_name   <- str_glue("{output_dir}/pred_accs.csv")
+        pred_accs <- if (file.exists(pa_name)) fread(pa_name)
     }
     
-    msg_pars(parameter_estimates)
-    print(parameter_estimates[!startsWith(parameter, "Group effect")])
-    if (!params$use_fb_data) {
-        print(pred_accs)
+    if (bici_cmd == "inf") {
+        msg_pars(parameter_estimates)
+        # print(parameter_estimates[!str_starts(parameter, "Group effect")])
+        if (params$sim_new_data != "no") print(pred_accs)
+        
+        ranks <- if (!is.null(estimated_BVs)) get_ranks(popn, estimated_BVs, params)
+        
+        time_end <- now()
+        
+        results <- c("params", "popn", "parameter_estimates", "estimated_BVs",
+                     "ranks", "pred_accs", "time_taken", "time_start", "time_end") |>
+            keep(exists)
+        
+        saveRDS(mget(results),
+                file = str_glue("{results_dir}/{name}.rds"))
     }
-    
-    ranks <- get_ranks(pop, estimated_BVs, params)
-    
-    ### Save results ----
-    if (!dir.exists(params$results_dir)) {
-        dir.create(params$results_dir)
+        
+    # generate etc_inf.rds summary file
+    if (sire_version == "bici") {
+        flatten_bici_states(dataset, name, bici_cmd)
+    } else {
+        flatten_sire_states(dataset, name)
     }
-    
-    save(params, pop, parameter_estimates, estimated_BVs, pred_accs, ranks, time_taken,
-         file = with(params, glue("{results_dir}/{name}.RData")))
 }

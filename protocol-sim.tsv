@@ -1,4 +1,0 @@
-"data_set"	"description"	"scenario"	"replicate"	"label"	"name"	"use_fb_data"	"model"	"setup"	"use_traits"	"link_traits"	"covars"	"donor_fe"	"sim_link_donor"	"link_donor"	"group_effect"	"vars"	"group_layout"	"trial_fe"	"nsample"	"burnin"	"thin"	"quench"	"quench_power"	"sire_version"	"nthreads"
-"sim-mpi"	"Sim FB Trial 1, SEIDR, traits SIR, cov 0, donor LIDR"	1	1	"s1a"	"scen-1-1"	FALSE	"SEIDR"	"fb1"	"sir"	"slidr"	"none"	"lidr"	"slidr"	"slidr"	-1	1	"fishboost"	"none"	10000000	2500000	1000	"off"	4	"2.1.1"	8
-"sim-mpi"	"Sim FB Trial 1, SEIDR, traits SI, cov 0, donor LIDR"	2	1	"s1b"	"scen-2-1"	FALSE	"SEIDR"	"fb1"	"si"	"slidr"	"none"	"lidr"	"slidr"	"slidr"	-1	1	"fishboost"	"none"	10000000	2500000	1000	"off"	4	"2.1.1"	8
-"sim-mpi"	"Sim FB Trial 1, SEIDR, traits I, cov 0, donor LIDR"	3	1	"s1c"	"scen-3-1"	FALSE	"SEIDR"	"fb1"	"i"	"slidr"	"none"	"lidr"	"slidr"	"slidr"	-1	1	"fishboost"	"none"	10000000	2500000	1000	"off"	4	"2.1.1"	8
