@@ -119,6 +119,7 @@ model_SIS <- function(popn, params) {
 
     # tidy up X
     X[, c("group_inf", "event_rate") := NULL]
+    X[, parasites := !is.na(Tinf)]
     setorder(X, id)
 
     popn2 <- rbind(popn[sdp != "progeny"], X, fill = TRUE)

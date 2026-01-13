@@ -148,7 +148,7 @@ plt <- plot_model(popn, params)
 }
 
 
-## Run SIRE ----
+## Run BICI ----
 
 {
     cmd <- with(params, str_glue(
@@ -190,9 +190,7 @@ plt <- plot_model(popn, params)
 
         pa_name   <- str_glue("{output_dir}/pred_accs.csv")
         pred_accs <- if (file.exists(pa_name)) fread(pa_name)
-    }
-    
-    if (bici_cmd == "inf") {
+
         msg_pars(parameter_estimates)
         # print(parameter_estimates[!str_starts(parameter, "Group effect")])
         if (params$sim_new_data != "no") print(pred_accs)

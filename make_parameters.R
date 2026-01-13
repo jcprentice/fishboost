@@ -564,7 +564,7 @@ make_parameters <- function(
     patch_state <- FALSE
     
     # Use weight if available
-    use_weight <- "no" # "log" or "linear"
+    use_weight <- "log" # "log" or "linear"
     
     # Use inverse H matrix, GRM, or none
     use_grm <- "" # {A,H} + {,_inv} + {,_nz}
@@ -629,8 +629,13 @@ summarise_params <- function(params) {
     with(params, {
         if (sim_new_data == "no") {
             message("Using Fishboost data")
+        } else if (sim_new_data == "etc_inf") {
+            message("Using data simulated in BICI from prior")
+        } else if (sim_new_data == "etc_ps") {
+            message("Using data simulated in BICI from posterior")
         } else {
-            message(str_glue("Simulating new data with {model_type} model"))
+            message(str_glue("Simulating new {model_type} data via {x}",
+                             x = str_to_upper(sim_new_data)))
         }
 
         param_file <- str_glue("{data_dir}/{name}.bici")

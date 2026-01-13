@@ -128,6 +128,7 @@ model_SIR <- function(popn, params) {
     
     # tidy up X
     Y[, c("group_inf", "event_rate") := NULL]
+    Y[, parasites := !is.na(Tinf)]
     
     # fix generation
     # X[status == "R" & donor == 0L, generation := 2L]

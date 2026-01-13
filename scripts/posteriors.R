@@ -118,7 +118,7 @@ get_posteriors <- function(dataset = "fb-final", scens = 1:2, reps = 1,
         
         plt_str <- str_glue("{post_dir}/{dataset}-s{sr}-posteriors",
                             sr = str_remove(scen_reps[[i]], "-0"))
-        # ggsave(str_c(plt_str, ".png"), plt, width = 10, height = 12)
+        ggsave(str_c(plt_str, ".png"), plt, width = 10, height = 12)
         ggsave(str_c(plt_str, ".pdf"), plt, width = 10, height = 12)
         message(str_glue(" - plotted '{plt_str}'"))
     })
@@ -158,7 +158,7 @@ get_posteriors <- function(dataset = "fb-final", scens = 1:2, reps = 1,
         
         plt_str <- str_glue("{cov_dir}/{dataset}-s{scen_reps[[i]]}-covs") |>
             str_replace("scen-", "s")
-        # ggsave(str_c(plt_str, ".png"), plt, width = 9, height = 8)
+        ggsave(str_c(plt_str, ".png"), plt, width = 9, height = 8)
         ggsave(str_c(plt_str, ".pdf"), plt, width = 8, height = 8)
         message(str_glue(" - Plotted '{plt_str}'"))
     })

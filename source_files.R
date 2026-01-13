@@ -27,6 +27,7 @@
     source("generate_bici_script.R")
     source("make_time_series.R")
     source("make_plots.R")
+    source("basic_km.R")
     source("inc_seed.R")
     source("get_ranks.R")
     source("rename_pars.R")

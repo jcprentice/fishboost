@@ -1,0 +1,242 @@
+---
+title: "Using BICI with an SEIDR model"
+author: "Jamie Prentice"
+date: "`r Sys.Date()`"
+output: pdf_document
+papersize: a4
+fontsize: 11pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries and source files
+
+This pulls in all the necessary libraries and source files
+
+```{r}
+suppressPackageStartupMessages({
+    source("libraries.R")
+    source("source_files.R")
+})
+```
+
+## Generating a params list
+
+The first step is to generate a params list that contains the basic information, with some messages to note exactly what it's using. All elements in `make_parameters()` have default values, so these are just to see what you can add.
+
+The params list might not fully do everything we want, but as it is just a basic R list, we can easily modify it afterwards.
+
+```{r build-params}
+params <- make_parameters(
+    model_type = "SEIDR", # c("SIR", "SEIR", "SIDR", "SEIDR")
+    dataset = "testing",
+    name = "scen-1-1",
+    setup = "fb_12_rpw", # "small", "fb_12", "fb_1", "fb_2", "single", etc.
+    use_traits = "sit", # "all", "none", "sit", "si" etc.
+    vars = c(sus = 1.0, inf = 1.5, tol = 0.5), # 0.5
+    cors = c(si = 0.3, st = 0.2, it = 0.2), # 0.2
+    group_layout = "fishboost", # "random", "family", "striped", "fishboost"
+    trial_fe = "ildt", # ""
+    donor_fe = "ildt", # ""
+    txd_fe = "ildt", # ""
+    weight_fe = "sildt", # ""
+    weight_is_nested = TRUE,
+    sim_new_data = "bici" # c("bici", "r", "no", "etc_inf", "etc_ps")
+)
+
+# These are for doing a very quick local run of BICI, the actual values should
+# be much higher if doing a real run on Eddie.
+params$nchains <- 2L # 16L
+params$nsample <- 1e2L # 2e6L
+params$sample_states <- 100L # 1e3L
+
+# We also set the time_step to 1, and censor the data (very useful as the last
+# 20% of the simulation is typically very uneventful).
+params$time_step <- 1
+params$censor <- 0.8
+```
+
+This provides a short summary of the params
+```{r, message=TRUE}
+summarise_params(params)
+```
+
+## Generate pedigree and popn
+
+Next we take the params file, set the groups and traits, and apply any fixed effects. Note that you these are piped into each other, but you can save the intermediate result at any point to examine what's happening (e.g. for bug fixing).
+
+```{r build-popn}
+popn <- make_pedigree(params) |>
+    set_groups(params) |>
+    set_traits(params) |>
+    apply_fixed_effects(params)
+```
+It's worth taking a look at the `popn` file to see what it includes. The columns are:
+```{r}
+names(popn)
+```
+Where:
+
+- `id`: the unique ID of the individual. Sires come first, then dams, then progeny.
+- `sire` and `dam` of the individual (together with `id` this makes a pedigree).
+- `sdp`: whether the individual is a sire, dam, or progeny.
+- The `weight` in kg at start of experiment.
+- Which `trial` the individual was assigned to.
+- Which `group` the individual was assigned to.
+- `donor`: if the individual was inoculated (1) or not (0).
+- `GE`: a small tank dependent group effect.
+- `sus_g`, `inf_g`, `tol_g`, `sus_e`, `inf_e`, `tol_e`: genetic and environmental values. These are normally distributed with mean 0.
+- `sus`, `inf`, `tol`, `lat`, `det`: phenotypic values. These are log-normally distributed and incorporate any fixed effects.
+
+A typical progeny looks like:
+
+```{r}
+popn[sdp == "progeny"][1]
+```
+
+
+## Simulate and plot epidemic
+
+We now pass the population file `popn` and the parameters `params` to `simulate_epidemic()`, which will run the appropriate model and return a _new_ `popn` file with event times, final status, which generation infective they were, and the individual responsible for their infection. You can generate multiple realisations of the epidemic from the same inputs if you save the `popn` output each time.
+
+```{r simulate-epidemic}
+tic(); popn <- simulate_epidemic(popn, params); toc()
+```
+
+We can also use the generation value to calculate $R_0$, which is the mean across all groups of the ratio of secondary to primary infectives. Also it's useful to see how long the epidemic took until it completed (since this information is necessary for BICI to use).
+
+```{r get-metrics, message = TRUE}
+params$estimated_R0 <- get_R0(popn)
+params$tmax <- get_tmax(popn, params)
+
+message("Tmax = [", str_flatten_comma(round(params$tmax, 1)), "]")
+```
+
+The progeny we had before now looks like this, with the additional columns:
+
+- `Tinf`: the infection time ($t:S\rightarrow E$). In actual data this is 0 for inoculated individuals, and missing for all others.
+- `Tinc`: the incubation time ($t:E\rightarrow I$), missing in the data.
+- `Tsym`: the time of symptoms ($t:I\rightarrow D$), present in data.
+- `Tdeath`: the time of death ($t:D\rightarrow R$), present in data.
+- `status`: which compartment the individual is in at the end of the epidemic (should only be `S` or `R`)
+- `generation`: if an individual is a primary, secondary, tertiary etc. infective.
+- `infected_by`: the id of the individual responsible for this infection (0 for inoculated individuals).
+- `parasites` `TRUE` if an individual was infected. In actual data the sensitivity is not 100%.
+
+```{r}
+popn[sdp == "progeny"][1]
+```
+
+
+## Plot the epidemic
+
+We can take a look at the time trajectory
+
+```{r tj-plot, fig.cap = "Time trajectory of SEIDR model"}
+plt <- plot_model(popn, params)
+```
+
+It's also important to look at the Kaplan-Meier survival plot.
+```{r km-plot, fig.cap = "KM plot of SEIDR model, showing the proportion of each family surviving over time."}
+plt2 <- basic_km(popn, params)
+```
+
+
+## Generate directories and config files
+
+In order for BICI to work, it needs the data and the model to fit to the data. We first generate the directories (all stored in the `params` file) and then create the BICI script file.
+
+```{r generate-files, eval = FALSE}
+walk(params[str_ends(names(params), "_dir")], ~ {
+    if (!dir.exists(.x)) dir.create(.x, recursive = TRUE)
+})
+# Remove any old files
+cleanup_bici_files(params)
+bici_txt <- generate_bici_script(popn, params)
+```
+
+
+## Run BICI
+
+Here we build `cmd`, the command that runs BICI, and run it with `system(cmd)`. There is some additional platform information in case the BICI directory contains an executable compiled for each platform ("bici-Linux", "bici-Darwin", or "bici-Windows"). If running the PAS algorithm, then BICI needs to be compiled with MPI support, and `--output :raw` is necessary for it to output a progress meter (otherwise it saves all output until it's finished running).
+
+```{r run-bici, eval = FALSE}
+cmd <- with(params, str_glue(
+    if (algorithm == "pas")
+        "mpirun -n {nchains} --output :raw --oversubscribe " else "",
+    "../BICI/bici-{platform} {data_dir}/{name}.bici {bici_cmd}",
+    platform = Sys.info()[["sysname"]]
+))
+message(str_glue("Running:\n$ {cmd}"))
+
+tic()
+out <- system(cmd)
+time_taken <- toc()
+
+if (out != 0) {
+    stop("BICI failed to finish")
+}
+```
+
+
+## Retrieve results and save
+
+Finally we collect the output from BICI do some post-processing, and save the results in a format suitable for easily reading back in R. The results file contains the data, the model fitted to the data, summary statistics, prediction accuracies (if available), and the time taken to run (handy for determining how long to reserve on Eddie for future runs with possibly more samples).
+
+`rebuild_bici_posteriors()` creates a `trace_combine.tsv` file that contains the output of all the chains combined into one, with the burn-in period removed, making it immediately useful for working with and sampling from the posterior. It also creates a summary file with each parameter's mean, median, 95% CI, 95% HPDI, ESS, and GR, which is very useful for convergence diagnostics.
+
+```{r retrieve-results}
+{
+    name <- params$name
+    dataset <- params$dataset
+    output_dir <- params$output_dir
+    results_dir <- params$results_dir
+    bici_cmd <- params$bici_cmd
+}
+
+if (bici_cmd == "inf") {
+    parameter_estimates <- rebuild_bici_posteriors(dataset, name)
+    
+    ebvs_name     <- str_glue("{output_dir}/ebvs.csv")
+    estimated_BVs <- if (file.exists(ebvs_name)) fread(ebvs_name)
+    
+    pa_name   <- str_glue("{output_dir}/pred_accs.csv")
+    pred_accs <- if (file.exists(pa_name)) fread(pa_name)
+
+    # msg_pars(parameter_estimates)
+    print(parameter_estimates[!str_starts(parameter, "Group effect"),
+                              .(parameter = rename_pars(parameter),
+                                median = round(median, 3),
+                                hdi95min = round(hdi95min, 3),
+                                hdi95max = round(hdi95max, 3),
+                                ESS,
+                                GR = round(GR, 3))])
+    
+    time_end <- now()
+    
+    results <- c("params", "popn", "parameter_estimates", "estimated_BVs",
+                 "ranks", "pred_accs", "time_taken", "time_start", "time_end") |>
+        keep(exists)
+    
+    saveRDS(mget(results),
+            file = str_glue("{results_dir}/{name}.rds"))
+}
+```
+
+Finally `flatten_bici_states()` creates an `etc-inf.rds` or `etc-ps.rds` summary file that contains snapshots of the state and the corresponding parameters. This can take a long time to run if there are a lot of states.
+
+```{r flatten-states, eval = FALSE}
+flatten_bici_states(dataset, name, bici_cmd)
+```
+Now we can examine the output of BICI more closely. First generate a posterior plot
+```{r generate-posterior, fig.dim = c(10, 12), fig.cap = "Posterior distributions"}
+source("scripts/posterior.R")
+get_posterior(dataset, scen_rep = str_remove(params$name, "scen-"))
+```
+The output is pretty bad as we using only 10^4 samples, but it's enough to get the idea.
+
+
+
+

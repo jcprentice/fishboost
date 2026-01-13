@@ -90,7 +90,9 @@ msg_pars <- function(x) {
       .(pars = rename_pars(parameter),
         mean = signif(mean, 3L),
         hdi95_min = signif(hdi95min, 2L),
-        hdi95_max = signif(hdi95max, 2L))] |>
+        hdi95_max = signif(hdi95max, 2L),
+        ESS,
+        GR = round(GR, 2))] |>
         as.data.frame() |>
         capture.output() |>
         str_flatten("\n") |>

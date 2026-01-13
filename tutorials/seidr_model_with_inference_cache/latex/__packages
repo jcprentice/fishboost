@@ -1,0 +1,14 @@
+data.table
+purrr
+stringr
+MASS
+tictoc
+lubridate
+Matrix
+ggplot2
+viridisLite
+coda
+HDInterval
+cowplot
+ggtext
+ggeasy

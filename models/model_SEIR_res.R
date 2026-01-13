@@ -128,6 +128,7 @@ model_SEIR_res <- function(popn, params) {
     # tidy up X
     # X[donor == 0 & status == "R", generation := 2]
     X[, c("group_inf", "event_rate") := NULL]
+    Y[, parasites := !is.na(Tinf)]
 
     popn2 <- rbind(popn[sdp != "progeny"], X, fill = TRUE)
 

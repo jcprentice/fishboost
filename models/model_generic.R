@@ -158,6 +158,7 @@ model_generic <- function(popn, params) {
 
     # tidy up X
     X[, c("group_inf", "group_res", "event_rate") := NULL]
+    X[, parasites := !is.na(Tinf)]
 
     # fix generation
     # X[status == "R" & donor == 0, generation := 2]
