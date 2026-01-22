@@ -22,7 +22,7 @@ km_plots <- function(dataset = "fb-test",
     
     if (FALSE) {
         dataset <- "sim-base-inf"; scens <- 1:18;  simulate_new_data <- "no"
-        dataset <- "fb-test"; scens <- 0;  simulate_new_data <- "no"
+        dataset <- "fb-test"; scens <- 0; simulate_new_data <- "no"
         opts <- list(n_plots = 50, use_means = FALSE)
         plotopts <- c("drop_small_groups", "drop_donors", "extreme_sires")[1]
     }
@@ -32,7 +32,6 @@ km_plots <- function(dataset = "fb-test",
             str_split_i("-", 2) |> unique() |> as.integer() |> sort()
     }
     
-    trials <- 12
     # use_means <- FALSE
     
     # Use posterior means (pm) or sample from posterior (ps, default)
@@ -69,16 +68,23 @@ km_plots <- function(dataset = "fb-test",
         
         # Save the data we just created
         md <- str_glue("datasets/{dataset}/meta")
-        if (!dir.exists(md)) dir.create(md)
+        if (!dir.exists(md)) {
+            message(" - mkdir ", md)
+            dir.create(md)
+        }
         saveRDS(km_data, file = f)
         message(str_glue("Saved KM data to '{f}'"))
     } else {
         km_data <- readRDS(f)
     }
     
+    if (length(scens) != length(km_data)) {
+        scens <- km_data |> map("params") |> map_int("scenario")
+    }
+    
     # Generate the plots
-    plts_st <- map(km_data, plot_km_sire_trial,  trials, plotopts)
-    plts_dt <- map(km_data, plot_km_donor_trial, trials, plotopts)
+    plts_st <- map(km_data, plot_km_sire_trial,  plotopts)
+    plts_dt <- map(km_data, plot_km_donor_trial, plotopts)
     
     # Grab the descriptions of the first available result for each scen
     descriptions <- map_chr(scens, \(i) {
@@ -93,23 +99,29 @@ km_plots <- function(dataset = "fb-test",
     plts_dt <- map2(plts_dt, descriptions, \(x, y) append(x, list(description = y)))
     
     km_dir_st <- str_glue("datasets/{dataset}/gfx/km_st")
-    if (!dir.exists(km_dir_st)) dir.create(km_dir_st, recursive = TRUE)
+    if (!dir.exists(km_dir_st)) {
+        message(" - mkdir ", km_dir_st)
+        dir.create(km_dir_st, recursive = TRUE)
+    }
     
     km_dir_dt <- str_glue("datasets/{dataset}/gfx/km_dt")
-    if (!dir.exists(km_dir_dt)) dir.create(km_dir_dt, recursive = TRUE)
+    if (!dir.exists(km_dir_dt)) {
+        message(" - mkdir ", km_dir_dt)
+        dir.create(km_dir_dt, recursive = TRUE)
+    }
     
     
     # Save the plots as PDF and PNG
     walk(seq_along(scens), \(i) {
         scen <- scens[[i]]
         plt_st <- plts_st[[i]]$plt
-        st_str <- str_glue("{km_dir_st}/{dataset}-s{scen}-sire-trial{trials}{um}{es}{dd}")
+        st_str <- str_glue("{km_dir_st}/{dataset}-s{scen}-sire-trial{um}{es}{dd}")
         # ggsave(str_glue("{st_str}.pdf"), plt_st, width = 9, height = 6, unit = "in")
         ggsave(str_glue("{st_str}.png"), plt_st, width = 9, height = 6, unit = "in")
         message(str_glue("Saved plots to {st_str}"))
         
         plt_dt <- plts_dt[[i]]$plt
-        dt_str <- str_glue("{km_dir_dt}/{dataset}-s{scen}-donor-trial{trials}{um}{es}{dd}")
+        dt_str <- str_glue("{km_dir_dt}/{dataset}-s{scen}-donor-trial{um}{es}{dd}")
         # ggsave(str_glue("{dt_str}.pdf"), plt_dt, width = 9, height = 6, unit = "in")
         ggsave(str_glue("{dt_str}.png"), plt_dt, width = 9, height = 6, unit = "in")
         message(str_glue("Saved plots to {dt_str}"))

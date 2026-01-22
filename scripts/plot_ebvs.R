@@ -24,7 +24,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
     
     walk(c(meta_dir, gfx_dir, ebvs_dir),
          \(d) if (!dir.exists(d)) {
-             message(str_glue("\t$ mkdir {d}"))
+             message(" - mkdir ", d)
              dir.create(d)
          }
     )
@@ -250,7 +250,7 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
     
     walk(c(meta_dir, gfx_dir, ebvs_dir),
          \(d) if (!dir.exists(d)) {
-             message(str_glue(" - mkdir {d}"))
+             message(" - mkdir ", d)
              dir.create(d)
          }
     )

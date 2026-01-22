@@ -178,7 +178,10 @@ plot_covariances <- function(dataset = "fb-final",
     
     
     cov_dir <- str_glue("{gfx_dir}/cov")
-    if (!dir.exists(cov_dir)) dir.create(cov_dir, recursive = TRUE)
+    if (!dir.exists(cov_dir)) {
+        message(" - mkdir ", cov_dir)
+        dir.create(cov_dir, recursive = TRUE)
+    }
     
     walk(c("G", "E", "P", "H", "GE"), \(x) {
         png_str <- str_glue("{cov_dir}/{dataset}-s{scen}-{itn}-cov-{x}.png")

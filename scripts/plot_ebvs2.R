@@ -20,7 +20,10 @@ plot_ebvs2 <- function(dataset = "fb-qtest", scen = 1, rep = 1) {
         gfx_dir  <- str_glue("{base_dir}/gfx")
         ebvs_dir <- str_glue("{gfx_dir}/ebvs2")
         
-        if (!dir.exists(ebvs_dir)) dir.create(ebvs_dir)
+        if (!dir.exists(ebvs_dir)) {
+            message(" - mkdir ", ebvs_dir)
+            dir.create(ebvs_dir)
+        }
     }
     
     rf <- str_glue("{res_dir}/scen-{scen}-{rep}.rds")

@@ -10,7 +10,7 @@
 
 # Are we testing convergence or coverage?
 # (Coverage only makes sense with simulated data.)
-n <- 2
+n <- 1
 goal <- c("convergence", "coverage")[[n]]
 message("Goal = ", goal)
 
@@ -18,51 +18,43 @@ dataset <- "sim-test"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(description = "FB_12_drop71, Traits SIT, FEs ILDT, RP ~ exp, pedigree"), # 1
-    data.table(description = "FB_1_drop71, Traits SIT, FEs ILDT, RP ~ exp, pedigree"), # 6
-    data.table(description = "FB_2_drop71, Traits SIT, FEs ILDT, RP ~ exp, pedigree"), # 7
+    data.table(d = "FB_1_rpw,  GEV SIT,   FEs SIT, Fit to d2, GRM HG_inv"), # 1
+    data.table(d = "FB_12_rpw, GEV SITTT, FEs SIT, Fit to d4, GRM HG_inv"), # 2
+    data.table(d = "FB_1_rpw,  GEV SITTT, FEs SIT, Fit to d5, GRM HG_inv"), # 3
+    data.table(d = "FB_2_rpw,  GEV SITTT, FEs SIT, Fit to d6, GRM HG_inv"), # 4
     
     fill = TRUE
 )
 
+protocol[, `:=`(description = str_squish(d), d = NULL)]
+
 protocol[, setup := str_split_i(description, ", ", 1) |> str_to_lower()]
 
-protocol[str_detect(description, "pedigree"), use_grm := ""]
-protocol[str_detect(description, "GRM"), use_grm := "H"]
-
-f <- function(s)  s |> str_split_1(", ") |> str_subset("Seed") |> str_split_i(" ", 2) |> as.numeric()
-protocol[, seed := f(description), .I]
-
-protocol[str_detect(description, "FEs ILDT"),
-         `:=`(trial_fe = "ildt", donor_fe = "ildt", txd_fe = "ildt",
-              weight_fe = "sildt")]
+protocol[, patch_dataset := "fb-test"]
+protocol[, patch_scen := description |> str_split_1(", ") |>
+             str_subset("Fit to") |> str_replace("Fit to d", "") |>
+             as.integer(), .I]
 
 # Common options ----
 source("param_generators/common2.R")
 
-common <- list(sim_new_data = "r",
-               vars = list(1,1,0.5),
+common <- list(sim_new_data = "bici",
+               bici_cmd = "sim",
+               use_grm = "HG_inv",
                use_traits = "sit",
+               traits_source = "none",
                use_weight = "log",
                weight_is_nested = TRUE,
                # expand_priors = 4,
                group_effect = 0.1,
-               prior__latent_period__type = "Flat",
-               prior__latent_period__val1 = 0,
-               prior__latent_period__val2 = 10,
-               prior__detection_period__val2 = 30,
-               prior__trial_l__val1 = -8,
-               prior__trial_l__val2 = 0,
-               prior__trial_d__val1 = 0,
-               prior__trial_d__val2 = 8,
-               prior__donor_l__val1 = -2,
-               prior__donor_l__val2 = 7,
-               prior__txd_l__val1 = 0,
-               prior__txd_l__val2 = 8,
-               prior__txd_d__val1 = -4,
-               prior__txd_d__val2 = 4,
+               trial_fe = "ildt",
+               donor_fe = "ildt",
+               txd_fe = "ildt",
+               weight_fe = "sit",
                censor = 0.8,
                nsample = 1e5,
+               nreps = 20,
+               nchains = 1,
                # sample_states = 100,
                ie_output = "true") |>
     safe_merge(common2)

@@ -53,7 +53,7 @@ params$nsample <- 1e2L # 2e6L
 params$sample_states <- 100L # 1e3L
 
 # We also set the time_step to 1, and censor the data (very useful as the last
-# 20% of the simulation is typically very uneventful).
+# 20% of the simulation is typically very long and drawn out).
 params$time_step <- 1
 params$censor <- 0.8
 ```
@@ -65,7 +65,7 @@ summarise_params(params)
 
 ## Generate pedigree and popn
 
-Next we take the params file, set the groups and traits, and apply any fixed effects. Note that you these are piped into each other, but you can save the intermediate result at any point to examine what's happening (e.g. for bug fixing).
+Next we take the `params` file, set the groups and traits, and apply any fixed effects. Note that you these are piped into each other, but you can save the intermediate result at any point to examine what's happening (e.g. for bug fixing).
 
 ```{r build-popn}
 popn <- make_pedigree(params) |>
@@ -152,6 +152,7 @@ In order for BICI to work, it needs the data and the model to fit to the data. W
 walk(params[str_ends(names(params), "_dir")], ~ {
     if (!dir.exists(.x)) dir.create(.x, recursive = TRUE)
 })
+
 # Remove any old files
 cleanup_bici_files(params)
 bici_txt <- generate_bici_script(popn, params)
@@ -160,7 +161,7 @@ bici_txt <- generate_bici_script(popn, params)
 
 ## Run BICI
 
-Here we build `cmd`, the command that runs BICI, and run it with `system(cmd)`. There is some additional platform information in case the BICI directory contains an executable compiled for each platform ("bici-Linux", "bici-Darwin", or "bici-Windows"). If running the PAS algorithm, then BICI needs to be compiled with MPI support, and `--output :raw` is necessary for it to output a progress meter (otherwise it saves all output until it's finished running).
+Here we build `cmd`, the command that runs BICI, and run it with `system(cmd)`. There is some additional platform information in case the BICI directory contains an executable compiled for each platform (`"bici-Linux"`, `"bici-Darwin"`, or `"bici-Windows"`). If running the PAS algorithm, then BICI needs to be compiled with MPI support, and `--output :raw` is necessary for it to output a progress meter (otherwise it saves all output until it's finished running).
 
 ```{r run-bici, eval = FALSE}
 cmd <- with(params, str_glue(

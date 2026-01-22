@@ -6,14 +6,45 @@
 
 # Load and sample EBV files ----
 
-dataset <- "fb-test"; scen <- 9
+dataset <- "fb-test"; scen <- 2
 
 f <- str_glue("datasets/{dataset}/data/scen-{scen}-1-out/etc_inf.rds")
-ebvs <- readRDS(f)$popn[, .(state, id, sus_g, inf_g, tol_g, sus_e, inf_e, tol_e)]
+ebvs <- readRDS(f)$popn[, .(state, id, sdp, sus_g, inf_g, tol_g, sus_e, inf_e, tol_e)]
 ebvs[, `:=`(sus_pt = sus_g + sus_e,
             inf_pt = inf_g + inf_e,
             tol_pt = tol_g + tol_e)]
 
+trials <- readRDS(f)$popn[sdp == "progeny", unique(trial)]
+if (length(trials) == 1) {
+    fb12 <- readRDS("fb_data/fb_12_rpw.rds")
+    
+    sires <- intersect(fb12[sdp == "sire", id], fb12[sdp == "progeny" & trial %in% trials, sire])
+    all_sires <- fb12[sdp == "sire", id]
+    dams <- intersect(fb12[sdp == "dam", id], fb12[sdp == "progeny" & trial %in% trials, dam])
+    all_dams <- fb12[sdp == "dam", id]
+    progeny <- fb12[sdp == "progeny" & trial %in% trials, id]
+    all_progeny <- fb12[sdp == "progeny", id]
+    
+    nstates <- last(ebvs$state)
+    
+    ebvs[sdp == "sire",     id := rep(sires,   nstates)]
+    ebvs[sdp == "dam",      id := rep(dams,    nstates)]
+    ebvs[sdp == "progeny",  id := rep(progeny, nstates)]
+    
+    # Missing rows
+    mr <- rbind(
+        data.table(sdp = "sire", id = setdiff(all_sires, sires)),
+        data.table(sdp = "dam",  id = setdiff(all_dams, dams)),
+        data.table(sdp = "progeny", id = setdiff(all_progeny, progeny))
+    )
+    mr2 <- mr[rep(seq(.N), nstates)]
+    mr2[, state := rep(seq_len(nstates), each = nrow(mr))]
+    ebvs2 <- rbind(ebvs, mr2, fill = TRUE)
+    
+    setorder(ebvs2, state, id)
+    ebvs <- ebvs2
+    rm(ebvs2, mr, mr2)
+}
 
 
 # Maps ----
@@ -70,7 +101,7 @@ dt2 <- dt[new_map]
 }
 
 {
-    cols <- c("id", str_c("sample", seq_len(ncol(ebvs_sus) - 1L)))
+    cols <- c("id", str_c("sample", seq_len(ncol(gts_sus) - 1L)))
     setnames(gts_sus, cols)
     setnames(gts_inf, cols)
     setnames(gts_tol, cols)
@@ -108,12 +139,15 @@ dt2 <- dt[new_map]
     setcolorder(pts_tol, c("id", "mean", "sd"))
 }
 
-fwrite(gts_sus, file = "../gwas/fb_gts_sus.csv")
-fwrite(gts_inf, file = "../gwas/fb_gts_inf.csv")
-fwrite(gts_tol, file = "../gwas/fb_gts_tol.csv")
-fwrite(evs_sus, file = "../gwas/fb_evs_sus.csv")
-fwrite(evs_inf, file = "../gwas/fb_evs_inf.csv")
-fwrite(evs_tol, file = "../gwas/fb_evs_tol.csv")
-fwrite(pts_sus, file = "../gwas/fb_pts_sus.csv")
-fwrite(pts_inf, file = "../gwas/fb_pts_inf.csv")
-fwrite(pts_tol, file = "../gwas/fb_pts_tol.csv")
+# Write to files
+{
+    fwrite(gts_sus, file = "../gwas/fb_gts_sus.csv")
+    fwrite(gts_inf, file = "../gwas/fb_gts_inf.csv")
+    fwrite(gts_tol, file = "../gwas/fb_gts_tol.csv")
+    fwrite(evs_sus, file = "../gwas/fb_evs_sus.csv")
+    fwrite(evs_inf, file = "../gwas/fb_evs_inf.csv")
+    fwrite(evs_tol, file = "../gwas/fb_evs_tol.csv")
+    fwrite(pts_sus, file = "../gwas/fb_pts_sus.csv")
+    fwrite(pts_inf, file = "../gwas/fb_pts_inf.csv")
+    fwrite(pts_tol, file = "../gwas/fb_pts_tol.csv")
+}

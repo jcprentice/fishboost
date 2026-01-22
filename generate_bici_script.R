@@ -22,7 +22,10 @@ generate_bici_script <- function(popn, params) {
         }
         
         out_dir <- str_glue("{data_dir}/{name}-out")
-        if (!dir.exists(out_dir)) dir.create(out_dir)
+        if (!dir.exists(out_dir)) {
+            message(" - mkdir ", out_dir)
+            dir.create(out_dir)
+        }
         
         # Begin BICI script ----
         x <- list()

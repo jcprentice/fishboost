@@ -6,9 +6,9 @@
     source("plotting/plot_posteriors.R")
 }
 
-get_posterior <- function(dataset = "fb-final", scen_rep = "1-1") {
-    # dataset <- "fb-test"; scen_rep <- "1-1"
-    # dataset <- "sim-base-inf"; scen_rep <- "1-1"
+get_posterior <- function(dataset = "fb-final", scen = 1, rep = 1) {
+    # dataset <- "fb-test"; scen <- 1; rep <- 1
+    # dataset <- "sim-base-inf"; scen <- 1; rep <- 1
     
     {
         base_dir <- str_glue("datasets/{dataset}")
@@ -18,11 +18,14 @@ get_posterior <- function(dataset = "fb-final", scen_rep = "1-1") {
         cov_dir  <- str_glue("{gfx_dir}/posteriors_covs")
         
         walk(c(gfx_dir, post_dir, cov_dir), \(d) {
-            if (!dir.exists(d)) dir.create(d, recursive = TRUE)
+            if (!dir.exists(d)) {
+                message(" - mkdir ", d)
+                dir.create(d, recursive = TRUE)
+            }
         })
     }
     
-    plts <- plot_posteriors(dataset = dataset, name = scen_rep, ci = "hpdi", draw = "density")
+    plts <- plot_posteriors(dataset = dataset, name = str_glue("{scen}-{rep}"), ci = "hpdi", draw = "density")
     
     
     # Create a plot with subplots aligned by trait
@@ -83,7 +86,7 @@ get_posterior <- function(dataset = "fb-final", scen_rep = "1-1") {
                      plot_grid(plotlist = pltlst, ncol = nrow(plt_mat)),
                      ncol = 1, rel_heights = c(0.05, 1))
     
-    plt_str <- str_glue("{post_dir}/{dataset}-s{scen_rep}-posteriors")
+    plt_str <- str_glue("{post_dir}/{dataset}-s{scen}-{rep}-posteriors")
     ggsave(str_c(plt_str, ".png"), plt, width = 10, height = 12)
     ggsave(str_c(plt_str, ".pdf"), plt, width = 10, height = 12)
     message(str_glue(" - plotted '{plt_str}'"))
@@ -112,7 +115,7 @@ get_posterior <- function(dataset = "fb-final", scen_rep = "1-1") {
                          plot_grid(plotlist = pltlst, ncol = 3),
                          ncol = 1, rel_heights = c(0.05, 1))
     
-    plt_str <- str_glue("{cov_dir}/{dataset}-s{scen_rep}-covs") |>
+    plt_str <- str_glue("{cov_dir}/{dataset}-s{scen}-{rep}-covs") |>
         str_replace("scen-", "s")
     ggsave(str_c(plt_str, ".png"), cov_plt, width = 9, height = 8)
     ggsave(str_c(plt_str, ".pdf"), cov_plt, width = 8, height = 8)
@@ -123,7 +126,12 @@ get_posterior <- function(dataset = "fb-final", scen_rep = "1-1") {
 
 if (FALSE) {
     # get_posteriors(dataset = "testing", scens = 1:2)
-    get_posteriors(dataset = "fb-test", scens = 1:4, reps = 1)
-    get_posteriors(dataset = "fb-qtest", scens = 1:13, reps = 1)
+    dataset <- "fb-test"; scens <- 1:4
+    walk(scens, \(i) get_posterior(dataset, i, 1))
+    
+    dataset <- "fb-qtest"; scens <- 1:13
+    walk(scens, \(i) get_posterior(dataset, i, 1))
+    
     # get_posteriors(dataset = "sim-base-inf", scens = 5, reps = 1:5, combine = FALSE)
+    # walk(scens, \(i) get_posterior(dataset, i, 1))
 }

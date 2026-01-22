@@ -24,6 +24,7 @@ x_A1 <- ifelse(x_A1 == 0, "a", "A")
 x_A2 <- ifelse(x_A2 == 0, "a", "A")
 
 if (FALSE) {
+    message(" - mkdir toy")
     dir.create("toy")
     write.table(cbind(data.frame(FID = rownames(x), IID = rownames(x), 0, 0, 0, 0),
                       cbind(x_A1, x_A2)[, order(c(1:m, 1:m + 0.5))]),

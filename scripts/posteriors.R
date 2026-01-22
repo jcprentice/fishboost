@@ -18,7 +18,10 @@ get_posteriors <- function(dataset = "fb-final", scens = 1:2, reps = 1,
     cov_dir  <- str_glue("{gfx_dir}/posteriors_covs")
     
     walk(c(gfx_dir, post_dir, cov_dir), \(d) {
-        if (!dir.exists(d)) dir.create(d, recursive = TRUE)
+        if (!dir.exists(d)) {
+            message(" - mkdir ", d)
+            dir.create(d, recursive = TRUE)
+        }
     })
     
     

@@ -76,7 +76,10 @@ draw_event_times <- function(dataset = "fb-test", scen = 1, rep = 1) {
         theme(plot.title = element_text(size = 8))
     
     gfx_dir <- str_glue("datasets/{dataset}/gfx/events")
-    if (!dir.exists(gfx_dir)) dir.create(gfx_dir)
+    if (!dir.exists(gfx_dir)) {
+        message(" - mkdir ", gfx_dir)
+        dir.create(gfx_dir)
+    }
     
     fp <- str_glue("{gfx_dir}/{dataset}-{scen}-{rep}-events.png")
     ggsave(fp, plt, width = 6, height = 3)

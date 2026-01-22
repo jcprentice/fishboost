@@ -128,7 +128,10 @@ model_fit_auc <- function(dataset = "fb-final", drop_outliers = FALSE) {
     fit_plt
     
     mf_dir <- str_glue("datasets/{dataset}/gfx/model_fit")
-    if (!dir.exists(mf_dir)) dir.create(mf_dir)
+    if (!dir.exists(mf_dir)) {
+        message(" - mkdir ", mf_dir)
+        dir.create(mf_dir)
+    }
     
     ggsave(str_glue("{mf_dir}/{dataset}-model_fit-auc{outliers}.png"),
            fit_plt, width = 8, height = 5)

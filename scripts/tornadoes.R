@@ -7,7 +7,10 @@
 tornadoes <- function(dataset = "fb-test", scens = 1:8, combine = TRUE) {
     
     gfx_dir <- str_glue("datasets/{dataset}/gfx/tornadoes")
-    if (!dir.exists(gfx_dir)) dir.create(gfx_dir, recursive = TRUE)
+    if (!dir.exists(gfx_dir)) {
+        message(" - mkdir ", gfx_dir)
+        dir.create(gfx_dir, recursive = TRUE)
+    }
     
     plts <- map(scens, \(scen)
                 plot_tornadoes(dataset = dataset,
@@ -88,4 +91,5 @@ tornadoes <- function(dataset = "fb-test", scens = 1:8, combine = TRUE) {
 if (FALSE) {
     # tornandoes(dataset = "sim-test2", scens = 1:5, combine = TRUE)
     tornadoes(dataset = "sim-base-inf", scens = 1:10, combine = TRUE)
+    tornadoes(dataset = "sim-test-inf", scens = 1:4, combine = TRUE)
 }

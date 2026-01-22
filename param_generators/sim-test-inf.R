@@ -10,64 +10,54 @@
 
 # Are we testing convergence or coverage?
 # (Coverage only makes sense with simulated data.)
-n <- 1
+n <- 2
 goal <- c("convergence", "coverage")[[n]]
 message("Goal = ", goal)
 
-dataset <- "fb-test"
+dataset <- "sim-test-inf"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(d = "FB_12_rpw, GEV SIT,   GRM HG_inv"), # 1
-    data.table(d = "FB_1_rpw,  GEV SIT,   GRM HG_inv"), # 2
-    data.table(d = "FB_2_rpw,  GEV SIT,   GRM HG_inv"), # 3
-    data.table(d = "FB_12_rpw, GEV SITTT, GRM HG_inv"), # 4
-    data.table(d = "FB_1_rpw,  GEV SITTT, GRM HG_inv"), # 5
-    data.table(d = "FB_2_rpw,  GEV SITTT, GRM HG_inv"), # 6
+    data.table(d = "FB_1_rpw,  GEV SIT,   FEs SIT, Fit to d1, GRM HG_inv"), # 1
+    data.table(d = "FB_12_rpw, GEV SITTT, FEs SIT, Fit to d2, GRM HG_inv"), # 2
+    data.table(d = "FB_1_rpw,  GEV SITTT, FEs SIT, Fit to d3, GRM HG_inv"), # 3
+    data.table(d = "FB_2_rpw,  GEV SITTT, FEs SIT, Fit to d4, GRM HG_inv"), # 4
     
     fill = TRUE
 )
 
 protocol[, `:=`(description = str_squish(d), d = NULL)]
 
-protocol[, setup := description |> str_split_1(", ") |>
-             str_subset("FB") |> str_to_lower(), .I]
+protocol[, setup := str_split_i(description, ", ", 1) |> str_to_lower()]
 
-protocol[str_detect(description, "GEV SIT"),
-         use_traits := "sit"]
-protocol[str_detect(description, "GEV SITTT"),
-         `:=`(use_traits = "sildt", link_traits = "sittt")]
-
-# protocol[, inf_model := description |> str_split_1(", ") |>
-#              str_subset("inf_model") |>  str_split_i(" ", 2) |> as.integer(), .I]
-
+# Handle patch_name: "Scen x" -> "scen-X-1"
+protocol[, patch_name := description |> str_split_1(", ") |>
+             str_subset("Fit to") |> str_replace_all("Fit to d(.*)", "scen-\\1-1"), .I]
 
 # Common options ----
 source("param_generators/common2.R")
 
-common <- list(use_grm = "HG_inv",
-               popn_format = "intervals",
-               inf_model = 1L,
-               group_effect = 0.05,
-               weight_is_nested = TRUE,
+common <- list(sim_new_data = "etc_sim",
+               bici_cmd = "inf",
+               use_grm = "HG_inv",
+               use_traits = "sit",
+               traits_source = "grm",
                cov_prior = "jeffreys",
+               single_prior = "inverse",
                use_weight = "log",
+               weight_is_nested = TRUE,
                # expand_priors = 4,
+               patch_dataset = "sim-test",
+               patch_type = "sampled",
+               group_effect = 0.1,
                trial_fe = "ildt",
                donor_fe = "ildt",
                txd_fe = "ildt",
                weight_fe = "sit",
-               prior__beta_Tr1__val2 = 4,
-               prior__beta_Tr2__val2 = 3,
-               prior__weight2_i__val1 = -2,
-               prior__weight2_i__val2 = +6,
-               prior__weight2_l__val1 = -2,
-               prior__weight2_l__val2 = +6,
-               `prior__latent_period_Tr2,Don__val1` = 1,
-               `prior__latent_period_Tr2,Don__val2` = 20,
-               fix_donors = "no_Tsym_survivors",
-               nsample = if (str_detect(dataset, "q")) 5e5 else 1e7,
-               sample_states = if (str_detect(dataset, "q")) 1e2 else 1e3,
+               censor = 0.8,
+               nsample = 1e5,
+               nchains = 8,
+               sample_states = 100,
                ie_output = "true") |>
     safe_merge(common2)
 
@@ -85,7 +75,10 @@ protocol[, replicate := 1:.N, scenario]
 protocol[, dataset := dataset]
 protocol[, name := str_c("scen-", scenario, "-", replicate)]
 
-protocol[, seed := replicate]
+if (goal == "coverage") protocol[, seed := replicate]
+
+# Set up patches
+protocol[, patch_state := replicate]
 
 # Prefer to have these columns in this order at the start
 setcolorder(protocol, intersect(cols, names(protocol)))

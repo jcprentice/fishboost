@@ -54,7 +54,7 @@ summarise_params(params)
 
 ## Generate pedigree and popn
 
-Next we take the params file, set the groups and traits, and apply any fixed effects. Note that you these are piped into each other, but you can save the intermediate result at any point to examine what's happening (e.g. for bug fixing).
+Next we take the `params` file, set the groups and traits, and apply any fixed effects. Note that you these are piped into each other, but you can save the intermediate result at any point to examine what's happening (e.g. for bug fixing).
 
 ```{r build-popn}
 popn <- make_pedigree(params) |>

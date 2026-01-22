@@ -147,7 +147,10 @@ plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
                                align = "v"),
                      ncol = 1, rel_heights = c(0.08, 1))
     
-    if (!dir.exists(gfx_dir)) dir.create(gfx_dir)
+    if (!dir.exists(gfx_dir)) {
+        message(" - mkdir ", gfx_dir)
+        dir.create(gfx_dir)
+    }
     # PDFs are huge here
     ggsave(str_glue("{gfx_dir}/{dataset}-s{scen}-{rep}-chains.png"),
            plt, height = 9, width = 12)
@@ -155,7 +158,7 @@ plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
 }
 
 if (FALSE) {
-    dataset <- "fb-test"
+    dataset <- "fb-test-1e7"
     scens <- str_glue("datasets/{dataset}/results") |>
         list.files() |> str_split_i("-", 2) |> as.integer() |> sort() |> unique()
     

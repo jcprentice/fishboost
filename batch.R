@@ -19,8 +19,8 @@ if (run_from_script) {
     pname <- cmd_args[[1]]
     row_no <- as.integer(cmd_args[[2]])
 } else {
-    pname <- "fb-qtest"
-    row_no <- 7L
+    pname <- "sim-test-inf"
+    row_no <- 1L
 }
 
 {
@@ -274,7 +274,10 @@ message(str_glue("censor = {x}\nTmax = {y}",
 {
     # Create directories
     walk(params[str_ends(names(params), "_dir")],
-         ~ if (!dir.exists(.x)) dir.create(.x, recursive = TRUE))
+         ~ if (!dir.exists(.x)) {
+             message(" - mkdir, ", x)
+             dir.create(.x, recursive = TRUE))
+         }
     
     # Clean up old config files and generate fresh one
     cleanup_bici_files(params)
@@ -288,7 +291,7 @@ message(str_glue("censor = {x}\nTmax = {y}",
     cmd <- with(params, str_glue(
         if (algorithm == "pas")
             "mpirun -n {nchains} --output :raw --oversubscribe " else "",
-        "../BICI_0_8/bici-{platform} {config}.bici {bici_cmd}",
+        "../BICI/bici-{platform} {config}.bici {bici_cmd}",
         platform = Sys.info()[["sysname"]]
     ))
     message(str_glue("Running:\n$ {cmd}"))

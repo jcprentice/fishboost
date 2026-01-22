@@ -146,7 +146,10 @@ plts <- map(seq_len(nrow(scen_reps)), \(i) {
 sildt <- c("s", "i", "l", "d", "t")
 
 cor_dir <- str_glue("datasets/{dataset}/gfx/correlations")
-if (!dir.exists(cor_dir)) dir.create(cor_dir)
+if (!dir.exists(cor_dir)) {
+    message(" - mkdir ", cor_dir)
+    dir.create(cor_dir)
+}
 
 walk(seq_len(nrow(scen_reps)), \(i) {
     scen <- scen_reps[i, scen]

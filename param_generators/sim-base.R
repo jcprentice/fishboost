@@ -18,17 +18,17 @@ dataset <- "sim-base"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(d = "FB_12_rpw, GEV SIT,   FE SIT,   beta med, GRM HG_inv"), # 1
-    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT,   beta med, GRM HG_inv"), # 2
-    data.table(d = "FB_12_rpw, GEV SIT,   FE SIT,   beta q25, GRM HG_inv"), # 1
-    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT,   beta q25, GRM HG_inv"), # 2
-    data.table(d = "FB_12_rpw, GEV ST,    FE SIT,   beta med, GRM HG_inv"), # 5
-    data.table(d = "FB_12_rpw, GEV SILDT, FE SILDT, beta med, GRM HG_inv"), # 6
-    
+    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, GRM HG_inv"), # 1
+    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT, GRM HG_inv"), # 2
+    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, GRM HG_inv"), # 2
+    data.table(d = "FB_2_rpw,  GEV SILDT, FE SIT, GRM HG_inv"), # 6
+
     fill = TRUE
 )
 
 protocol[, `:=`(description = str_squish(d), d = NULL)]
+
+protocol[, setup := description |> str_split_i(", ", 1), .I]
 
 # Handle Genetic & Environmental Variance (GEV)
 protocol[, GEV := description |> str_split_1(", ") |> str_subset("GEV") |>
@@ -43,33 +43,20 @@ protocol[, use_grm := description |> str_split_1(", ") |> str_subset("GRM") |>
 # protocol[, traits_source := fifelse(use_grm == "pedigree", "pedigree", "grm")]
 protocol[, traits_source := "posterior"]
 
+# Handle patch
+protocol[, patch_name := description |> str_split_1(", ") |>
+             str_subset("Fit to") |> str_replace_all("Fit to d(.*)", "scen-\\1-1"), .I]
 
-# Set beta to either q25 or median
-protocol[str_detect(description, "beta q25"),
-         `:=`(prior__beta_Tr1__true_val = 1.493645,
-              prior__beta_Tr2__true_val = 1.719060)]
-protocol[str_detect(description, "beta med"),
-         `:=`(prior__beta_Tr1__true_val = 0.612829,
-              prior__beta_Tr2__true_val = 0.889292)]
+
 
 protocol[, weight_fe := description |> str_split_1(", ") |> str_subset("FE") |>
              str_split_i(" ", 2) |> str_to_lower(), .I]
-
-protocol[, vars := fcase(
-    use_traits == "st",    list(c(sus = 1.0, inf = 0.0, lat = 0.0, det = 0.0, tol = 0.5)),
-    use_traits == "sit",   list(c(sus = 1.0, inf = 1.5, lat = 0.0, det = 0.0, tol = 0.5)),
-    use_traits == "sildt", list(c(sus = 1.0, inf = 1.5, lat = 0.5, det = 0.5, tol = 0.5)),
-    default = list(0))]
-
-protocol[, skip_patches := fifelse(use_traits == "st", "beta,cov_G_ii,cov_E_ii", "beta")]
-
 
 # Common options ----
 source("param_generators/common2.R")
 
 common <- list(sim_new_data = "bici",
                model_type = "SEIDR",
-               setup = "fb_12_rpw",
                use_grm = "pedigree",
                traits_source = "none",
                use_weight = "log",
@@ -94,11 +81,10 @@ common <- list(sim_new_data = "bici",
                nsample = 1e4,
                sample_states = 100,
                nreps = 20,
+               nchains = 1,
                time_step_bici = 0.2,
                ie_output = "true") |>
     safe_merge(common2)
-
-common$nchains <- 1
 
 # Labels
 protocol[, label := str_c("s", 1:.N)]

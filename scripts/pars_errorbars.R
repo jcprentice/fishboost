@@ -21,7 +21,10 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
         res_dir  <- str_glue("{base_dir}/results")
         gfx_dir  <- str_glue("{base_dir}/gfx")
         
-        if (!dir.exists(gfx_dir)) dir.create(gfx_dir)
+        if (!dir.exists(gfx_dir)) {
+            message(" - mkdir ", gfx_dir)
+            dir.create(gfx_dir)
+        }
     }
     
     
@@ -212,4 +215,5 @@ if (FALSE) {
     pars_errorbars("sim-base-inf", 1:2, "Validating BICI - Base models", "base")
     pars_errorbars("sim-base-inf", 1:12, "Validating BICI - Misspecifying model", "misspecify")
     pars_errorbars("sim-base-inf", c(1:2, 13:20), "Validating BICI - convergence", "conv")
+    pars_errorbars("sim-test-inf", 1:4, "Validating BICI")
 }

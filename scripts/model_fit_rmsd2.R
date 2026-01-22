@@ -139,7 +139,10 @@ model_fit_rmsd2 <- function(dataset = "fb-final", scens = 1:8,
     fit_plt
     
     mf_dir <- str_glue("datasets/{dataset}/gfx/model_fit")
-    if (!dir.exists(mf_dir)) dir.create(mf_dir)
+    if (!dir.exists(mf_dir)) {
+        message(" - mkdir ", mf_dir)
+        dir.create(mf_dir)
+    }
     mf_base <- str_glue("{mf_dir}/{dataset}-model_fit-rmv_dev2")
     
     plt_str <- str_glue("{mf_base}{outliers}{alt}.png")

@@ -136,7 +136,10 @@ model_fit_rmsd <- function(dataset = "fb-test", scens = 0, alt = "", drop_outlie
     fit_plt
     
     mf_dir <- str_glue("datasets/{dataset}/gfx/model_fit")
-    if (!dir.exists(mf_dir)) dir.create(mf_dir)
+    if (!dir.exists(mf_dir)) {
+        message(" - mkdir ", mf_dir)
+        dir.create(mf_dir)
+    }
     mf_base <- str_glue("{mf_dir}/{dataset}-model_fit-rmv_dev")
     
     plt_str <- str_glue("{mf_base}{outliers}{alt}.png")
