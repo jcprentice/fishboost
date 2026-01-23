@@ -137,13 +137,12 @@ plt <- plot_model(popn, params)
 ## Generate config files ----
 
 {
-    # Create directories
-    walk(params[str_ends(names(params), "_dir")], ~ {
-        if (!dir.exists(.x)) {
-            message(" - mkdir ", .x)
-            dir.create(.x, recursive = TRUE)
-        }
-    })
+    # Create missing directories
+    params[str_ends(names(params), "_dir")] |>
+        as.character() |>
+        discard(dir.exists) |>
+        walk(~ message(" - mkdir ", .x)) |>
+        walk(~ dir.create(.x, recursive = TRUE))
 
     # Clean up old config files and generate fresh one
     cleanup_bici_files(params)

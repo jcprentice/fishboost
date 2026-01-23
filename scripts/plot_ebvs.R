@@ -22,12 +22,12 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         ebvs_dir <- str_glue("{gfx_dir}/ebvs")
     }
     
-    walk(c(meta_dir, gfx_dir, ebvs_dir),
-         \(d) if (!dir.exists(d)) {
+    walk(c(meta_dir, gfx_dir, ebvs_dir), \(d) {
+        if (!dir.exists(d)) {
              message(" - mkdir ", d)
              dir.create(d)
          }
-    )
+    })
     
     etc <- str_glue("{data_dir}/scen-{scen}-{rep}-out/etc_inf.rds")
     if (file.exists(etc)) {

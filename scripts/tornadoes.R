@@ -82,7 +82,7 @@ tornadoes <- function(dataset = "fb-test", scens = 1:8, combine = TRUE) {
         
         plt_str <- str_glue("{gfx_dir}/{dataset}-{scen}-tornadoes")
         ggsave(str_c(plt_str, ".png"), plt, width = 12, height = 12)
-        # ggsave(str_c(plt_str, ".pdf"), plt, width = 12, height = 12)
+        ggsave(str_c(plt_str, ".pdf"), plt, width = 12, height = 12)
         message(str_glue("plotted '{plt_str}'"))
     })
 }

@@ -30,10 +30,8 @@ protocol[, `:=`(description = str_squish(d), d = NULL)]
 
 protocol[, setup := str_split_i(description, ", ", 1) |> str_to_lower()]
 
-protocol[, patch_dataset := "fb-test"]
-protocol[, patch_scen := description |> str_split_1(", ") |>
-             str_subset("Fit to") |> str_replace("Fit to d", "") |>
-             as.integer(), .I]
+protocol[, patch_name := description |> str_split_1(", ") |>
+             str_subset("Fit to") |> str_replace_all("Fit to d(.*)", "scen-\\1-1"), .I]
 
 # Common options ----
 source("param_generators/common2.R")
@@ -43,6 +41,8 @@ common <- list(sim_new_data = "bici",
                use_grm = "HG_inv",
                use_traits = "sit",
                traits_source = "none",
+               patch_dataset = "fb-test",
+               patch_type = "median",
                use_weight = "log",
                weight_is_nested = TRUE,
                # expand_priors = 4,

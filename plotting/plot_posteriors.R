@@ -32,19 +32,15 @@
 #' `plot_posteriors("fb-final", 1)`
 #' `plot_posteriors("fb-final", 1, "hpdi", "histogram")`
 
-plot_posteriors <- function(
-        dataset = "fb-final",
-        name = "1-1",
-        ci = "hpdi", # ci95
-        draw = "density" # histogram
+plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
+                            ci = "hpdi", # ci95
+                            draw = "density" # histogram
 ) {
     
     # dataset <- "fb-test"; name <- "1-1"; ci <- "hpdi"; draw <- "density"; combine <- TRUE
     # dataset <- "sim-test2"; name <- "1-1"; ci <- "hpdi"; draw <- "density"; combine <- TRUE
     
-    scen_rep <- str_split_1(name, "-") |> as.integer()
-    scen <- scen_rep[[1]]
-    rep <- scen_rep[[2]]
+    name <- str_glue("{scen}-{rep}")
     
     if (rep == 0) name <- scen
     

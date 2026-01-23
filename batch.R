@@ -19,7 +19,7 @@ if (run_from_script) {
     pname <- cmd_args[[1]]
     row_no <- as.integer(cmd_args[[2]])
 } else {
-    pname <- "sim-test-inf"
+    pname <- "sim-test"
     row_no <- 1L
 }
 
@@ -272,13 +272,13 @@ message(str_glue("censor = {x}\nTmax = {y}",
 
 ## Generate config files ----
 {
-    # Create directories
-    walk(params[str_ends(names(params), "_dir")],
-         ~ if (!dir.exists(.x)) {
-             message(" - mkdir, ", x)
-             dir.create(.x, recursive = TRUE))
-         }
-    
+    # Create missing directories
+    params[str_ends(names(params), "_dir")] |>
+        as.character() |>
+        discard(dir.exists) |>
+        walk(~ message(" - mkdir ", .x)) |>
+        walk(~ dir.create(.x, recursive = TRUE))
+
     # Clean up old config files and generate fresh one
     cleanup_bici_files(params)
     bici_txt <- generate_bici_script(popn, params)

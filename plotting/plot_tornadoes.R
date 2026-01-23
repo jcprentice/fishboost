@@ -16,7 +16,7 @@
 
 plot_tornadoes <- function(dataset = "sim-test",
                            scen = 1,
-                           sort_by = "mean",
+                           sort_by = "median",
                            use_hpdi = TRUE,
                            combine = TRUE) {
     
@@ -61,7 +61,7 @@ plot_tornadoes <- function(dataset = "sim-test",
     # Get list of parameters ----
     parameters <- readRDS(res_files[[1]])$parameter_estimates$parameter |>
         # discard group effect and shape
-        str_subset("Group", negate = TRUE) |>
+        str_subset("^Group|^G_", negate = TRUE) |>
         rename_bici_pars()
     
     

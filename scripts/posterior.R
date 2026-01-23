@@ -17,15 +17,14 @@ get_posterior <- function(dataset = "fb-final", scen = 1, rep = 1) {
         post_dir <- str_glue("{gfx_dir}/posteriors")
         cov_dir  <- str_glue("{gfx_dir}/posteriors_covs")
         
-        walk(c(gfx_dir, post_dir, cov_dir), \(d) {
-            if (!dir.exists(d)) {
-                message(" - mkdir ", d)
-                dir.create(d, recursive = TRUE)
-            }
-        })
+        c(gfx_dir, post_dir, cov_dir) |>
+            discard(dir.exists) |>
+            walk(~ message(" - mkdir ", .x)) |>
+            walk(dir.create, recursive = TRUE)
+        
     }
     
-    plts <- plot_posteriors(dataset = dataset, name = str_glue("{scen}-{rep}"), ci = "hpdi", draw = "density")
+    plts <- plot_posteriors(dataset, scen, rep, ci = "hpdi", draw = "density")
     
     
     # Create a plot with subplots aligned by trait
@@ -88,12 +87,11 @@ get_posterior <- function(dataset = "fb-final", scen = 1, rep = 1) {
     
     plt_str <- str_glue("{post_dir}/{dataset}-s{scen}-{rep}-posteriors")
     ggsave(str_c(plt_str, ".png"), plt, width = 10, height = 12)
-    ggsave(str_c(plt_str, ".pdf"), plt, width = 10, height = 12)
+    # ggsave(str_c(plt_str, ".pdf"), plt, width = 10, height = 12)
     message(str_glue(" - plotted '{plt_str}'"))
     
     
     # Covariance only
-    # Do we want to include the latent_period here?
     plt_names <- cov_pars
     plt_names[plt_names %notin% parnames] <- "empty"
     
@@ -111,14 +109,16 @@ get_posterior <- function(dataset = "fb-final", scen = 1, rep = 1) {
         return()
     }
     
+    pltlst <- with(plts$plts, mget(plt_names))
+    
     cov_plt <- plot_grid(plts$title_plt + theme_classic(),
-                         plot_grid(plotlist = pltlst, ncol = 3),
+                         plot_grid(plotlist = pltlst, ncol = nrow(plt_mat)),
                          ncol = 1, rel_heights = c(0.05, 1))
     
     plt_str <- str_glue("{cov_dir}/{dataset}-s{scen}-{rep}-covs") |>
         str_replace("scen-", "s")
-    ggsave(str_c(plt_str, ".png"), cov_plt, width = 9, height = 8)
-    ggsave(str_c(plt_str, ".pdf"), cov_plt, width = 8, height = 8)
+    # ggsave(str_c(plt_str, ".png"), cov_plt, width = 9, height = 8)
+    ggsave(str_c(plt_str, ".pdf"), cov_plt, width = 9, height = 8)
     message(str_glue(" - Plotted '{plt_str}'"))
     
     plt
@@ -126,7 +126,7 @@ get_posterior <- function(dataset = "fb-final", scen = 1, rep = 1) {
 
 if (FALSE) {
     # get_posteriors(dataset = "testing", scens = 1:2)
-    dataset <- "fb-test"; scens <- 1:4
+    dataset <- "fb-test-1e7"; scens <- 1:6
     walk(scens, \(i) get_posterior(dataset, i, 1))
     
     dataset <- "fb-qtest"; scens <- 1:13
