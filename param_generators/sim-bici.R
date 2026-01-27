@@ -18,16 +18,15 @@ dataset <- "sim-bici"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(description = "FB_12_rpw, Traits SIT, FEs ILDT, GRM pedigree, scen-5-1, timestep 0.05"), # 1
-    data.table(description = "FB_12_rpw, Traits SIT, FEs ILDT, GRM pedigree, scen-5-1, timestep 0.1"), # 2
-    data.table(description = "FB_12_rpw, Traits SIT, FEs ILDT, GRM pedigree, scen-5-1, timestep 0.2"), # 3
-    data.table(description = "FB_12_rpw, Traits SIT, FEs ILDT, GRM pedigree, scen-5-1, timestep 0.5"), # 4
+    data.table(d = "FB_12_rpw, Traits SIT, FEs ILDT, GRM pedigree, scen-5-1, timestep 0.05"), # 1
+    data.table(d = "FB_12_rpw, Traits SIT, FEs ILDT, GRM pedigree, scen-5-1, timestep 0.1"), # 2
+    data.table(d = "FB_12_rpw, Traits SIT, FEs ILDT, GRM pedigree, scen-5-1, timestep 0.2"), # 3
+    data.table(d = "FB_12_rpw, Traits SIT, FEs ILDT, GRM pedigree, scen-5-1, timestep 0.5"), # 4
     
     fill = TRUE
 )
 
-protocol[, time_step_bici := description |> str_split_1(", ") |> str_subset("timestep") |>
-             str_split_i(" ", 2) |> as.numeric(), .I]
+protocol[, time_step_bici := get_part(d, "timestep") |> as.numeric(), .I]
 
 # Common options ----
 source("param_generators/common2.R")
@@ -59,7 +58,8 @@ common <- list(sim_new_data = "etc_sim",
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 1 else 20

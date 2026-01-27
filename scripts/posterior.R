@@ -127,7 +127,7 @@ get_posterior <- function(dataset = "fb-final", scen = 1, rep = 1) {
 if (FALSE) {
     # get_posteriors(dataset = "testing", scens = 1:2)
     dataset <- "fb-test-1e7"; scens <- 1:6
-    walk(scens, \(i) get_posterior(dataset, i, 1))
+    walk(scens, possibly(\(i) get_posterior(dataset, i, 1)))
     
     dataset <- "fb-qtest"; scens <- 1:13
     walk(scens, \(i) get_posterior(dataset, i, 1))

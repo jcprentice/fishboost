@@ -20,14 +20,14 @@ dataset <- "fb-gammas"
 # Variable parameters ----
 protocol <- rbind(
     # Standard
-    data.table(description = "FB, Traits SIT, FEs ILDT, pedigree"), # 1
-    data.table(description = "FB, Traits SI[LDT], FEs ILDT, pedigree"), # 2
+    data.table(d = "FB, Traits SIT,   FEs ILDT,               pedigree"), # 1
+    data.table(d = "FB, Traits SITTT, FEs ILDT,               pedigree"), # 2
     # Replace var_E(tol)
-    data.table(description = "FB, Traits SIT, FEs ILDT, No VarE(T), pedigree"), # 3
-    data.table(description = "FB, Traits SI[LDT], FEs ILDT, No VarE(T), pedigree"), # 4
+    data.table(d = "FB, Traits SIT,   FEs ILDT, No VarE(T),   pedigree"), # 3
+    data.table(d = "FB, Traits SITTT, FEs ILDT, No VarE(T),   pedigree"), # 4
     # Replace var_E(all)
-    data.table(description = "FB, Traits SIT, FEs ILDT, No VarE(SIT), pedigree"), # 5
-    data.table(description = "FB, Traits SI[LDT], FEs ILDT, No VarE(SIT), pedigree"), # 6
+    data.table(d = "FB, Traits SIT,   FEs ILDT, No VarE(SIT), pedigree"), # 5
+    data.table(d = "FB, Traits SITTT, FEs ILDT, No VarE(SIT), pedigree"), # 6
     
     fill = TRUE
 )
@@ -36,15 +36,15 @@ message(nrow(protocol), " scenarios")
 
 
 # Set traits to SIT or SITTT
-protocol[str_detect(description, "Traits SIT"),
+protocol[str_detect(d, "Traits SIT"),
          use_traits := "sit"]
-protocol[str_detect(description, "Traits SI\\[LDT\\]"),
+protocol[str_detect(d, "Traits SITTT"),
          `:=`(use_traits = "all", link_traits = "sittt")]
 
-protocol[str_detect(description, "No VarE\\(T\\)"),
+protocol[str_detect(d, "No VarE\\(T\\)"),
          ge_opts := "no_ev_t"]
 
-protocol[str_detect(description, "No VarE\\(SIT\\)"),
+protocol[str_detect(d, "No VarE\\(SIT\\)"),
          ge_opts := "gt_only"]
 
 # Common options ----
@@ -76,7 +76,8 @@ common <- list(setup = "fb_12",
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 1 else 20

@@ -19,7 +19,7 @@ if (run_from_script) {
     pname <- cmd_args[[1]]
     row_no <- as.integer(cmd_args[[2]])
 } else {
-    pname <- "sim-test"
+    pname <- "sim-test-inf"
     row_no <- 1L
 }
 
@@ -335,32 +335,28 @@ message(str_glue("censor = {x}\nTmax = {y}",
 
         pa_name   <- str_glue("{output_dir}/pred_accs.csv")
         pred_accs <- if (file.exists(pa_name)) fread(pa_name)
+        
+        ranks <- if (!is.null(estimated_BVs)) get_ranks(popn, estimated_BVs, params)
+        
+        message("Parameter estimates:")
+        msg_pars(parameter_estimates)
+        
+        results_pars <- c("params", "popn", "time_taken", "time_start", "time_end",
+                          "parameter_estimates", "estimated_BVs","ranks", "pred_accs")
+    } else {
+        results_pars <- c("params", "popn", "time_taken", "time_start", "time_end")
     }
+    
+    # Generate etc_inf.rds or etc_sim.rds summary file
+    flatten_bici_states(dataset, name, bici_cmd)
     
     time_end <- now()
     
-    if (bici_cmd == "inf") {
-        ranks <- if (!is.null(estimated_BVs)) get_ranks(popn, estimated_BVs, params)
-        
-        message("parameter estimates:")
-        msg_pars(parameter_estimates)
-        
-        results <- c("params", "popn", "parameter_estimates", "estimated_BVs",
-                     "ranks", "pred_accs", "time_taken", "time_start", "time_end") |>
-            keep(exists)
-        
-        saveRDS(mget(results),
-                file = str_glue("{results_dir}/{name}.rds"))
-    } else if (bici_cmd == "sim") {
-        results <- c("params", "popn", "time_taken", "time_start", "time_end")
-        
-        saveRDS(mget(results),
-                file = str_glue("{results_dir}/{name}.rds"))
-    }
-    
-    # generate etc_inf.rds summary file
-    flatten_bici_states(dataset, name, bici_cmd)
+    # Filter for results that we have and save
+    results_pars |>
+        keep(exists) |>
+        mget() |>
+        saveRDS(file = str_glue("{results_dir}/{name}.rds"))
 }
 
 message("Finished!")
-

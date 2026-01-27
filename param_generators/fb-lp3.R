@@ -18,19 +18,19 @@ dataset <- "fb-lp3"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(description = "FB_12, Traits SIT, FEs ILDT, LP 0, Fix Seeders, GRM"), # 1
-    data.table(description = "FB_12, Traits SIT, FEs ILDT, LP 2, Fix Seeders, GRM"), # 2
-    data.table(description = "FB_12, Traits SIT, FEs ILDT, LP 4, Fix Seeders, GRM"), # 3
-    data.table(description = "FB_12, Traits SIT, FEs ILDT, LP 6, Fix Seeders, GRM"), # 4
-    data.table(description = "FB_12, Traits SIT, FEs ILDT, LP 8, Fix Seeders, GRM"), # 5
-    data.table(description = "FB_12, Traits SIT, FEs ILDT, LP 10, Fix Seeders, GRM"), # 6
+    data.table(d = "FB_12, Traits SIT,   FEs ILDT, LP 0,  Fix Seeders, GRM"), # 1
+    data.table(d = "FB_12, Traits SIT,   FEs ILDT, LP 2,  Fix Seeders, GRM"), # 2
+    data.table(d = "FB_12, Traits SIT,   FEs ILDT, LP 4,  Fix Seeders, GRM"), # 3
+    data.table(d = "FB_12, Traits SIT,   FEs ILDT, LP 6,  Fix Seeders, GRM"), # 4
+    data.table(d = "FB_12, Traits SIT,   FEs ILDT, LP 8,  Fix Seeders, GRM"), # 5
+    data.table(d = "FB_12, Traits SIT,   FEs ILDT, LP 10, Fix Seeders, GRM"), # 6
     
-    data.table(description = "FB_12, Traits SI[LDT], FEs ILDT, LP 0, Fix Seeders, GRM"), # 7
-    data.table(description = "FB_12, Traits SI[LDT], FEs ILDT, LP 2, Fix Seeders, GRM"), # 8
-    data.table(description = "FB_12, Traits SI[LDT], FEs ILDT, LP 4, Fix Seeders, GRM"), # 9
-    data.table(description = "FB_12, Traits SI[LDT], FEs ILDT, LP 6, Fix Seeders, GRM"), # 10
-    data.table(description = "FB_12, Traits SI[LDT], FEs ILDT, LP 8, Fix Seeders, GRM"), # 11
-    data.table(description = "FB_12, Traits SI[LDT], FEs ILDT, LP 10, Fix Seeders, GRM"), # 12
+    data.table(d = "FB_12, Traits SITTT, FEs ILDT, LP 0,  Fix Seeders, GRM"), # 7
+    data.table(d = "FB_12, Traits SITTT, FEs ILDT, LP 2,  Fix Seeders, GRM"), # 8
+    data.table(d = "FB_12, Traits SITTT, FEs ILDT, LP 4,  Fix Seeders, GRM"), # 9
+    data.table(d = "FB_12, Traits SITTT, FEs ILDT, LP 6,  Fix Seeders, GRM"), # 10
+    data.table(d = "FB_12, Traits SITTT, FEs ILDT, LP 8,  Fix Seeders, GRM"), # 11
+    data.table(d = "FB_12, Traits SITTT, FEs ILDT, LP 10, Fix Seeders, GRM"), # 12
     
     fill = TRUE
 )
@@ -38,26 +38,26 @@ protocol <- rbind(
 message(nrow(protocol), " scenarios")
 
 # Set traits to SIT or SITTT
-protocol[str_detect(description, "Traits SIT"),
+protocol[str_detect(d, "Traits SIT"),
          use_traits := "sit"]
-protocol[str_detect(description, "Traits SI\\[LDT\\]"),
+protocol[str_detect(d, "Traits SITTT"),
          `:=`(use_traits = "all", link_traits = "sittt")]
 
 # Set LP
 f <- function(x) x |> str_split_1(", ") |> str_subset("LP") |> str_split_i(" ", 2) |> as.numeric()
-protocol[, `:=`(prior__latent_period__val1 = f(description),
-                prior__latent_period__val2 = f(description) + 2),
+protocol[, `:=`(prior__latent_period__val1 = f(d),
+                prior__latent_period__val2 = f(d) + 2),
          by = .I]
 
 
 # Set samples etc. for pedigree vs GRM
 protocol[, nsample := 2.5e4]
-protocol[str_detect(description, "GRM"),
+protocol[str_detect(d, "GRM"),
          `:=`(use_grm = "Hinv", nsample = 0.4 * nsample)]
 protocol[, nsample_per_gen := pmax(3e-3 * nsample, 1)]
 
 # Set FEs to none, ILDT, or I[LDT]
-protocol[str_detect(description, "FEs I\\[LDT\\]"),
+protocol[str_detect(d, "FEs ITTT"),
          `:=`(link_trial = "sittt", link_donor = "sittt", link_txd = "sittt", link_weight = "sittt")]
 
 # Common options ----
@@ -84,7 +84,8 @@ common <- list(sim_new_data = "no",
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 1 else 20

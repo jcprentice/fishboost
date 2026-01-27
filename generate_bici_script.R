@@ -494,7 +494,7 @@ generate_bici_script <- function(popn, params) {
                         fwrite(file = str_glue("{out_dir}/{fstr}"),
                                sep = "\t")
                 })
-            }            
+            }
         }
         
         

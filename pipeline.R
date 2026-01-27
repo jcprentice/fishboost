@@ -186,29 +186,33 @@ plt <- plot_model(popn, params)
         # pe_name <- str_glue("{output_dir}/posterior.csv")
         # parameter_estimates <- fread(pe_name)
         parameter_estimates <- rebuild_bici_posteriors(dataset, name)
-
+        
         ebvs_name     <- str_glue("{output_dir}/ebvs.csv")
         estimated_BVs <- if (file.exists(ebvs_name)) fread(ebvs_name)
-
+        
         pa_name   <- str_glue("{output_dir}/pred_accs.csv")
         pred_accs <- if (file.exists(pa_name)) fread(pa_name)
-
-        msg_pars(parameter_estimates)
-        # print(parameter_estimates[!str_starts(parameter, "Group effect")])
-        if (params$sim_new_data != "no") print(pred_accs)
         
         ranks <- if (!is.null(estimated_BVs)) get_ranks(popn, estimated_BVs, params)
         
-        time_end <- now()
+        message("Parameter estimates:")
+        msg_pars(parameter_estimates)
         
-        results <- c("params", "popn", "parameter_estimates", "estimated_BVs",
-                     "ranks", "pred_accs", "time_taken", "time_start", "time_end") |>
-            keep(exists)
-        
-        saveRDS(mget(results),
-                file = str_glue("{results_dir}/{name}.rds"))
+        results_pars <- c("params", "popn", "time_taken", "time_start", "time_end",
+                          "parameter_estimates", "estimated_BVs","ranks", "pred_accs")
+    } else {
+        results_pars <- c("params", "popn", "time_taken", "time_start", "time_end")
     }
-        
-    # generate etc_inf.rds summary file
+    
+    # Generate etc_inf.rds summary file
     flatten_bici_states(dataset, name, bici_cmd)
+    
+    time_end <- now()
+    
+    # Filter for results that we have and save
+    results_pars |>
+        keep(exists) |>
+        mget() |>
+        saveRDS(file = str_glue("{results_dir}/{name}.rds"))
 }
+

@@ -18,46 +18,70 @@ dataset <- "sim-test-inf"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(d = "FB_1_rpw,  GEV SIT,   FEs SIT, Fit to d1, GRM HG_inv"), # 1
-    data.table(d = "FB_12_rpw, GEV SITTT, FEs SIT, Fit to d2, GRM HG_inv"), # 2
-    data.table(d = "FB_1_rpw,  GEV SITTT, FEs SIT, Fit to d3, GRM HG_inv"), # 3
-    data.table(d = "FB_2_rpw,  GEV SITTT, FEs SIT, Fit to d4, GRM HG_inv"), # 4
+    # Basic models
+    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d1, GRM HG_inv"), # 1
+    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d2, GRM HG_inv"), # 2
+    data.table(d = "FB_2_rpw,  GEV SITTT, FE SIT, Fit d3, GRM HG_inv"), # 3
+    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT, Fit d4, GRM HG_inv"), # 4
+    # Misspecified models
+    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d2, GRM HG_inv, (Fitting SIT to SITTT)"),        # 5
+    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d1, GRM HG_inv, (Fitting SITTT to SIT)"),        # 6
+    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d5, GRM HG_inv, (Overfitting SIT to ST)"),       # 7
+    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d5, GRM HG_inv, (Overfitting SITTT to ST)"),     # 8
+    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d6, GRM HG_inv, (Underfitting SIT to SILDT)"),   # 9
+    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d6, GRM HG_inv, (Underfitting SITTT to SILDT)"), # 10
     
     fill = TRUE
 )
 
-protocol[, `:=`(description = str_squish(d), d = NULL)]
+# Setup
+protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
 
-protocol[, setup := str_split_i(description, ", ", 1) |> str_to_lower()]
+# Genetic & Environmental Variance
+protocol[, GEV := get_part(d, "GEV ") |> str_to_lower(), .I]
+protocol[GEV == "sittt", `:=`(use_traits = "sildt", link_traits = "sittt")]
+protocol[GEV != "sittt", use_traits := GEV]
+protocol[, GEV := NULL]
+
+
+# Handle FEs
+protocol[, weight_fe := {
+    x <- get_part(d, "FE ")
+    if (length(x) == 0 || x %in% c("", "none")) "" else str_to_lower(x)
+}, .I]
+
+
+# Handle GRM
+protocol[, use_grm := get_part(d, "GRM"), .I]
+protocol[, traits_source := fifelse(use_grm == "pedigree", "pedigree", "grm")]
+
 
 # Handle patch_name: "Scen x" -> "scen-X-1"
-protocol[, patch_name := description |> str_split_1(", ") |>
-             str_subset("Fit to") |> str_replace_all("Fit to d(.*)", "scen-\\1-1"), .I]
+protocol[, patch_name := get_part(d, "Fit ") |>
+             str_replace("d(.*)", "scen-\\1-1"), .I]
+
 
 # Common options ----
 source("param_generators/common2.R")
 
 common <- list(sim_new_data = "etc_sim",
-               bici_cmd = "inf",
-               use_grm = "HG_inv",
-               use_traits = "sit",
-               traits_source = "grm",
-               cov_prior = "jeffreys",
-               single_prior = "inverse",
+               traits_source = "posterior",
                use_weight = "log",
                weight_is_nested = TRUE,
+               cov_prior = "jeffreys",
+               vars = list(0),
+               single_prior = "inverse",
                # expand_priors = 4,
+               group_effect = 0.05,
                patch_dataset = "sim-test",
                patch_type = "sampled",
-               group_effect = 0.1,
-               trial_fe = "ildt",
-               donor_fe = "ildt",
-               txd_fe = "ildt",
-               weight_fe = "sit",
+               bici_cmd = "inf",
+               fix_donors = "no_Tsym_survivors",
                censor = 0.8,
-               nsample = 1e5,
+               nsample = 2e5,
                nchains = 8,
                sample_states = 100,
+               time_step_bici = 1,
                ie_output = "true") |>
     safe_merge(common2)
 
@@ -65,17 +89,17 @@ common <- list(sim_new_data = "etc_sim",
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
-n_replicates <- if (goal == "convergence") 1 else 20
+n_replicates <- 10
 protocol[, scenario := .I]
 protocol <- protocol[rep(1:.N, each = n_replicates)]
 protocol[, replicate := 1:.N, scenario]
 protocol[, dataset := dataset]
 protocol[, name := str_c("scen-", scenario, "-", replicate)]
-
-if (goal == "coverage") protocol[, seed := replicate]
+protocol[, seed := replicate]
 
 # Set up patches
 protocol[, patch_state := replicate]

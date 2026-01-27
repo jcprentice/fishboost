@@ -121,3 +121,11 @@ log_recentre <- function(x, digits = 5L) {
 str_1st <- function(x) str_sub(x, 1L, 1L)
 str_last <- function(x) str_sub(x, -1L)
 
+# Get part of description
+get_part <- function(x, y) {
+    x |>
+        str_squish() |>
+        str_split_1(", ") |>
+        str_subset(y) |>
+        str_split_i(" ", 2)
+}

@@ -10,7 +10,7 @@
 
 plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
     if (FALSE) {
-        dataset <- "fb-test"; scen <- 1; rep <- 1
+        dataset <- "fb-test"; scen <- 2; rep <- 1
     }
     
     {
@@ -22,12 +22,10 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         ebvs_dir <- str_glue("{gfx_dir}/ebvs")
     }
     
-    walk(c(meta_dir, gfx_dir, ebvs_dir), \(d) {
-        if (!dir.exists(d)) {
-             message(" - mkdir ", d)
-             dir.create(d)
-         }
-    })
+    c(meta_dir, gfx_dir, ebvs_dir) |>
+        discard(dir.exists) |>
+        walk(~ message(" - mkdir ", .x)) |>
+        walk(dir.create)
     
     etc <- str_glue("{data_dir}/scen-{scen}-{rep}-out/etc_inf.rds")
     if (file.exists(etc)) {
@@ -36,7 +34,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         return(NULL)
     }
     
-    traits <- c("sus_g", "inf_g", "tol_g", "sus_e", "inf_e", "tol_e")
+    traits <- c("sus_g", "inf_g", "tol_g")
     cols <- c("state", "id", "sire", "dam", "sdp", "trial", "donor")
     popn <- popn[, mget(c(cols, traits))]
     
@@ -44,14 +42,17 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
     
     st <- str_glue("{dataset} / s{scen}-{rep}")
     
+    # Trait estimates ----
     x1 <- popn[, .(trial = first(trial),
-                   sus_g__lo = hdi(sus_g)[["lower"]], sus_g__hi = hdi(sus_g)[["upper"]], sus_g__med = median(sus_g),
-                   inf_g__lo = hdi(inf_g)[["lower"]], inf_g__hi = hdi(inf_g)[["upper"]], inf_g__med = median(inf_g),
-                   tol_g__lo = hdi(tol_g)[["lower"]], tol_g__hi = hdi(tol_g)[["upper"]], tol_g__med = median(tol_g),
-                   
-                   sus_e__lo = hdi(sus_e)[["lower"]], sus_e__hi = hdi(sus_e)[["upper"]], sus_e__med = median(sus_e),
-                   inf_e__lo = hdi(inf_e)[["lower"]], inf_e__hi = hdi(inf_e)[["upper"]], inf_e__med = median(inf_e),
-                   tol_e__lo = hdi(tol_e)[["lower"]], tol_e__hi = hdi(tol_e)[["upper"]], tol_e__med = median(tol_e)),
+                   sus_g__lo = hdi(sus_g)[["lower"]],
+                   sus_g__hi = hdi(sus_g)[["upper"]],
+                   sus_g__med = median(sus_g),
+                   inf_g__lo = hdi(inf_g)[["lower"]],
+                   inf_g__hi = hdi(inf_g)[["upper"]],
+                   inf_g__med = median(inf_g),
+                   tol_g__lo = hdi(tol_g)[["lower"]],
+                   tol_g__hi = hdi(tol_g)[["upper"]],
+                   tol_g__med = median(tol_g)),
                id] |>
         melt(id.var = c("id", "trial"),
              measure.vars = measure(trait, val, sep = "__")) |>
@@ -75,8 +76,9 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         facet_wrap(. ~ trait,
                    ncol = 3,
                    labeller = labeller(
-                       trait = c(sus_g = "Sus G", inf_g = "Inf G", tol_g = "Tol G",
-                                 sus_e = "Sus E", inf_e = "Inf E", tol_e = "Tol E")
+                       trait = c(sus_g = "Sus G",
+                                 inf_g = "Inf G",
+                                 tol_g = "Tol G")
                    )) +
         theme_bw() +
         theme(legend.position = "none")
@@ -85,6 +87,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
     ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-r{rep}-ebvs.png"),
            plts$ids, width = 9, height = 6)
     
+    # Traits sorted ----
     x11 <- x1[order(trait, med)][, id := seq(.N), trait][order(id, trait)]
     
     plts$sorted <- x11 |>
@@ -102,8 +105,9 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         facet_wrap(. ~ trait,
                    ncol = 3,
                    labeller = labeller(
-                       trait = c(sus_g = "Sus G", inf_g = "Inf G", tol_g = "Tol G",
-                                 sus_e = "Sus E", inf_e = "Inf E", tol_e = "Tol E")
+                       trait = c(sus_g = "Sus G",
+                                 inf_g = "Inf G",
+                                 tol_g = "Tol G")
                    )) +
         theme_bw() +
         theme(legend.position = "none")
@@ -112,13 +116,17 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
     ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-r{rep}-ebvs-sorted.png"),
            plts$sorted, width = 9, height = 6)
     
+    # Sire trait estimates ----
     x2 <- popn[!is.na(sire),
-               .(sus_g__lo = hdi(sus_g)[["lower"]], sus_g__hi = hdi(sus_g)[["upper"]], sus_g__med = median(sus_g),
-                 inf_g__lo = hdi(inf_g)[["lower"]], inf_g__hi = hdi(inf_g)[["upper"]], inf_g__med = median(inf_g),
-                 tol_g__lo = hdi(tol_g)[["lower"]], tol_g__hi = hdi(tol_g)[["upper"]], tol_g__med = median(tol_g),
-                 sus_e__lo = hdi(sus_e)[["lower"]], sus_e__hi = hdi(sus_e)[["upper"]], sus_e__med = median(sus_e),
-                 inf_e__lo = hdi(inf_e)[["lower"]], inf_e__hi = hdi(inf_e)[["upper"]], inf_e__med = median(inf_e),
-                 tol_e__lo = hdi(tol_e)[["lower"]], tol_e__hi = hdi(tol_e)[["upper"]], tol_e__med = median(tol_e)),
+               .(sus_g__lo = hdi(sus_g)[["lower"]],
+                 sus_g__hi = hdi(sus_g)[["upper"]],
+                 sus_g__med = median(sus_g),
+                 inf_g__lo = hdi(inf_g)[["lower"]],
+                 inf_g__hi = hdi(inf_g)[["upper"]],
+                 inf_g__med = median(inf_g),
+                 tol_g__lo = hdi(tol_g)[["lower"]],
+                 tol_g__hi = hdi(tol_g)[["upper"]],
+                 tol_g__med = median(tol_g)),
                sire] |>
         melt(id.var = "sire", 
              measure.vars = measure(trait, val, sep = "__")) |>
@@ -143,9 +151,9 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         facet_wrap(. ~ trait,
                    ncol = 3,
                    labeller = labeller(
-                       trait = c(sus_g = "Sus G", inf_g = "Inf G", tol_g = "Tol G",
-                                 sus_e = "Sus E", inf_e = "Inf E", tol_e = "Tol E")
-                   )) +
+                       trait = c(sus_g = "Sus G",
+                                 inf_g = "Inf G",
+                                 tol_g = "Tol G"))) +
         theme_bw() +
         theme(legend.position = "none")
     plts$sires
@@ -153,7 +161,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
     ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-r{rep}-ebvs-sires1.png"),
            plts$sires, width = 9, height = 6)
     
-    # Using stat_summary
+    # Using stat_summary ----
     x3 <- popn[state %in% 1:10 & !is.na(sire), mget(c("sire", traits))] |>
         melt(id.vars = "sire", variable.name = "trait")
     x3[, trait := factor(trait, levels = traits)]
@@ -186,8 +194,9 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         facet_wrap(. ~ trait,
                    ncol = 3,
                    labeller = labeller(
-                       trait = c(sus_g = "Sus G", inf_g = "Inf G", tol_g = "Tol G",
-                                 sus_e = "Sus E", inf_e = "Inf E", tol_e = "Tol E"))) +
+                       trait = c(sus_g = "Sus G",
+                                 inf_g = "Inf G",
+                                 tol_g = "Tol G"))) +
         theme_bw()
     plts$hdi
     
@@ -214,8 +223,9 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
                    rows = vars(trial),
                    scales = "free_y",
                    labeller = labeller(
-                       trait = c(sus_g = "Sus G", inf_g = "Inf G", tol_g = "Tol G",
-                                 sus_e = "Sus E", inf_e = "Inf E", tol_e = "Tol E"),
+                       trait = c(sus_g = "Sus G",
+                                 inf_g = "Inf G",
+                                 tol_g = "Tol G"),
                        trial = c("0" = "sires",
                                  "1" = "Trial 1",
                                  "2" = "Trial 2")
@@ -226,6 +236,55 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
     
     ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-r{rep}-ebvs-hist.png"),
            plts$hist, width = 9, height = 6)
+    
+    popn_sit <- popn[sdp != "dam",
+                     .(sire = first(sire),
+                       sdp = first(sdp),
+                       trial = first(trial),
+                       donor = first(donor),
+                       sus_g = mean(sus_g),
+                       inf_g = mean(inf_g),
+                       tol_g = mean(tol_g)),
+                     id]
+    
+    plts$si <- popn_sit |>
+        ggplot(aes(x = sus_g, y = inf_g, group = trial, colour = factor(donor))) +
+        geom_hline(yintercept = 0, linewidth = 1, linetype = "dashed") +
+        geom_vline(xintercept = 0, linewidth = 1, linetype = "dashed") +
+        geom_point() +
+        labs(x = "Susceptibility",
+             y = "Infectivity") +
+        theme_bw() +
+        theme(legend.position = "none")
+    plts$si
+    
+    plts$st <- popn_sit |>
+        ggplot(aes(x = sus_g, y = tol_g, group = trial, colour = factor(donor))) +
+        geom_hline(yintercept = 0, linewidth = 1, linetype = "dashed") +
+        geom_vline(xintercept = 0, linewidth = 1, linetype = "dashed") +
+        geom_point() +
+        labs(x = "Susceptibility",
+             y = "Tolerance") +
+        theme_bw() +
+        theme(legend.position = "none")
+    plts$st
+    
+    plts$it <- popn_sit |>
+        ggplot(aes(x = inf_g, y = tol_g, group = trial, colour = factor(donor))) +
+        geom_hline(yintercept = 0, linewidth = 1, linetype = "dashed") +
+        geom_vline(xintercept = 0, linewidth = 1, linetype = "dashed") +
+        geom_point() +
+        labs(x = "Infectivity",
+             y = "Tolerance") +
+        theme_bw() +
+        theme(legend.position = "none")
+    plts$it
+    
+    plts$sit <- plot_grid(plotlist = plts[c("si", "st", "it")],
+                          nrow = 1, align = "hv")
+    
+    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-r{rep}-ebvs-sit.png"),
+           plts$sit, width = 12, height = 5)
     
     
     saveRDS(plts, str_glue("{meta_dir}/{dataset}-{scen}-{rep}-ebvs.rds"))
@@ -248,12 +307,10 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
         ebvs_dir <- str_glue("{gfx_dir}/ebvs")
     }
     
-    walk(c(meta_dir, gfx_dir, ebvs_dir),
-         \(d) if (!dir.exists(d)) {
-             message(" - mkdir ", d)
-             dir.create(d)
-         }
-    )
+    c(meta_dir, gfx_dir, ebvs_dir) |>
+        discard(dir.exists) |>
+        walk(~ message(" - mkdir ", .x)) |>
+        walk(dir.create)
     
     etc <- str_glue("{data_dir}/scen-{scen}-{rep}-out/etc_inf.rds")
     if (file.exists(etc)) {
@@ -269,7 +326,7 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
         return(NULL)
     }
     
-    traits <- c("sus_g", "inf_g", "tol_g", "sus_e", "inf_e", "tol_e")
+    traits <- c("sus_g", "inf_g", "tol_g")
     traits <- intersect(traits, intersect(names(popn), names(truevals)))
     ntraits <- traits |> str_detect("_g") |> sum()
     cols <- c("id", "sire", "dam", "sdp", "trial", "donor")
@@ -317,8 +374,9 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
         facet_wrap(. ~ trait,
                    ncol = 3,
                    labeller = labeller(
-                       trait = c(sus_g = "Sus G", inf_g = "Inf G", tol_g = "Tol G",
-                                 sus_e = "Sus E", inf_e = "Inf E", tol_e = "Tol E")
+                       trait = c(sus_g = "Sus G",
+                                 inf_g = "Inf G",
+                                 tol_g = "Tol G")
                    )) +
         theme_bw() +
         theme(legend.position = "none")
@@ -361,8 +419,9 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
         facet_wrap(. ~ trait,
                    ncol = ntraits,
                    labeller = labeller(
-                       trait = c(sus_g = "Sus G", inf_g = "Inf G", tol_g = "Tol G",
-                                 sus_e = "Sus E", inf_e = "Inf E", tol_e = "Tol E")
+                       trait = c(sus_g = "Sus G",
+                                 inf_g = "Inf G",
+                                 tol_g = "Tol G")
                    )) +
         theme_bw() +
         theme(legend.position = "none")
@@ -387,8 +446,9 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
                    rows = vars(trial),
                    scales = "free_y",
                    labeller = labeller(
-                       trait = c(sus_g = "Sus G", inf_g = "Inf G", tol_g = "Tol G",
-                                 sus_e = "Sus E", inf_e = "Inf E", tol_e = "Tol E"),
+                       trait = c(sus_g = "Sus G",
+                                 inf_g = "Inf G",
+                                 tol_g = "Tol G"),
                        trial = c("0" = "sires",
                                  "1" = "Trial 1",
                                  "2" = "Trial 2")

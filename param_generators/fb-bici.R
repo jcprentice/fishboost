@@ -18,22 +18,20 @@ dataset <- "fb-bici"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(description = "FB_12_drop71, Traits SIT, FEs ILDT, RP ~ exp, GRM H_inv"), # 1
-    data.table(description = "FB_12_rpw, Traits SIT, FEs ILDT, RP ~ exp, GRM HS_inv"), # 2
-    data.table(description = "FB_12_rpw, Traits SIT, FEs ILDT, RP ~ exp, GRM HG_inv"), # 3
+    data.table(d = "FB_12_drop71, Traits SIT, FEs ILDT, RP ~ exp, GRM H_inv"), # 1
+    data.table(d = "FB_12_rpw,    Traits SIT, FEs ILDT, RP ~ exp, GRM HS_inv"), # 2
+    data.table(d = "FB_12_rpw,    Traits SIT, FEs ILDT, RP ~ exp, GRM HG_inv"), # 3
     
     fill = TRUE
 )
 
-protocol[, setup := description |> str_split_1(", ") |> str_subset("FB") |>
-             str_to_lower(), .I]
+protocol[, setup := get_part(d, "FB") |> str_to_lower(), .I]
 
-protocol[, use_grm := description |> str_split_1(", ") |> str_subset("GRM") |>
-             str_split_i(" ", 2), .I]
+protocol[, use_grm := get_part(d, "GRM"), .I]
 
-protocol[str_detect(description, "Traits SIT"),
+protocol[str_detect(d, "Traits SIT"),
          use_traits := "sit"]
-protocol[str_detect(description, "Traits SI\\[LDT\\]"),
+protocol[str_detect(d, "Traits SITTT"),
          `:=`(use_traits = "sildt", link_traits = "sittt")]
 
 
@@ -70,7 +68,8 @@ common <- list(group_effect = 1.0,
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 10 else 20

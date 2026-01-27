@@ -28,18 +28,14 @@ protocol <- rbind(
     fill = TRUE
 )
 
-protocol[, `:=`(description = str_squish(d), d = NULL)]
+protocol[, setup := get_part(d, "FB") |> str_to_lower(), .I]
 
-protocol[, setup := description |> str_split_1(", ") |>
-             str_subset("FB") |> str_to_lower(), .I]
-
-protocol[str_detect(description, "GEV SIT"),
+protocol[str_detect(d, "GEV SIT"),
          use_traits := "sit"]
-protocol[str_detect(description, "GEV SITTT"),
+protocol[str_detect(d, "GEV SITTT"),
          `:=`(use_traits = "sildt", link_traits = "sittt")]
 
-# protocol[, inf_model := description |> str_split_1(", ") |>
-#              str_subset("inf_model") |>  str_split_i(" ", 2) |> as.integer(), .I]
+# protocol[, inf_model := get_part(d, "inf_model") |> as.integer(), .I]
 
 
 # Common options ----
@@ -75,7 +71,8 @@ common <- list(use_grm = "HG_inv",
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 1 else 20

@@ -19,26 +19,26 @@ dataset <- "fb-weight"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(description = "FB_1, FEs ILDT"),
-    data.table(description = "FB_2, FEs ILDT"),
-    data.table(description = "FB_12, FEs ILDT"),
-    data.table(description = "FB_1, FEs I[LDT]"),
-    data.table(description = "FB_2, FEs I[LDT]"),
-    data.table(description = "FB_12, FEs I[LDT]"),
+    data.table(d = "FB_1,  FEs ILDT"),
+    data.table(d = "FB_2,  FEs ILDT"),
+    data.table(d = "FB_12, FEs ILDT"),
+    data.table(d = "FB_1,  FEs ITTT"),
+    data.table(d = "FB_2,  FEs ITTT"),
+    data.table(d = "FB_12, FEs ITTT"),
     
     fill = TRUE
 )
 
-protocol[, setup := description |> str_split_i(", ", 1) |> str_to_lower()]
+protocol[, setup := d |> str_split_i(", ", 1) |> str_to_lower()]
 
 # Trial effects
 protocol[setup == "fb_12", `:=`(trial_fe = "ildt",
                                 txd_fe = "ildt")]
 
 # Apply links
-protocol[str_detect(description, "FEs ILDT"),
+protocol[str_detect(d, "FEs ILDT"),
          `:=`(link_trial = "sildt", link_donor = "sildt", link_txd = "sildt", link_weight = "sildt")]
-protocol[str_detect(description, "FEs I\\[LDT\\]"),
+protocol[str_detect(d, "FEs ITTT"),
          `:=`(link_trial = "sittt", link_donor = "sittt", link_txd = "sittt", link_weight = "sittt")]
 
 # Common options ----
@@ -63,7 +63,8 @@ common <- list(use_traits = "sit",
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 1 else 20

@@ -31,7 +31,7 @@ patch_params <- function(params, trace_row = 0) {
         return(params)
     }
     
-    if (msgs) message(str_glue(" - using {patch_type} posteriors from ",
+    if (msgs) message(str_glue(" - using *{patch_type}* posteriors from ",
                                "'{patch_dataset}' scenario {patch_name} ..."))
     
     {
@@ -82,7 +82,12 @@ patch_params <- function(params, trace_row = 0) {
         } else {
             tmp[state == patch_state]
         }
-        patch_vals <- setNames(as.list(tmp$value), tmp$parameter)
+        # This is to under renaming the parameters in BICI
+        patch_vals <- setNames(as.list(tmp$value),
+                               tmp$parameter |> str_replace_all(
+                                   c("LP" = "latent_period",
+                                     "DP" = "detection_period",
+                                     "RP" = "removal_period")))
         rm(tmp)
     }
     

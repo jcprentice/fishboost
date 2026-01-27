@@ -18,52 +18,97 @@ dataset <- "sim-test"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(d = "FB_1_rpw,  GEV SIT,   FEs SIT, Fit to d2, GRM HG_inv"), # 1
-    data.table(d = "FB_12_rpw, GEV SITTT, FEs SIT, Fit to d4, GRM HG_inv"), # 2
-    data.table(d = "FB_1_rpw,  GEV SITTT, FEs SIT, Fit to d5, GRM HG_inv"), # 3
-    data.table(d = "FB_2_rpw,  GEV SITTT, FEs SIT, Fit to d6, GRM HG_inv"), # 4
+    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit s2, GRM HG_inv"), # 1
+    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit s5, GRM HG_inv"), # 2
+    data.table(d = "FB_2_rpw,  GEV SITTT, FE SIT, Fit s6, GRM HG_inv"), # 3
+    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT, Fit s4, GRM HG_inv"), # 4
+    # Misspecified models
+    data.table(d = "FB_1_rpw,  GEV ST,    FE SIT, Fit s2, GRM HG_inv"), # 5
+    data.table(d = "FB_1_rpw,  GEV SILDT, FE SIT, Fit s2, GRM HG_inv"), # 6
     
     fill = TRUE
 )
 
-protocol[, `:=`(description = str_squish(d), d = NULL)]
+# Setup
+protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
 
-protocol[, setup := str_split_i(description, ", ", 1) |> str_to_lower()]
+# Handle Genetic & Environmental Variance (GEV)
+protocol[, GEV := get_part(d, "GEV") |> str_to_lower(), .I]
+protocol[, use_traits := GEV]
+protocol[GEV == "sittt", `:=`(use_traits = "sildt", link_traits = "sittt")]
+protocol[, GEV := NULL]
 
-protocol[, patch_name := description |> str_split_1(", ") |>
-             str_subset("Fit to") |> str_replace_all("Fit to d(.*)", "scen-\\1-1"), .I]
+# Handle fit
+protocol[, patch_name := get_part(d, "Fit") |>
+             str_replace("s(.*)", "scen-\\1-1"), .I]
+
+# Handle GRM
+protocol[, use_grm := get_part(d, "GRM"), .I]
+# protocol[, traits_source := fifelse(use_grm == "pedigree", "pedigree", "grm")]
+protocol[, traits_source := "posterior"]
+
+
+protocol[, weight_fe := get_part(d, "FE") |> str_to_lower(), .I]
+
+protocol[, vars := fcase(
+    use_traits == "st",    list(c(sus = 0.54, tol = 0.18, default = 0)),
+    use_traits == "sit",   list(c(sus = 0.54, inf = 2.88, tol = 0.18, default = 0)),
+    use_traits == "sildt", list(c(sus = 0.54, inf = 2.88, lat = 0.5, det = 0.5, tol = 0.18)),
+    default = list(0))]
+
+protocol[, cors := fcase(
+    use_traits == "st",    list(c(st = 0.01, default = 0)),
+    use_traits == "sit",   list(c(si = 0.22, st = 0.24, it = 0.01, default = 0)),
+    use_traits == "sildt", list(c(si = 0.22, st = 0.24, it = 0.01, default = 0.2)),
+    default = list(0))]
+
+# Skip patches when we want 0 variance
+protocol[use_traits == "st", skip_patches := "cov_G_ii,cov_E_ii"]
+
+
 
 # Common options ----
 source("param_generators/common2.R")
 
 common <- list(sim_new_data = "bici",
-               bici_cmd = "sim",
-               use_grm = "HG_inv",
-               use_traits = "sit",
+               model_type = "SEIDR",
+               setup = "fb_12_rpw",
+               use_grm = "pedigree",
                traits_source = "none",
-               patch_dataset = "fb-test",
-               patch_type = "median",
                use_weight = "log",
                weight_is_nested = TRUE,
                # expand_priors = 4,
-               group_effect = 0.1,
+               group_effect = 0.05,
+               patch_dataset = "fb-test",
+               patch_type = "median",
+               patch_state = FALSE,
+               # skip_patches = "beta", # "cov,base,beta",
+               # cors <- c(si = -0.3, sl = 0.2, sd = 0.2, st = -0.3, il = 0.2,
+               #           id =  0.2, it = 0.3, ld = 0.2, lt =  0.2, dt =  0.2),
+               # latent_periods = 10,
+               # detection_periods = 20,
+               # removal_periods = 10,
                trial_fe = "ildt",
                donor_fe = "ildt",
                txd_fe = "ildt",
-               weight_fe = "sit",
+               bici_cmd = "sim",
                censor = 0.8,
-               nsample = 1e5,
+               nsample = 1e4,
+               sample_states = 100,
                nreps = 20,
-               nchains = 1,
-               # sample_states = 100,
+               time_step_bici = 0.2,
                ie_output = "true") |>
     safe_merge(common2)
+
+common$nchains <- 1
 
 # Labels
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(str_squish(d), ", ", goal)] |>
+    setnames("d", "description")
+
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 1 else 20
@@ -72,8 +117,7 @@ protocol <- protocol[rep(1:.N, each = n_replicates)]
 protocol[, replicate := 1:.N, scenario]
 protocol[, dataset := dataset]
 protocol[, name := str_c("scen-", scenario, "-", replicate)]
-
-if (goal == "coverage") protocol[, seed := replicate]
+protocol[, seed := replicate]
 
 # Prefer to have these columns in this order at the start
 setcolorder(protocol, intersect(cols, names(protocol)))

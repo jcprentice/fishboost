@@ -210,10 +210,11 @@ if (FALSE) {
     pars_errorbars("fb-dp", 1:6, "Testing DPs")
     pars_errorbars("fb-donors", 1:27, "Testing donor reclassification")
     pars_errorbars("fb-test", 0, "Testing BICI on FB data")
+    pars_errorbars("fb-test-1e7", 0, "Testing BICI on FB data")
     pars_errorbars("fb-qtest", 0, "Testing BICI on FB data")
     pars_errorbars("sim-base-inf", 0, "Validating BICI")
     pars_errorbars("sim-base-inf", 1:2, "Validating BICI - Base models", "base")
     pars_errorbars("sim-base-inf", 1:12, "Validating BICI - Misspecifying model", "misspecify")
     pars_errorbars("sim-base-inf", c(1:2, 13:20), "Validating BICI - convergence", "conv")
-    pars_errorbars("sim-test-inf", 1:4, "Validating BICI")
+    pars_errorbars("sim-test-inf", 0, "Validating BICI on FB data")
 }

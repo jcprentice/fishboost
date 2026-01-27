@@ -20,23 +20,23 @@ dataset <- str_c("sim-simple", n)
 # Variable parameters ----
 protocol <- rbind(
     # Pass all events
-    data.table(description = "FB Trial 1+2, No IEs, No FEs, Pass all events"), # 1
-    data.table(description = "FB Trial 1+2, FEs ILDT, Weight Nested SILDT, Pass all events"), # 2
-    data.table(description = "FB Trial 1+2, IEs ILDT, No FEs, Pass all events"), # 3
-    data.table(description = "FB Trial 1+2, IEs ILDT, FEs ILDT, Weight Nested SILDT, Pass all events"), # 4
+    data.table(d = "FB Trial 1+2, No IEs, No FEs, Pass all events"), # 1
+    data.table(d = "FB Trial 1+2, FEs ILDT, Weight Nested SILDT, Pass all events"), # 2
+    data.table(d = "FB Trial 1+2, IEs ILDT, No FEs, Pass all events"), # 3
+    data.table(d = "FB Trial 1+2, IEs ILDT, FEs ILDT, Weight Nested SILDT, Pass all events"), # 4
     # Pass regular events
-    data.table(description = "FB Trial 1+2, No IEs, No FEs"), # 5
-    data.table(description = "FB Trial 1+2, FEs ILDT, Weight Nested SILDT"), # 6
-    data.table(description = "FB Trial 1+2, IEs ILDT, No FEs"), # 7
-    data.table(description = "FB Trial 1+2, IEs ILDT, FEs ILDT, Weight Nested SILDT"), # 12
+    data.table(d = "FB Trial 1+2, No IEs, No FEs"), # 5
+    data.table(d = "FB Trial 1+2, FEs ILDT, Weight Nested SILDT"), # 6
+    data.table(d = "FB Trial 1+2, IEs ILDT, No FEs"), # 7
+    data.table(d = "FB Trial 1+2, IEs ILDT, FEs ILDT, Weight Nested SILDT"), # 12
     
     fill = TRUE
 )
 
-protocol[, use_traits := fifelse(str_detect(description, "IEs SIT"), "sit", "")]
-protocol[str_detect(description, "FEs SIT"),
+protocol[, use_traits := fifelse(str_detect(d, "IEs SIT"), "sit", "")]
+protocol[str_detect(d, "FEs SIT"),
          `:=`(trial_fe = "ildt", donor_fe = "ildt", txd_fe = "ildt", weight_fe = "sildt")]
-protocol[, pass_events := fifelse(str_detect(description, "Pass all events"), "all", NA)]
+protocol[, pass_events := fifelse(str_detect(d, "Pass all events"), "all", NA)]
 
 
 # Common options
@@ -67,7 +67,8 @@ protocol[, label := str_c("s", 1:.N)]
 
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 1L else 20L

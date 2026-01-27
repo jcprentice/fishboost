@@ -19,18 +19,17 @@ dataset <- "fb-ge"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(description = "FB_12, Traits SIT, FEs ILDT, GE 0.0, pedigree"),
-    data.table(description = "FB_12, Traits SIT, FEs ILDT, GE 0.1, pedigree"),
-    data.table(description = "FB_12, Traits SIT, FEs ILDT, GE 0.2, pedigree"),
-    data.table(description = "FB_12, Traits SIT, FEs ILDT, GE 0.5, pedigree"),
-    data.table(description = "FB_12, Traits SIT, FEs ILDT, GE 1.0, pedigree"),
-    data.table(description = "FB_12, Traits SIT, FEs ILDT, GE 2.0, pedigree"),
+    data.table(d = "FB_12, Traits SIT, FEs ILDT, GE 0.0, pedigree"),
+    data.table(d = "FB_12, Traits SIT, FEs ILDT, GE 0.1, pedigree"),
+    data.table(d = "FB_12, Traits SIT, FEs ILDT, GE 0.2, pedigree"),
+    data.table(d = "FB_12, Traits SIT, FEs ILDT, GE 0.5, pedigree"),
+    data.table(d = "FB_12, Traits SIT, FEs ILDT, GE 1.0, pedigree"),
+    data.table(d = "FB_12, Traits SIT, FEs ILDT, GE 2.0, pedigree"),
     
     fill = TRUE
 )
 
-f <- function(s) s |> str_split_1(", ") |> str_subset("GE") |> str_split_i(" ", 2) |> as.numeric()
-protocol[, group_effect := f(description), .I]
+protocol[, group_effect := get_part(d, "GE") |> as.numeric(), .I]
 
 
 # Common options ----
@@ -54,7 +53,8 @@ common <- list(setup = "fb_12",
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 1 else 20

@@ -18,19 +18,18 @@ dataset <- "fb"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(description = "FB_12, SEIDR, Traits SIT, FEs ILDT, GE 0.3"),
-    data.table(description = "FB_1, SEIDR, Traits SIT, FEs ILDT, GE 0.3"),
-    data.table(description = "FB_2, SEIDR, Traits SIT, FEs ILDT, GE 0.3"),
-    data.table(description = "FB_1, GE -1",
+    data.table(d = "FB_12, SEIDR, Traits SIT, FEs ILDT, GE 0.3"),
+    data.table(d = "FB_1,  SEIDR, Traits SIT, FEs ILDT, GE 0.3"),
+    data.table(d = "FB_2,  SEIDR, Traits SIT, FEs ILDT, GE 0.3"),
+    data.table(d = "FB_1, GE -1",
                trial_fe = ""),
     
     fill = TRUE
 )
 
-protocol[, setup := description |> str_split_i(", ", 1) |> str_to_lower()]
+protocol[, setup := d |> str_split_i(", ", 1) |> str_to_lower()]
 
-f <- function(s) s |> str_split_1(", ") |> str_starts("^GE") |> str_split_i(" ", 2) |> as.numeric()
-protocol[, group_effect := f(description), .I]
+protocol[, group_effect := get_part(d, "GE") |> as.numeric(), .I]
 
 # Common options ----
 source("param_generators/common2.R")
@@ -43,7 +42,8 @@ common <- list(use_traits = "sit",
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 1 else 20

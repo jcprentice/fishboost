@@ -18,30 +18,28 @@ dataset <- "sim-test2"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(description = "FB_12_rpw, Traits SIT, FEs ILDT, RP ~ exp, GRM HS_inv"), # 1
-    data.table(description = "FB_12_rpw, Traits SIT, FEs ILDT, RP ~ exp, GRM HG_inv"), # 2
-    data.table(description = "FB_12_drop71, Traits SIT, FEs ILDT, RP ~ exp, GRM H_inv"), # 3
-    data.table(description = "FB_12_drop71, Traits SIT, FEs ILDT, RP ~ exp, GRM pedigree"), # 4
-    data.table(description = "FB_12_drop71, Traits none, RP ~ exp, GRM pedigree"), # 5
+    data.table(d = "FB_12_rpw,    Traits SIT,  FEs ILDT, RP ~ exp, GRM HS_inv"), # 1
+    data.table(d = "FB_12_rpw,    Traits SIT,  FEs ILDT, RP ~ exp, GRM HG_inv"), # 2
+    data.table(d = "FB_12_drop71, Traits SIT,  FEs ILDT, RP ~ exp, GRM H_inv"), # 3
+    data.table(d = "FB_12_drop71, Traits SIT,  FEs ILDT, RP ~ exp, GRM pedigree"), # 4
+    data.table(d = "FB_12_drop71, Traits none,           RP ~ exp, GRM pedigree"), # 5
 
     fill = TRUE
 )
 
-protocol[, use_traits := description |> str_split_1(", ") |>
-             str_subset("Traits") |> str_split_i(" ", 2) |> str_to_lower(), .I]
+protocol[, use_traits := get_part(d, "Traits") |> str_to_lower(), .I]
 
-protocol[, setup := description |> str_split_i(", ", 1) |> str_to_lower(), .I]
+protocol[, setup := d |> str_split_i(", ", 1) |> str_to_lower(), .I]
 
-protocol[, use_grm := description |> str_split_1(", ") |> str_subset("GRM") |>
-             str_split_i(" ", 2), .I]
+protocol[, use_grm := get_part(d, "GRM"), .I]
 
-protocol[str_detect(description, "pedigree"), traits_source := "pedigree"]
-protocol[!str_detect(description, "pedigree"), traits_source := "grm"]
+protocol[str_detect(d, "pedigree"), traits_source := "pedigree"]
+protocol[!str_detect(d, "pedigree"), traits_source := "grm"]
 
-protocol[str_detect(description, "FEs ILDT"),
+protocol[str_detect(d, "FEs ILDT"),
          `:=`(trial_fe = "ildt", donor_fe = "ildt", txd_fe = "ildt",
               weight_fe = "sildt")]
-protocol[!str_detect(description, "FEs ILDT"),
+protocol[!str_detect(d, "FEs ILDT"),
          `:=`(trial_fe = "", donor_fe = "", txd_fe = "", weight_fe = "")]
 
 # Common options ----
@@ -78,7 +76,8 @@ common <- list(sim_new_data = "bici",
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 5 else 20

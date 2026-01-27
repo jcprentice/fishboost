@@ -26,21 +26,18 @@ protocol <- rbind(
     fill = TRUE
 )
 
-protocol[, `:=`(description = str_squish(d), d = NULL)]
-
-protocol[str_detect(description, "GEV SIT"),
+protocol[str_detect(d, "GEV SIT"),
          use_traits := "sit"]
-protocol[str_detect(description, "GEV SITTT"),
+protocol[str_detect(d, "GEV SITTT"),
          `:=`(use_traits = "sildt", link_traits = "sittt")]
 
-protocol[, weight_fe := description |> str_split_1(", ") |> str_subset("FE") |>
-             str_split_i(" ", 2) |> str_to_lower(), .I]
+protocol[, weight_fe := get_part(d, "FE") |> str_to_lower(), .I]
 
-protocol[str_detect(description, "LP_D2 low"),
+protocol[str_detect(d, "LP_D2 low"),
          `:=`(`prior__latent_period_Tr2,Don__val1` = 1,
               `prior__latent_period_Tr2,Don__val2` = 20)]
 
-protocol[str_detect(description, "LP_D2 high"),
+protocol[str_detect(d, "LP_D2 high"),
          `:=`(`prior__latent_period_Tr2,Don__val1` = 20,
               `prior__latent_period_Tr2,Don__val2` = 120)]
 
@@ -76,7 +73,8 @@ common <- list(setup = "fb_12_rpw",
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 1 else 20

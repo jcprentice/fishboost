@@ -12,27 +12,28 @@ remove_bici_fes <- function(params) {
     message("Checking if parameters need merged for BICI if no Trial or Donor FEs")
     
     # Trial ----
-    
-    if (!str_detect(trial_fe, "s|i")) {
-        message(" - Merging beta across trials")
-        priors[str_detect(parameter, "beta_Tr"), true_val := mean(true_val)]
+    if (params$ntrials > 1) {
+        if (!str_detect(trial_fe, "s|i")) {
+            message(" - Merging beta across trials")
+            priors[str_detect(parameter, "beta_Tr"), true_val := mean(true_val)]
+        }
+        if (!str_detect(trial_fe, "l")) {
+            message(" - Merging LP across trials")
+            priors[str_detect(parameter, "lat.*Don"), true_val := mean(true_val)]
+            priors[str_detect(parameter, "lat.*Rec"), true_val := mean(true_val)]
+        }
+        if (!str_detect(trial_fe, "d")) {
+            message(" - Merging DP across trials")
+            priors[str_detect(parameter, "det.*Don"), true_val := mean(true_val)]
+            priors[str_detect(parameter, "det.*Rec"), true_val := mean(true_val)]
+        }
+        if (!str_detect(trial_fe, "t")) {
+            message(" - Merging RP across trials")
+            priors[str_detect(parameter, "rem.*Don"), true_val := mean(true_val)]
+            priors[str_detect(parameter, "rem.*Rec"), true_val := mean(true_val)]
+        }
     }
-    if (!str_detect(trial_fe, "l")) {
-        message(" - Merging LP across trials")
-        priors[str_detect(parameter, "lat.*Don"), true_val := mean(true_val)]
-        priors[str_detect(parameter, "lat.*Rec"), true_val := mean(true_val)]
-    }
-    if (!str_detect(trial_fe, "d")) {
-        message(" - Merging DP across trials")
-        priors[str_detect(parameter, "det.*Don"), true_val := mean(true_val)]
-        priors[str_detect(parameter, "det.*Rec"), true_val := mean(true_val)]
-    }
-    if (!str_detect(trial_fe, "t")) {
-        message(" - Merging RP across trials")
-        priors[str_detect(parameter, "rem.*Don"), true_val := mean(true_val)]
-        priors[str_detect(parameter, "rem.*Rec"), true_val := mean(true_val)]
-    }
-    
+        
     # Donor ----
     
     # Need to weight by proportion of inoculated status)

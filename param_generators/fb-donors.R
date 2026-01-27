@@ -19,33 +19,33 @@ dataset <- "fb-donors"
 # Variable parameters ----
 protocol <- rbind(
     # No donor fixes
-    data.table(description = "FB_12_drop71, Traits SIT, FEs ILDT, RP ~ exp, leave donors, GRM"), # 1
-    data.table(description = "FB_1_drop71, Traits SIT, FEs ILDT, RP ~ exp, leave donors, GRM"), # 2
-    data.table(description = "FB_2_drop71, Traits SIT, FEs ILDT, RP ~ exp, leave donors, GRM"), # 3
+    data.table(d = "FB_12_drop71, Traits SIT, FEs ILDT, RP ~ exp, leave donors, GRM"), # 1
+    data.table(d = "FB_1_drop71,  Traits SIT, FEs ILDT, RP ~ exp, leave donors, GRM"), # 2
+    data.table(d = "FB_2_drop71,  Traits SIT, FEs ILDT, RP ~ exp, leave donors, GRM"), # 3
     # Standard Fix
-    data.table(description = "FB_12_drop71, Traits SIT, FEs ILDT, RP ~ exp, leave donors, GRM"), # 4
-    data.table(description = "FB_1_drop71, Traits SIT, FEs ILDT, RP ~ exp, leave donors, GRM"), # 5
-    data.table(description = "FB_2_drop71, Traits SIT, FEs ILDT, RP ~ exp, leave donors, GRM"), # 6
+    data.table(d = "FB_12_drop71, Traits SIT, FEs ILDT, RP ~ exp, leave donors, GRM"), # 4
+    data.table(d = "FB_1_drop71,  Traits SIT, FEs ILDT, RP ~ exp, leave donors, GRM"), # 5
+    data.table(d = "FB_2_drop71,  Traits SIT, FEs ILDT, RP ~ exp, leave donors, GRM"), # 6
     # Strict donor fixes
-    data.table(description = "FB_12_drop71, Traits SIT, FEs ILDT, RP ~ exp, strict donors, GRM"), # 7
-    data.table(description = "FB_1_drop71, Traits SIT, FEs ILDT, RP ~ exp, strict donors, GRM"), # 8
-    data.table(description = "FB_2_drop71, Traits SIT, FEs ILDT, RP ~ exp, strict donors, GRM"), # 9
+    data.table(d = "FB_12_drop71, Traits SIT, FEs ILDT, RP ~ exp, strict donors, GRM"), # 7
+    data.table(d = "FB_1_drop71,  Traits SIT, FEs ILDT, RP ~ exp, strict donors, GRM"), # 8
+    data.table(d = "FB_2_drop71,  Traits SIT, FEs ILDT, RP ~ exp, strict donors, GRM"), # 9
     
     fill = TRUE
 )
 
-protocol[, setup := str_split_i(description, ", ", 1) |> str_to_lower()]
+protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower()]
 
-protocol[str_detect(description, "pedigree"), use_grm := ""]
-protocol[str_detect(description, "GRM"), use_grm := "H"]
+protocol[str_detect(d, "pedigree"), use_grm := ""]
+protocol[str_detect(d, "GRM"), use_grm := "H"]
 
-protocol[str_detect(description, "FEs ILDT"),
+protocol[str_detect(d, "FEs ILDT"),
          `:=`(trial_fe = "ildt", donor_fe = "ildt", txd_fe = "ildt",
               weight_fe = "sildt")]
 
 # All should have no Tsym survivors, but also check more stringent version
-protocol[, fix_donors := fcase(str_detect(description, "leave donors"), "",
-                               str_detect(description, "strict donors"), "no_Tsym_survivors,time",
+protocol[, fix_donors := fcase(str_detect(d, "leave donors"), "",
+                               str_detect(d, "strict donors"), "no_Tsym_survivors,time",
                                default = "no_Tsym_survivors")]
 
 # Common options ----
@@ -79,7 +79,8 @@ common <- list(use_traits = "sit",
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 3 else 20

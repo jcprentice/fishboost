@@ -19,18 +19,14 @@ dataset <- str_glue("sim-censored-{x}",
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(description = "Sim FB1, SEIDR, censor=1, Traits SIT (pos), Donor I[LDT]",
-               censor = 1.0),
-    
-    data.table(description = "Sim FB1, SEIDR, censor=0.8, Traits SIT (pos), Donor I[LDT]",
-               censor = 0.8),
-    
-    data.table(description = "Sim FB1, SEIDR, censor=0.6, Traits SIT (pos), Donor I[LDT]",
-               censor = 0.6),
+    data.table(d = "Sim FB1, SEIDR, censor 1.0, Traits SIT (pos), Donor ITTT"),
+    data.table(d = "Sim FB1, SEIDR, censor 0.8, Traits SIT (pos), Donor ITTT"),
+    data.table(d = "Sim FB1, SEIDR, censor 0.6, Traits SIT (pos), Donor ITTT"),
     
     fill = TRUE
 )
 
+protocol[, censor := get_part(d, "censor") |> as.numeric(), .I]
 
 # Common options
 protocol[, `:=`(setup = "fb1",
@@ -45,7 +41,8 @@ protocol[, label := str_c("s1", letters[1:.N])]
 
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 1L else 20L

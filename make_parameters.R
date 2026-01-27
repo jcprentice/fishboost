@@ -220,7 +220,7 @@ make_parameters <- function(
     # This should expand vars and cors to be the full matrix values, possibly
     # with replicates
     vars <- Sigma_G |> diag()
-    cors <- Sigma_G[lower.tri(Sigma_G)] |> setNames(out$cns)
+    cors <- Sigma_G[lower.tri(Sigma_G)] |> setNames(out$cor_names)
     
     ge_opts <- "" # c("gt_only", "pt_only", "e1", "no_ev_xyz")
     

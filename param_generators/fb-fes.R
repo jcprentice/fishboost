@@ -19,29 +19,29 @@ dataset <- "fb-fes3"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(description = "FB_1, FEs ILDT, Weight"), # 1
-    data.table(description = "FB_2, FEs ILDT, Weight"), # 2
-    data.table(description = "FB_12, FEs ILDT, Weight"), # 3
-    data.table(description = "FB_12, FEs ILDT, Weight nested"), # 4
-    data.table(description = "FB_1, FEs IDT, Weight"), # 5
-    data.table(description = "FB_2, FEs IDT, Weight"), # 6
-    data.table(description = "FB_12, FEs IDT, Weight"), # 7
-    data.table(description = "FB_12, FEs IDT, Weight nested"), # 8
-    data.table(description = "FB_1, FEs IDT, No weight"), # 9
-    data.table(description = "FB_2, FEs IDT, No weight"), # 10
-    data.table(description = "FB_12, FEs IDT, No weight"), # 11
-    data.table(description = "FB_12, FEs ILDT, Weight nested, GRM"), # 12
-    data.table(description = "FB_12, FEs ILDT, Weight, GRM"), # 13
+    data.table(d = "FB_1,  FEs ILDT, Weight"), # 1
+    data.table(d = "FB_2,  FEs ILDT, Weight"), # 2
+    data.table(d = "FB_12, FEs ILDT, Weight"), # 3
+    data.table(d = "FB_12, FEs ILDT, Weight nested"), # 4
+    data.table(d = "FB_1,  FEs IDT,  Weight"), # 5
+    data.table(d = "FB_2,  FEs IDT,  Weight"), # 6
+    data.table(d = "FB_12, FEs IDT,  Weight"), # 7
+    data.table(d = "FB_12, FEs IDT,  Weight nested"), # 8
+    data.table(d = "FB_1,  FEs IDT,  No weight"), # 9
+    data.table(d = "FB_2,  FEs IDT,  No weight"), # 10
+    data.table(d = "FB_12, FEs IDT,  No weight"), # 11
+    data.table(d = "FB_12, FEs ILDT, Weight nested, GRM"), # 12
+    data.table(d = "FB_12, FEs ILDT, Weight, GRM"), # 13
     
     fill = TRUE
 )
 
-protocol[, setup := description |> str_split_i(", ", 1) |> str_to_lower()]
-protocol[, donor_fe := description |> str_extract("FEs [ILDT]*") |> str_split_i(" ", 2) |> str_to_lower()]
+protocol[, setup := d |> str_split_i(", ", 1) |> str_to_lower()]
+protocol[, donor_fe := str_part(d, "FEs") |> str_to_lower()]
 protocol[, `:=`(trial_fe = fifelse(str_detect(setup, "12"), donor_fe, ""),
                 txd_fe = trial_fe,
                 weight_fe = str_c("s", donor_fe))]
-protocol[, weight_is_nested := str_detect(description, "Weight nested")]
+protocol[, weight_is_nested := str_detect(d, "Weight nested")]
 
 # Common options ----
 source("param_generators/common2.R")
@@ -65,7 +65,8 @@ common <- list(use_traits = "sit",
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 1 else 20

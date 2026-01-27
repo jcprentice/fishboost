@@ -7,7 +7,7 @@
 #  memory limit of 1 Gbyte: -l h_vmem
 #$ -N sim-test-inf
 #$ -pe sharedmem 8
-#$ -t 1-80
+#$ -t 1-100
 #$ -R y
 #$ -P roslin_wilson
 #$ -cwd

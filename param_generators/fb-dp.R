@@ -18,12 +18,12 @@ dataset <- "fb-dp"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(description = "FB_12_drop71, Traits SIT, FEs ILDT, DP 1, GRM"), # 1
-    data.table(description = "FB_12_drop71, Traits SIT, FEs ILDT, DP 10, GRM"), # 2
-    data.table(description = "FB_12_drop71, Traits SIT, FEs ILDT, DP 20, GRM"), # 3
-    data.table(description = "FB_12_drop71, Traits SIT, FEs ILDT, DP 30, GRM"), # 4
-    data.table(description = "FB_12_drop71, Traits SIT, FEs ILDT, DP 40, GRM"), # 5
-    data.table(description = "FB_12_drop71, Traits SIT, FEs ILDT, DP 50, GRM"), # 6
+    data.table(d = "FB_12_drop71, Traits SIT, FEs ILDT, DP 1,  GRM"), # 1
+    data.table(d = "FB_12_drop71, Traits SIT, FEs ILDT, DP 10, GRM"), # 2
+    data.table(d = "FB_12_drop71, Traits SIT, FEs ILDT, DP 20, GRM"), # 3
+    data.table(d = "FB_12_drop71, Traits SIT, FEs ILDT, DP 30, GRM"), # 4
+    data.table(d = "FB_12_drop71, Traits SIT, FEs ILDT, DP 40, GRM"), # 5
+    data.table(d = "FB_12_drop71, Traits SIT, FEs ILDT, DP 50, GRM"), # 6
     
     fill = TRUE
 )
@@ -31,19 +31,18 @@ protocol <- rbind(
 message(nrow(protocol), " scenarios")
 
 # Set traits to SIT or SITTT
-protocol[str_detect(description, "Traits SIT"),
+protocol[str_detect(d, "Traits SIT"),
          use_traits := "sit"]
-protocol[str_detect(description, "Traits SI\\[LDT\\]"),
+protocol[str_detect(d, "Traits SITTT"),
          `:=`(use_traits = "all", link_traits = "sittt")]
 
 # Set LP
 f <- function(x) x
-protocol[, prior__detection_period__val2 := description |> str_split_1(", ") |>
-             str_subset("DP") |> str_split_i(" ", 2) |> as.numeric(), by = .I]
+protocol[, prior__detection_period__val2 := get_part(d, "DP") |> as.numeric(), .I]
 
 
 # Set FEs to none, ILDT, or I[LDT]
-protocol[str_detect(description, "FEs I\\[LDT\\]"),
+protocol[str_detect(d, "FEs I\\[LDT\\]"),
          `:=`(link_trial = "sittt", link_donor = "sittt", link_txd = "sittt", link_weight = "sittt")]
 
 # Common options ----
@@ -73,7 +72,8 @@ common <- list(sim_new_data = "no",
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 1 else 20

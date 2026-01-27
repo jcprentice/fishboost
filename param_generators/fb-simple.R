@@ -18,20 +18,19 @@ dataset <- "fb-simple-b"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(description = "FB_12, Traits none, FEs none, check LP, pedigree"), # 1
-    data.table(description = "FB_1, Traits none, FEs none, check LP, pedigree"), # 2
-    data.table(description = "FB_2, Traits none, FEs none, check LP, pedigree"), # 3
-    data.table(description = "FB_12, Traits none, FEs ILDT, check LP, pedigree"), # 4
-    data.table(description = "FB_1, Traits none, FEs ILDT, check LP, pedigree"), # 5
-    data.table(description = "FB_2, Traits none, FEs ILDT, check LP, pedigree"), # 6
+    data.table(d = "FB_12, Traits none, FEs none, check LP, pedigree"), # 1
+    data.table(d = "FB_1,  Traits none, FEs none, check LP, pedigree"), # 2
+    data.table(d = "FB_2,  Traits none, FEs none, check LP, pedigree"), # 3
+    data.table(d = "FB_12, Traits none, FEs ILDT, check LP, pedigree"), # 4
+    data.table(d = "FB_1,  Traits none, FEs ILDT, check LP, pedigree"), # 5
+    data.table(d = "FB_2,  Traits none, FEs ILDT, check LP, pedigree"), # 6
     
     fill = TRUE
 )
 
-f <- function(s) s |> str_split_i(", ", 1) |> str_to_lower()
-protocol[, setup := f(description), .I]
+protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
 
-protocol[str_detect(description, "FEs ILDT"),
+protocol[str_detect(d, "FEs ILDT"),
          `:=`(trial_fe = "ildt", donor_fe = "ildt", txd_fe = "ildt",
               weight_fe = "sildt")]
 
@@ -69,7 +68,8 @@ common <- list(weight_is_nested = TRUE,
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- if (goal == "convergence") 1 else 20

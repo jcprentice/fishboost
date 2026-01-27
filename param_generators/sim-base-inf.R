@@ -36,15 +36,8 @@ protocol <- rbind(
     fill = TRUE
 )
 
-protocol[, `:=`(description = str_squish(d), d = NULL)]
-
-
-# Model
-protocol[, model_type := fifelse(str_detect(description, "SIDR"), "SIDR", "SEIDR")]
-
 # Genetic & Environmental Variance
-protocol[, GEV := description |> str_split_1(", ") |> str_subset("GEV ") |>
-             str_split_i(" ", 2) |> str_to_lower(), .I]
+protocol[, GEV := get_part(d, "GEV ") |> str_to_lower(), .I]
 protocol[GEV == "sittt", `:=`(use_traits = "sildt", link_traits = "sittt")]
 protocol[GEV != "sittt", use_traits := GEV]
 protocol[, GEV := NULL]
@@ -52,19 +45,19 @@ protocol[, GEV := NULL]
 
 # Handle FEs
 protocol[, weight_fe := {
-    x <- description |> str_split_1(", ") |> str_subset("FE ") |> str_split_i(" ", 2)
+    x <- get_part(d, "FE ")
     if (length(x) == 0 || x %in% c("", "none")) "" else str_to_lower(x)
 }, .I]
 
 
 # Handle GRM
-protocol[, use_grm := description |> str_split_1(", ") |> str_subset("GRM") |>
+protocol[, use_grm := d |> str_split_1(", ") |> str_subset("GRM") |>
              str_split_i(" ", 2), .I]
 protocol[, traits_source := fifelse(use_grm == "pedigree", "pedigree", "grm")]
 
 
 # Handle patch_name: "Scen x" -> "scen-X-1"
-protocol[, patch_name := description |> str_split_1(", ") |>
+protocol[, patch_name := d |> str_split_1(", ") |>
              str_subset("Fit to") |> str_replace_all("Fit to d(.*)", "scen-\\1-1"), .I]
 
 
@@ -80,10 +73,10 @@ common <- list(sim_new_data = "etc_sim",
                vars = list(0),
                single_prior = "inverse",
                # expand_priors = 4,
+               group_effect = 0.05,
                patch_dataset = "sim-base",
                patch_type = "sampled",
                bici_cmd = "inf",
-               group_effect = 0.05,
                fix_donors = "no_Tsym_survivors",
                censor = 0.8,
                nsample = 2e5,
@@ -97,7 +90,8 @@ common <- list(sim_new_data = "etc_sim",
 protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", convergence")]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
 n_replicates <- 10

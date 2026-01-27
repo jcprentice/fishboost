@@ -15,11 +15,8 @@ make_matrices <- function(model_traits = c("sus", "inf", "lat", "det", "tol"),
     cors <- unlist(cors)
     
     if (FALSE) {
-        vars <- c(sus = 1, inf = 1.5, lat = 0, det = 0, tol = 0.5)
-        cors <- c(si = -0.3, sl = 0.2, sd = 0.2, st = -0.3,
-                  il = 0.2, id = 0.2, it =  0.3,
-                  ld = 0.2, lt =  0.2,
-                  dt =  0.2)
+        vars <- c(sus = 1, inf = 1.5, tol = 0.5, default = 0.1)
+        cors <- c(si = -0.3, st = -0.3, it =  0.3, default = 0.1)
     }
     if (FALSE) {
         vars <- 1; cors <- 0.2
@@ -28,26 +25,29 @@ make_matrices <- function(model_traits = c("sus", "inf", "lat", "det", "tol"),
     # Get the matrix idxs to assign cors to
     mat <- matrix(1:25, 5, 5, dimnames = list(all_traits, all_traits))
     mat_idxs <- mat[idxs, idxs][lower.tri(mat[idxs, idxs])]
-    cns <- expand.grid(sildt, sildt) |> rev()  |> apply(1, str_flatten) |> _[mat_idxs]
+    cor_names <- expand.grid(sildt, sildt) |> rev() |> apply(1, str_flatten) |> _[mat_idxs]
+    
+    mat_names <- expand.grid(sildt, sildt) |> apply(1, str_flatten) |> matrix(5, 5)
+    # mat_names[lower.tri(mat_names)] <- t(mat_names)[lower.tri(mat_names)]
     
     # Create Sigma and the correlation matrix with `cors`
     D <- cor_mat <- matrix(0, 5L, 5L, dimnames = list(all_traits, all_traits))
+    
     if (is.null(names(cors))) {
+        # If we just receive an unnamed vector of length 1 or N(N-1)/2
         if (length(cors) %notin% c(1, length(mat_idxs))) {
             capture_message(cors)
             stop(str_glue("length(cors) = {lc}, expecting 1, {lmi}, or named vector",
-                          lc = length(cors), lmi = length(mat_idxs)))
+                          lc = length(cors),
+                          lmi = length(mat_idxs)))
         }
         cor_mat[mat_idxs] <- cors
     } else {
-        expand.grid(sildt, sildt) |>
-            rev() |> _[mat_idxs, ] |>
-            pwalk(~ {
-                cn <- c(.x, .y) |> str_flatten()
-                if (cn %in% names(cors)) {
-                    cor_mat[.x, .y] <<- cors[[cn]]
-                }
-            })
+        # We have a named vector, possibly with a default
+        if ("default" %in% names(cors)) {
+            cor_mat[upper.tri(cor_mat)] <- cors[["default"]]
+        }
+        iwalk(cors, \(x, i) {cor_mat[mat_names == i] <<- x})
     }    
     cor_mat <- cor_mat + t(cor_mat)
     diag(cor_mat) <- 1
@@ -56,6 +56,7 @@ make_matrices <- function(model_traits = c("sus", "inf", "lat", "det", "tol"),
     Sigma <- cor_mat
     diag(Sigma) <- 0
     if (is.null(names(vars))) {
+        # If we receive an unnamed vector of length 1 or N
         if (length(vars) %notin% c(1, length(idxs))) {
             capture_message(vars)
             stop(str_glue("length(vars) = {lv}, expecting 1, {li}, or named vector",
@@ -63,7 +64,11 @@ make_matrices <- function(model_traits = c("sus", "inf", "lat", "det", "tol"),
         }
         diag(Sigma)[idxs] <- vars
     } else {
-        walk(names(vars), ~ {Sigma[.x, .x] <<- vars[[.x]]})
+        # We have a named vector, possibly with a default
+        if ("default" %in% names(vars)) {
+            diag(Sigma) <- vars[["default"]]
+        }
+        walk(setdiff(names(vars), "default"), ~ {Sigma[.x, .x] <<- vars[[.x]]})
     }
     
     # D is the std dev, or the sqrt of the diag of Sigma
@@ -84,7 +89,7 @@ make_matrices <- function(model_traits = c("sus", "inf", "lat", "det", "tol"),
     Sigma <- Sigma[idxs, idxs]
     cov_mat <- cov_mat[idxs, idxs]
     
-    list(Sigma = Sigma, cov = cov_mat, cns = cns)
+    list(Sigma = Sigma, cov = cov_mat, cor_names = cor_names)
 }
 
 
