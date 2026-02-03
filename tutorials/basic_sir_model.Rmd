@@ -32,11 +32,11 @@ The params list might not fully do everything we want, but as it is just a basic
 
 ```{r build-params}
 params <- make_parameters(
-    model_type = "SIR",
-    setup = "single",
-    use_traits = "none",
-    group_layout = "striped",
-    sim_new_data = "r"
+    model_type = "SIR",       # a Susceptible-Infected-Removed model
+    setup = "single",         # a single group
+    use_traits = "none",      # no genetic effects applied to traits
+    group_layout = "striped", # group layout
+    sim_new_data = "r"        # simulate in R (rather than in BICI)
 )
 ```
 

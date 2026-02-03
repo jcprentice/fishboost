@@ -639,8 +639,6 @@ summarise_params <- function(params) {
                              x = str_to_upper(sim_new_data)))
         }
 
-        param_file <- str_glue("{data_dir}/{name}.bici")
-        
         message(str_glue(
             "- Demography is:\n",
             "    {nsires} sires, {ndams} dams, {nprogeny} progeny ",
@@ -668,11 +666,11 @@ summarise_params <- function(params) {
             "- Running MCMC with:\n",
             "    {ns} updates / {th} samples / {burnprop} burnin / {nchains} chains\n",
             "- BICI script file:\n",
-            "    '{param_file}'\n",
+            "    '{data_dir}/{name}.bici'\n",
             "- Results file:\n",
             "    '{results_dir}/{name}.rds'",
             ns = format(nsample, scientific = FALSE, big.mark = ","),
-            th = format(thinto, scientific = FALSE, big.mark = ","),
+            th = format(thinto,  scientific = FALSE, big.mark = ","),
             .trim = FALSE
         ))
     })
