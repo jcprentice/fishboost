@@ -23,7 +23,7 @@ make_time_series_seidr <- function(popn, params) {
     X <- rbind(
         data.table(event = factor("start", c("start", "infection", "incubation", "detection", "removal", "end")),
                    time = 0.0),
-        data.table(event = "infection",  time = popn2$Tinf),
+        data.table(event = "infection",  time = popn2$Tinf[popn2$Tinf > 0]),
         data.table(event = "incubation", time = popn2$Tinc),
         data.table(event = "detection",  time = popn2$Tsym),
         data.table(event = "removal",    time = popn2$Tdeath),
@@ -68,7 +68,7 @@ make_time_series_sidr <- function(popn, params) {
     X <- rbind(
         data.table(event = factor("start", c("start", "infection", "detection", "removal", "end")),
                    time = 0.0),
-        data.table(event = "infection", time = popn2$Tinf),
+        data.table(event = "infection", time = popn2$Tinf[popn2$Tinf > 0]),
         data.table(event = "detection", time = popn2$Tsym),
         data.table(event = "removal",   time = popn2$Tdeath),
         data.table(event = "end",       time = tmax))
@@ -110,7 +110,7 @@ make_time_series_seir <- function(popn, params) {
     X <- rbind(
         data.table(event = factor("start", c("start", "infection", "incubation", "removal", "end")),
                    time = 0.0),
-        data.table(event = "infection",  time = popn2$Tinf),
+        data.table(event = "infection",  time = popn2$Tinf[popn2$Tinf > 0]),
         data.table(event = "incubation", time = popn2$Tsym),
         data.table(event = "removal",    time = popn2$Tdeath),
         data.table(event = "end",        time = tmax))
@@ -150,7 +150,7 @@ make_time_series_sir <- function(popn, params) {
     X <- rbind(
         data.table(event = factor("start", c("start", "infection", "removal", "end")),
                    time = 0.0),
-        data.table(event = "infection", time = popn2$Tinf),
+        data.table(event = "infection", time = popn2$Tinf[popn2$Tinf > 0]),
         data.table(event = "removal",   time = popn2$Tdeath),
         data.table(event = "end",       time = tmax))
 
@@ -184,7 +184,7 @@ make_time_series_sis <- function(popn, params) {
     X <- rbind(
         data.table(event = factor("start", c("start", "infection", "removal", "end")),
                    time = 0.0),
-        data.table(event = "infection", time = popn$Tinf),
+        data.table(event = "infection", time = popn$Tinf[popn2$Tinf > 0]),
         data.table(event = "removal",   time = popn$Tdeath),
         data.table(event = "end",       time = tmax))
 
