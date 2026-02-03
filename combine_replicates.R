@@ -90,12 +90,12 @@ combine_replicates(dataset = "fb-final2") {
             files <- list.files(out_dir, full.names = TRUE, recursive = TRUE)
             if (length(files) > 0) file.remove(files)
             if (dir.exists(out_dir)) {
-                message(str_glue("    - Deleting output files"))
+                message("    - Deleting output files")
                 file.remove(out_dir)
             }
             files <- list.files(data_dir, str_glue("-{scen}-{rep}(-|\\.)"), full.names = TRUE)
             if (length(files) > 0) {
-                message(str_glue("    - Deleting input files"))
+                message("    - Deleting input files")
                 file.remove(files)
             }
         })

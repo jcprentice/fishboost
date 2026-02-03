@@ -647,7 +647,8 @@ summarise_params <- function(params) {
             "({ntotal} total), {ngroups} group{s} (group size {group_size})\n",
             "    R0 = {r0}",
             s = if (ngroups > 1) "s" else "",
-            r0 = signif(R0, 3)
+            r0 = signif(R0, 3),
+            .trim = FALSE
         ))
         
         message("Sigma_G = ")
@@ -660,15 +661,19 @@ summarise_params <- function(params) {
             dfe = if (donor_fe  %in% c("", "none")) "none" else donor_fe,
             xfe = if (txd_fe    %in% c("", "none")) "none" else txd_fe,
             wfe = if (weight_fe %in% c("", "none")) "none" else weight_fe,
+            .trim = FALSE
         ))
         
         message(str_glue(
             "- Running MCMC with:\n",
             "    {ns} updates / {th} samples / {burnprop} burnin / {nchains} chains\n",
-            "- BICI script file: '{param_file}'\n",
-            "- Results file: '{results_dir}/{name}.rds'",
+            "- BICI script file:\n",
+            "    '{param_file}'\n",
+            "- Results file:\n",
+            "    '{results_dir}/{name}.rds'",
             ns = format(nsample, scientific = FALSE, big.mark = ","),
-            th = format(thinto, scientific = FALSE, big.mark = ",")
+            th = format(thinto, scientific = FALSE, big.mark = ","),
+            .trim = FALSE
         ))
     })
 }
