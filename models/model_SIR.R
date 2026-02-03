@@ -104,7 +104,7 @@ model_SIR <- function(popn, params) {
                 
                 if (status == "I") {
                     if (DEBUG) message("ID ", id_next_event, ": I -> R")
-                    set(X, id_next_event, "status", "D")
+                    set(X, id_next_event, "status", "R")
                 } else {
                     message("status = ", status)
                     print(X[, .(group, donor, status, Tinf, Tdeath, group_inf, event_rate)])

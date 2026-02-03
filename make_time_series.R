@@ -1,6 +1,6 @@
 make_time_series <- function(popn, params) {
     switch(params$model_type,
-           "SIR"  = make_time_series_sir(popn, params),
+           "SIR" = make_time_series_sir(popn, params),
            "SEIR" = make_time_series_seir(popn, params),
            "SIDR" = make_time_series_sidr(popn, params),
            "SEIDR" = make_time_series_seidr(popn, params)

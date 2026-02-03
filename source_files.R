@@ -10,6 +10,7 @@
     source("patch_params.R")
     source("remove_bici_fes.R")
     source("patch_in_traits.R")
+    source("set_weights.R")
     source("tidy_up_periods.R")
     source("set_ge_opts.R")
     source("set_use_flags.R")

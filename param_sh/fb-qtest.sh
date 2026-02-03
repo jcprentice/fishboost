@@ -7,7 +7,7 @@
 #  memory limit of 1 Gbyte: -l h_vmem
 #$ -N fb-qtest
 #$ -pe sharedmem 16
-#$ -t 1-13
+#$ -t 1-18
 #$ -R y
 #$ -P roslin_wilson
 #$ -cwd

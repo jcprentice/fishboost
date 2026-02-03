@@ -18,24 +18,40 @@ dataset <- "fb-test"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(d = "FB_12_rpw, GEV SIT,   GRM HG_inv"), # 1
-    data.table(d = "FB_1_rpw,  GEV SIT,   GRM HG_inv"), # 2
-    data.table(d = "FB_2_rpw,  GEV SIT,   GRM HG_inv"), # 3
-    data.table(d = "FB_12_rpw, GEV SITTT, GRM HG_inv"), # 4
-    data.table(d = "FB_1_rpw,  GEV SITTT, GRM HG_inv"), # 5
-    data.table(d = "FB_2_rpw,  GEV SITTT, GRM HG_inv"), # 6
+    data.table(d = "FB_12_rpw, GEV SIT,   inf_model 1, cov_prior jeffreys, GRM HG_inv"), # 1
+    data.table(d = "FB_1_rpw,  GEV SIT,   inf_model 1, cov_prior jeffreys, GRM HG_inv"), # 2
+    data.table(d = "FB_2_rpw,  GEV SIT,   inf_model 1, cov_prior jeffreys, GRM HG_inv"), # 3
+    data.table(d = "FB_12_rpw, GEV SITTT, inf_model 1, cov_prior jeffreys, GRM HG_inv"), # 4
+    data.table(d = "FB_1_rpw,  GEV SITTT, inf_model 1, cov_prior jeffreys, GRM HG_inv"), # 5
+    data.table(d = "FB_2_rpw,  GEV SITTT, inf_model 1, cov_prior jeffreys, GRM HG_inv"), # 6
+    
+    data.table(d = "FB_12_rpw, GEV SIT,   inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 7
+    data.table(d = "FB_1_rpw,  GEV SIT,   inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 8
+    data.table(d = "FB_2_rpw,  GEV SIT,   inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 9
+    data.table(d = "FB_12_rpw, GEV SITTT, inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 10
+    data.table(d = "FB_1_rpw,  GEV SITTT, inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 11
+    data.table(d = "FB_2_rpw,  GEV SITTT, inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 12
+    
+    data.table(d = "FB_12_rpw, GEV SIT,   inf_model 4, cov_prior uniform,  GRM HG_inv"), # 13
+    data.table(d = "FB_1_rpw,  GEV SIT,   inf_model 4, cov_prior uniform,  GRM HG_inv"), # 14
+    data.table(d = "FB_2_rpw,  GEV SIT,   inf_model 4, cov_prior uniform,  GRM HG_inv"), # 15
+    data.table(d = "FB_12_rpw, GEV SITTT, inf_model 4, cov_prior uniform,  GRM HG_inv"), # 16
+    data.table(d = "FB_1_rpw,  GEV SITTT, inf_model 4, cov_prior uniform,  GRM HG_inv"), # 17
+    data.table(d = "FB_2_rpw,  GEV SITTT, inf_model 4, cov_prior uniform,  GRM HG_inv"), # 18
     
     fill = TRUE
 )
 
-protocol[, setup := get_part(d, "FB") |> str_to_lower(), .I]
+protocol[, setup := d |> str_split_i(", ", 1) |> str_to_lower(), .I]
 
 protocol[str_detect(d, "GEV SIT"),
          use_traits := "sit"]
 protocol[str_detect(d, "GEV SITTT"),
          `:=`(use_traits = "sildt", link_traits = "sittt")]
 
-# protocol[, inf_model := get_part(d, "inf_model") |> as.integer(), .I]
+protocol[, inf_model := get_part(d, "inf_model") |> as.integer(), .I]
+
+protocol[, cov_prior := get_part(d, "cov_prior"), .I]
 
 
 # Common options ----
@@ -46,7 +62,6 @@ common <- list(use_grm = "HG_inv",
                inf_model = 1L,
                group_effect = 0.05,
                weight_is_nested = TRUE,
-               cov_prior = "jeffreys",
                use_weight = "log",
                # expand_priors = 4,
                trial_fe = "ildt",
@@ -62,7 +77,7 @@ common <- list(use_grm = "HG_inv",
                `prior__latent_period_Tr2,Don__val1` = 1,
                `prior__latent_period_Tr2,Don__val2` = 20,
                fix_donors = "no_Tsym_survivors",
-               nsample = if (str_detect(dataset, "q")) 5e5 else 1e7,
+               nsample = if (str_detect(dataset, "q")) 2e5 else 2e6,
                sample_states = if (str_detect(dataset, "q")) 1e2 else 1e3,
                ie_output = "true") |>
     safe_merge(common2)

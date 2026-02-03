@@ -67,3 +67,6 @@ check_convergence <- function(dataset = "fb-test") {
          worst = pes[order(ESS)[1:20]])
 }
 
+if (FALSE) {
+    out <- check_convergence("fb-qtest")
+}

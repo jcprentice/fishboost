@@ -89,6 +89,7 @@ if (params$sim_new_data != "no") {
     popn <- make_pedigree(params) |>
         set_groups(params) |> # Set groups, trial, donors, and group effect
         set_traits(params) |>
+        set_weights(params) |>
         apply_fixed_effects(params)
 } else {
     popn <- readRDS(str_glue("fb_data/{params$setup}.rds"))
@@ -204,9 +205,6 @@ plt <- plot_model(popn, params)
         results_pars <- c("params", "popn", "time_taken", "time_start", "time_end")
     }
     
-    # Generate etc_inf.rds summary file
-    flatten_bici_states(dataset, name, bici_cmd)
-    
     time_end <- now()
     
     # Filter for results that we have and save
@@ -214,5 +212,8 @@ plt <- plot_model(popn, params)
         keep(exists) |>
         mget() |>
         saveRDS(file = str_glue("{results_dir}/{name}.rds"))
+    
+    # Generate etc_inf.rds summary file
+    flatten_bici_states(dataset, name, bici_cmd)
 }
 

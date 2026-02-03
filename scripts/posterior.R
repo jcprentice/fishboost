@@ -117,8 +117,8 @@ get_posterior <- function(dataset = "fb-final", scen = 1, rep = 1) {
     
     plt_str <- str_glue("{cov_dir}/{dataset}-s{scen}-{rep}-covs") |>
         str_replace("scen-", "s")
-    # ggsave(str_c(plt_str, ".png"), cov_plt, width = 9, height = 8)
-    ggsave(str_c(plt_str, ".pdf"), cov_plt, width = 9, height = 8)
+    ggsave(str_c(plt_str, ".png"), cov_plt, width = 9, height = 8)
+    # ggsave(str_c(plt_str, ".pdf"), cov_plt, width = 9, height = 8)
     message(str_glue(" - Plotted '{plt_str}'"))
     
     plt
@@ -130,7 +130,7 @@ if (FALSE) {
     walk(scens, possibly(\(i) get_posterior(dataset, i, 1)))
     
     dataset <- "fb-qtest"; scens <- 1:13
-    walk(scens, \(i) get_posterior(dataset, i, 1))
+    walk(scens, possibly(\(i) get_posterior(dataset, i, 1)))
     
     # get_posteriors(dataset = "sim-base-inf", scens = 5, reps = 1:5, combine = FALSE)
     # walk(scens, \(i) get_posterior(dataset, i, 1))

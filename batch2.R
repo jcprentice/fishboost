@@ -271,49 +271,7 @@ message(str_glue("censor = {x}\nTmax = {y}",
 # plt <- plot_model(popn, params)
 
 
-## Generate config files ----
-{
-    # Create missing directories
-    params[str_ends(names(params), "_dir")] |>
-        as.character() |>
-        discard(dir.exists) |>
-        walk(~ message(" - mkdir ", .x)) |>
-        walk(~ dir.create(.x, recursive = TRUE))
 
-    # Clean up old config files and generate fresh one
-    cleanup_bici_files(params)
-    bici_txt <- generate_bici_script(popn, params)
-}
-
-
-## Run BICI ----
-
-{
-    cmd <- with(params, str_glue(
-        if (algorithm == "pas")
-            "mpirun -n {nchains} --output :raw --oversubscribe " else "",
-        "../BICI/bici-{platform} {config}.bici {bici_cmd}",
-        platform = Sys.info()[["sysname"]]
-    ))
-    message(str_glue("Running:\n$ {cmd}"))
-    
-    nattempts <- if (run_from_script) 4 else 1
-    for (attempt in seq_len(nattempts)) {
-        tic()
-        out <- system(cmd)
-        time_taken <- toc()
-        
-        if (out == 0) {
-            message("BICI ran successfully")
-            break
-        } else if (attempt < nattempts) {
-            message(str_glue(" - attempt {attempt}/{nattempts} failed, trying again"))
-            inc_seed(params)
-        } else {
-            stop("BICI failed to finish")
-        }
-    }
-}
 
 ## Retrieve results and save ----
 
@@ -330,10 +288,10 @@ message(str_glue("censor = {x}\nTmax = {y}",
         # pe_name <- str_glue("{output_dir}/posterior.csv")
         # parameter_estimates <- if (file.exists(pe_name)) fread(pe_name)
         parameter_estimates <- rebuild_bici_posteriors(dataset, name)
-
+        
         ebvs_name     <- str_glue("{output_dir}/ebvs.csv")
         estimated_BVs <- if (file.exists(ebvs_name)) fread(ebvs_name)
-
+        
         pa_name   <- str_glue("{output_dir}/pred_accs.csv")
         pred_accs <- if (file.exists(pa_name)) fread(pa_name)
         

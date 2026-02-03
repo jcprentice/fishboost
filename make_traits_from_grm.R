@@ -78,12 +78,5 @@ make_traits_from_grm <- function(popn, params) {
     # parents don't need phenotypes
     popn2[sdp != "progeny", (model_traits) := NA]
     
-    # Add weights
-    if ("weight" %notin% names(popn2)) {
-        popn2[, weight := 1]
-        popn2[trial == 1, weight := rlnorm(.N, 3.430757, 0.2899917)]
-        popn2[trial == 2, weight := rlnorm(.N, 4.457181, 0.3330279)]
-    }
-    
     popn2
 }

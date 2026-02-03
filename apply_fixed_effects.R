@@ -35,7 +35,7 @@ apply_fixed_effects <- function(popn, params) {
 
     # looking for either log_recentre() or recentre()
     recentre_f <- get(if (use_weight == "log") "log_recentre" else "recentre")
-
+    
     walk(model_traits, \(trait) {
         # trait <- "sus"
         trait1 <- str_1st(trait)

@@ -5,8 +5,13 @@
 }
 
 basic_km <- function(popn, params) {
-    cols <- intersect(c("sire", "trial", "Tsym", "Tdeath"), names(popn))
+    cols <- intersect(c("sire", "trial", "Tinf", "Tsym", "Tdeath"), names(popn))
+    
     x <- popn[sdp == "progeny", ..cols]
+    
+    if ("Tsym" %notin% names(x)) {
+        x[, Tsym := Tinf]
+    }
     
     x[, RP := Tdeath - Tsym]
     
@@ -30,7 +35,8 @@ basic_km <- function(popn, params) {
                        variable = c(Tinf = "Proportion of family uninfected vs time",
                                     Tsym = "Proportion of family with no symptoms vs time",
                                     RP   = "Proportion of family surviving vs time"),
-                       trial = c("1" = "Trial 1", "2" = "Trial 2")))
+                       trial = c("1" = "Trial 1",
+                                 "2" = "Trial 2")))
     
     if (params$show_plots) print(plt)
     

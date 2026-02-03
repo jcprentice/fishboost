@@ -28,13 +28,13 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         walk(dir.create)
     
     etc <- str_glue("{data_dir}/scen-{scen}-{rep}-out/etc_inf.rds")
-    if (file.exists(etc)) {
-        popn <- readRDS(etc)$popn
-    } else {
+    if (!file.exists(etc)) {
         return(NULL)
     }
     
-    traits <- c("sus_g", "inf_g", "tol_g")
+    popn <- readRDS(etc)$popn
+    
+    traits <- c("sus_g", "inf_g", "tol_g", "sus_e", "inf_e", "tol_e")[1:3]
     cols <- c("state", "id", "sire", "dam", "sdp", "trial", "donor")
     popn <- popn[, mget(c(cols, traits))]
     
@@ -59,7 +59,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         dcast(... ~ val) |>
         setcolorder(c("id", "trial", "trait", "lo", "med", "hi"))
     x1[, trait := factor(trait, levels = traits)]
-    setorder(x1, id, trait)
+    setorder(x1, trait, id)
     
     plts$ids <- x1 |>
         ggplot(aes(x = id, colour = trait)) +
@@ -84,13 +84,13 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         theme(legend.position = "none")
     plts$ids
     
-    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-r{rep}-ebvs.png"),
+    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-{rep}-ebvs.png"),
            plts$ids, width = 9, height = 6)
     
     # Traits sorted ----
-    x11 <- x1[order(trait, med)][, id := seq(.N), trait][order(id, trait)]
+    x1_sorted <- x1[order(trait, med)][, id := seq(.N), trait][order(trait, id)]
     
-    plts$sorted <- x11 |>
+    plts$sorted <- x1_sorted |>
         ggplot(aes(x = id, colour = trait)) +
         geom_ribbon(aes(ymin = lo, ymax = hi, fill = trait)) +
         # geom_errorbar(aes(ymin = lo, ymax = hi)) +
@@ -113,7 +113,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         theme(legend.position = "none")
     plts$sorted
     
-    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-r{rep}-ebvs-sorted.png"),
+    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-{rep}-ebvs-sorted.png"),
            plts$sorted, width = 9, height = 6)
     
     # Sire trait estimates ----
@@ -144,10 +144,8 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         geom_hline(yintercept = 0, colour = "black") +
         labs(x = "Sire",
              y = "Trait",
-             title = "Sire Trait estimates",
+             title = "Sorted Sire Trait estimates",
              subtitle = st) +
-        # scale_colour_manual(values = rep(brewer.pal(4, "Set1"),
-        #                                  length.out = length(levels(x2$sire)))) +
         facet_wrap(. ~ trait,
                    ncol = 3,
                    labeller = labeller(
@@ -158,13 +156,17 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         theme(legend.position = "none")
     plts$sires
     
-    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-r{rep}-ebvs-sires1.png"),
+    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-{rep}-ebvs-sires-eb.png"),
            plts$sires, width = 9, height = 6)
     
     # Using stat_summary ----
-    x3 <- popn[state %in% 1:10 & !is.na(sire), mget(c("sire", traits))] |>
+    x3 <- popn[state & !is.na(sire), mget(c("sire", traits))] |>
         melt(id.vars = "sire", variable.name = "trait")
     x3[, trait := factor(trait, levels = traits)]
+    x3[, med := median(value), .(trait, sire)] |>
+        setorder(trait, med)
+    x3[, id := match(sire, unique(sire)), trait]
+    
     
     hdi95 <- function(x) {
         x <- na.omit(x)
@@ -175,11 +177,12 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
     }
     
     my_med <- function(x) {
+        x <- na.omit(x)
         data.frame(y = median(x, na.rm = TRUE))
     }
     
     plts$hdi <- x3 |>
-        ggplot(aes(x = sire, y = value, colour = trait)) +
+        ggplot(aes(x = id, y = value, colour = trait)) +
         stat_summary(geom = "errorbar",
                      fun.data = hdi95,
                      show.legend = FALSE) +
@@ -189,7 +192,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         geom_hline(yintercept = 0, colour = "grey10") +
         labs(x = "Sire",
              y = "Trait",
-             title = "Sire Traits 95% HDI",
+             title = "Sorted Sire Traits 95% HDI",
              subtitle = st) +
         facet_wrap(. ~ trait,
                    ncol = 3,
@@ -200,10 +203,32 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         theme_bw()
     plts$hdi
     
-    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-r{rep}-ebvs-sires_hdi.png"),
+    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-{rep}-ebvs-sires-hdi.png"),
            plts$hdi, width = 9, height = 6)
     
+    # Sires Violin ----
     
+    plts$violin <- x3 |>
+        ggplot(aes(x = id, y = value, fill = trait, group = factor(sire))) +
+        geom_hline(yintercept = 0, colour = "grey10") +
+        labs(x = "Sire",
+             y = "Trait",
+             title = "Sorted Sire Traits",
+             subtitle = st) +
+        geom_violin(show.legend = FALSE) +
+        facet_wrap(. ~ trait,
+                   ncol = 3,
+                   labeller = labeller(
+                       trait = c(sus_g = "Sus G",
+                                 inf_g = "Inf G",
+                                 tol_g = "Tol G"))) +
+        theme_bw()
+    plts$violin
+    
+    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-{rep}-ebvs-sires-violin.png"),
+           plts$violin, width = 9, height = 6)
+    
+    # EBVs histogram ----
     popn2 <- popn |> melt(id.vars = c("id", "sire", "sdp", "trial"),
                           measure.vars = traits,
                           variable.name = "trait")
@@ -234,9 +259,10 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         theme(legend.position = "none")
     plts$hist
     
-    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-r{rep}-ebvs-hist.png"),
+    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-{rep}-ebvs-hist.png"),
            plts$hist, width = 9, height = 6)
     
+    # Sus x Inf x Tol ----
     popn_sit <- popn[sdp != "dam",
                      .(sire = first(sire),
                        sdp = first(sdp),
@@ -283,7 +309,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
     plts$sit <- plot_grid(plotlist = plts[c("si", "st", "it")],
                           nrow = 1, align = "hv")
     
-    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-r{rep}-ebvs-sit.png"),
+    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-{rep}-ebvs-sit.png"),
            plts$sit, width = 12, height = 5)
     
     
@@ -382,7 +408,7 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
         theme(legend.position = "none")
     plts$progeny
     
-    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-r{rep}-ebvs-progeny.png"),
+    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-{rep}-ebvs-progeny.png"),
            plts$progeny, width = 9, height = 6)
     
     
@@ -427,7 +453,7 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
         theme(legend.position = "none")
     plts$sires
     
-    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-r{rep}-ebvs-sires.png"),
+    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-{rep}-ebvs-sires.png"),
            plts$sires, width = 9, height = 6)
     
     popn2[is.na(trial), trial := 0]
@@ -457,7 +483,7 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
         theme(legend.position = "none")
     plts$hist
     
-    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-r{rep}-ebvs-hist.png"),
+    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-{rep}-ebvs-hist.png"),
            plts$hist, width = 9, height = 6)
     
     

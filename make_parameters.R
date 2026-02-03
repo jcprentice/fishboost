@@ -131,7 +131,7 @@ make_parameters <- function(
         "fb_2_rpw"     = c(17,   14,   875,    35,    1,     5),
         "chris"        = c(100,  2000, 2000,   200,   1,     5),
         "small"        = c(3,    6,    12,     4,     1,     1),
-        "single"       = c(100,  2000, 2000,   1,     1,     5),
+        "single"       = c(10,   20,   200,    8,     1,     5),
                          c(28,   25,   1750,   70,    2,     5)) |>
         as.integer() |> 
         setNames(c("nsires", "ndams", "nprogeny", "ngroups", "ntrials", "I0")) |>

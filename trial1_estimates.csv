@@ -1,0 +1,24 @@
+parameter,mean,median,ESS,GR
+Var G (Sus),0.6,0.5,9467,1
+Var G (Inf),2.9,2.9,9065,1
+Var G (Tol),0.2,0.2,9607,1
+"Cor G (Sus, Inf)",0.2,0.2,5761,1.01
+"Cor G (Sus, Tol)",0.2,0.2,7750,1.01
+"Cor G (Inf, Tol)",0,0,8443,1
+Var E (Sus),2.4,2.3,6938,1
+Var E (Inf),0.9,0.9,9461,1
+Var E (Tol),0.3,0.3,10000,1
+"Cor E (Sus, Inf)",-0.3,-0.3,6943,1
+"Cor E (Sus, Tol)",0.6,0.6,9524,1
+"Cor E (Inf, Tol)",-0.3,-0.4,8559,1
+beta Tr1,2.9,3,9331,1
+"Latent Period (days) Tr1,Don",1.1,1,10000,1
+"Latent Period (days) Tr1,Rec",11.6,11.5,8276,1
+"Detection Period (days) Tr1,Don",4,4,9168,1
+"Detection Period (days) Tr1,Rec",1.1,1.1,10000,1
+"Removal Period (days) Tr1,Don",2.9,2.8,6625,1
+"Removal Period (days) Tr1,Rec",13.7,13.6,8051,1
+Group Effect,0,0,10000,1
+weight Susceptibility,0.3,0.3,10000,1
+weight Infectivity,-0.6,-0.6,9611,1
+weight Tolerance,0.2,0.2,10000,1

@@ -78,6 +78,7 @@ We're now using BICI to generate our data, so we create a `popn` file but don't 
 popn <- make_pedigree(params) |>
     set_groups(params) |>
     set_traits(params) |>
+    set_weights(params) |>
     apply_fixed_effects(params)
 
 params$tmax <- c(t1 = 200, t2 = 200)

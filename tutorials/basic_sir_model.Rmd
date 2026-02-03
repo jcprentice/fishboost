@@ -1,5 +1,5 @@
 ---
-title: "Basic SEIDR Model"
+title: "Basic SIR Model"
 author: "Jamie Prentice"
 date: "`r Sys.Date()`"
 output: pdf_document
@@ -30,20 +30,11 @@ The params list might not fully do everything we want, but as it is just a basic
 
 ```{r build-params}
 params <- make_parameters(
-    model_type = "SEIDR", # c("SIR", "SEIR", "SIDR", "SEIDR")
-    dataset = "testing",
-    name = "scen-1-1",
-    setup = "fb_12_rpw", # "small", "fb_12", "fb_1", "fb_2", "single", etc.
-    use_traits = "sit", # "all", "none", "sit", "si" etc.
-    vars = c(sus = 1.0, inf = 1.5, tol = 0.5), # 0.5
-    cors = c(si = 0.3, st = 0.2, it = 0.2), # 0.2
-    group_layout = "fishboost", # "random", "family", "striped", "fishboost"
-    trial_fe = "ildt", # ""
-    donor_fe = "ildt", # ""
-    txd_fe = "ildt", # ""
-    weight_fe = "sildt", # ""
-    weight_is_nested = TRUE,
-    sim_new_data = "r" # c("bici", "r", "no", "etc_inf", "etc_ps")
+    model_type = "SIR",
+    setup = "single",
+    use_traits = "none",
+    group_layout = "striped",
+    sim_new_data = "r"
 )
 ```
 

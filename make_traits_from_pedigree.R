@@ -16,6 +16,8 @@ make_traits_from_pedigree <- function(pedigree, params) {
         use_weight   <- params$use_weight
     }
 
+    # Keep track of traits we haven't used, for those the genotypic value will
+    # be set to 0 and the phenotypic value will be set to 1.
     missing_traits <- setdiff(model_traits, traitnames)
 
     # Skip everything if n_traits == 0 (otherwise things break)
@@ -40,13 +42,15 @@ make_traits_from_pedigree <- function(pedigree, params) {
     traitnames_EV <- str_c(traitnames, "_e")
     
     # Check for positive definite matrix
-    posdef <- all(eigen(cov_G)$values > 0)
-    if (!posdef) {
-        semiposdef <- all(eigen(cov_G)$values > -1e-6)
-        if (semiposdef) {
-            cov_G[] <- 0
-        } else {
-            stop("cov_G is not positive definite")
+    if (any(eigen(cov_G)$values <= 0)) {
+        message(" - Matrix is not positive definite, shrinking correlations")
+        n <- 0
+        while (n < 50 && any(eigen(cov_G)$values < 0)) {
+            message("shrinking")
+            n <- n + 1
+            dcov <- diag(cov_G)
+            cov_G <- 0.9 * cov_G
+            diag(cov_G) <- dcov
         }
     }
 
@@ -101,13 +105,6 @@ make_traits_from_pedigree <- function(pedigree, params) {
         popn[, (missing_traits) := 1]
     }
     
-    # Add weights
-    if ("weight" %notin% names(popn)) {
-        popn[, weight := 1]
-        popn[trial == 1, weight := rlnorm(.N, 3.430757, 0.2899917)]
-        popn[trial == 2, weight := rlnorm(.N, 4.457181, 0.3330279)]
-    }
-
     # parents don't need phenotypes
     popn[sdp != "progeny", (model_traits) := NA]
 

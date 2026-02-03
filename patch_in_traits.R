@@ -5,7 +5,6 @@ patch_in_traits <- function(popn, params) {
         dataset         <- params$patch_dataset %||% ""
         name            <- params$patch_name
         model_traits    <- params$model_traits
-        use_weight      <- params$use_weight
         patch_state     <- params$patch_state
         patch_type      <- params$patch_type
         traits_source   <- params$traits_source

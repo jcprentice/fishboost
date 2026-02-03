@@ -71,6 +71,7 @@ Next we take the `params` file, set the groups and traits, and apply any fixed e
 popn <- make_pedigree(params) |>
     set_groups(params) |>
     set_traits(params) |>
+    set_weights(params) |>
     apply_fixed_effects(params)
 ```
 It's worth taking a look at the `popn` file to see what it includes. The columns are:
