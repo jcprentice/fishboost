@@ -17,7 +17,7 @@ make_traits_from_grm <- function(popn, params) {
         setup        <- params$setup
     }
     
-    message(str_glue(" - using '{use_grm}'"))
+    message(str_glue("- using '{use_grm}'"))
     
     GRM <- if (str_starts(use_grm, "A")) {
         make_grm(popn, "A")
@@ -30,7 +30,7 @@ make_traits_from_grm <- function(popn, params) {
             as.matrix() |>
             solve()
     } else {
-        stop(" - Cannot find GRM!")
+        stop("- Cannot find GRM!")
     }
     
     # This should stop a failure at chol(KGG) if a diagonal element is 0

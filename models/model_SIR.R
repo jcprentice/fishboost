@@ -123,7 +123,7 @@ model_SIR <- function(popn, params) {
     
     final_t <- max(Y$Tdeath, na.rm = TRUE) |> signif(5)
     
-    message(" - Final t = ", final_t, ", values are:",
+    message(str_glue("- Final t = {final_t}, values are:"),
             str_flatten(capture.output(table(Y$status)), "\n"))
     
     # tidy up X

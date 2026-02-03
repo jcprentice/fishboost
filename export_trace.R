@@ -7,7 +7,7 @@ export_trace <- function(dataset, scen) {
     tc_txt <- str_glue("datasets/{dataset}/data/scen-{scen}-1-out/trace_combine.txt")
     tc <- str_replace(tc_txt, "\\.txt", "tsv")
     if (file.exists(tc_txt)) {
-        message(" - renaming .txt to .tsv")
+        message("- renaming .txt to .tsv")
         file.rename(tc_txt, tc)
     }
     

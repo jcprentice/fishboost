@@ -89,7 +89,7 @@ R0s <- map(c(none = "none", sus = "sus_g", r0 = "r0"),
 capture_message(unlist(R0s))
 
 if (!dir.exists("r0_selection")) {
-        message(" - mkdir r0_selection")
+        message("- mkdir r0_selection")
     dir.create("r0_selection")
 }
 

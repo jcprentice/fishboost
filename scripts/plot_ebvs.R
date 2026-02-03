@@ -24,7 +24,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
     
     c(meta_dir, gfx_dir, ebvs_dir) |>
         discard(dir.exists) |>
-        walk(~ message(" - mkdir ", .x)) |>
+        walk(~ message("- mkdir ", .x)) |>
         walk(dir.create)
     
     etc <- str_glue("{data_dir}/scen-{scen}-{rep}-out/etc_inf.rds")
@@ -335,7 +335,7 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
     
     c(meta_dir, gfx_dir, ebvs_dir) |>
         discard(dir.exists) |>
-        walk(~ message(" - mkdir ", .x)) |>
+        walk(~ message("- mkdir ", .x)) |>
         walk(dir.create)
     
     etc <- str_glue("{data_dir}/scen-{scen}-{rep}-out/etc_inf.rds")

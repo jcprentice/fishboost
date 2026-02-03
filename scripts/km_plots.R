@@ -42,7 +42,7 @@ km_plots <- function(dataset = "fb-test",
     f <- str_glue("datasets/{dataset}/meta/km_data{um}.rds")
     
     if (simulate_new_data != "no" && file.exists(f)) {
-        message(" - Removing previous km_data file")
+        message("- Removing previous km_data file")
         file.remove(f)
     }
     
@@ -57,19 +57,19 @@ km_plots <- function(dataset = "fb-test",
         }
         
         if (simulate_new_data != "no") {
-            message(str_glue(" - No data found at '{f}', simulating new data ..."))
+            message(str_glue("- No data found at '{f}', simulating new data ..."))
         }
     }
     
     if (simulate_new_data != "no") {
-        message(str_glue(" - Generating new data with '{simulate_new_data}'"))
+        message(str_glue("- Generating new data with '{simulate_new_data}'"))
         fn <- get(str_glue("generate_km_data_{simulate_new_data}"))
         km_data <- map(scens, ~ fn(dataset, .x, opts))
         
         # Save the data we just created
         md <- str_glue("datasets/{dataset}/meta")
         if (!dir.exists(md)) {
-            message(" - mkdir ", md)
+            message("- mkdir ", md)
             dir.create(md)
         }
         saveRDS(km_data, file = f)
@@ -100,13 +100,13 @@ km_plots <- function(dataset = "fb-test",
     
     km_dir_st <- str_glue("datasets/{dataset}/gfx/km_st")
     if (!dir.exists(km_dir_st)) {
-        message(" - mkdir ", km_dir_st)
+        message("- mkdir ", km_dir_st)
         dir.create(km_dir_st, recursive = TRUE)
     }
     
     km_dir_dt <- str_glue("datasets/{dataset}/gfx/km_dt")
     if (!dir.exists(km_dir_dt)) {
-        message(" - mkdir ", km_dir_dt)
+        message("- mkdir ", km_dir_dt)
         dir.create(km_dir_dt, recursive = TRUE)
     }
     

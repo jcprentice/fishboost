@@ -12,7 +12,7 @@ patch_in_traits <- function(popn, params) {
     }
     
     if (traits_source != "posterior" || dataset == "") {
-        if (msgs) message(" - not requested")
+        if (msgs) message("- not requested")
         return(popn)
     }
     
@@ -31,7 +31,7 @@ patch_in_traits <- function(popn, params) {
         f <- str_glue("{output_dir}/etc_inf.rds")
 
         # If we don't find anything, revert to patching with mean
-        message(" - no ETC file, reverting to posterior mean")
+        message("- no ETC file, reverting to posterior mean")
         if (!file.exists(f)) patch_type <- "mean"
     }
     
@@ -42,21 +42,21 @@ patch_in_traits <- function(popn, params) {
             cols <- names(tmp) |> str_subset("^(sus|inf|lat|det|tol)")
             ebvs <- tmp[, map(.SD, mean), id, .SDcols = cols]
         } else {
-            stop(str_glue(" - '{f}' not found!"))
+            stop(str_glue("- '{f}' not found!"))
         }
         
-        if (msgs) message(str_glue(" - making popn by copying EBVs from '{dataset}/{name}' ..."))
+        if (msgs) message(str_glue("- making popn by copying EBVs from '{dataset}/{name}' ..."))
         
     } else if (is.numeric(patch_state)) {
         f <- str_glue("{output_dir}/etc_inf.rds")
         if (file.exists(f)) {
             ebvs <- readRDS(f)$ies[state == patch_state, map(.SD, mean), id, .SDcols = -1]
         } else {
-            stop(str_glue(" - '{f}' not found!"))
+            stop(str_glue("- '{f}' not found!"))
         }
         
-        if (msgs) message(str_glue(" - making popn by copying EBVs from '{dataset}/{name}'\n",
-                                   " - using state '{patch_state}' ..."))
+        if (msgs) message(str_glue("- making popn by copying EBVs from '{dataset}/{name}'\n",
+                                   "- using state '{patch_state}' ..."))
     } else if (!is.null(params$trace_row)) {
         trace_row <- params$trace_row
         f <- str_glue("{output_dir}/extended_trace_combine.tsv")
@@ -66,7 +66,7 @@ patch_in_traits <- function(popn, params) {
                 stop("No trace file")
             }
         }
-        if (msgs) message(str_glue(" - reading trace file '{f}'"))
+        if (msgs) message(str_glue("- reading trace file '{f}'"))
         tc <- fread(f)[trace_row]
         tc <- tc[, .SD, .SDcols = str_subset(names(tc), "^\\d")] |>
             melt(measure.vars = measure(id, ie, ae, sep = "_"))
@@ -80,7 +80,7 @@ patch_in_traits <- function(popn, params) {
     }
     
     if (nrow(popn) != nrow(ebvs)) {
-        message(str_glue(" - inconsistent sizes for EBVs ({x}) and pedigree ({y}), generating new data",
+        message(str_glue("- inconsistent sizes for EBVs ({x}) and pedigree ({y}), generating new data",
                                x = nrow(popn), y = nrow(ebvs)))
         popn2 <- make_traits_from_pedigree(popn, params)
         return(popn2)

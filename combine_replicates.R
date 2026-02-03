@@ -53,7 +53,7 @@ combine_replicates(dataset = "fb-final2") {
                 str_subset(str_glue("scen-{scen}"))
             
             if (length(tc_files) <= 1) return()
-            message(str_glue(" - Rebuilding {fp}trace_combine.tsv file for s{scen}"))
+            message(str_glue("- Rebuilding {fp}trace_combine.tsv file for s{scen}"))
             
             foo <- map(tc_files, fread) |> rbindlist()
             foo[, state := seq(0L, .N - 1L)]
@@ -69,7 +69,7 @@ combine_replicates(dataset = "fb-final2") {
         ebv_files <- list.files(data_dir, "ebvs", recursive = TRUE, full.names = TRUE) |>
             str_subset(str_glue("scen-{scen}"))
         if (length(ebv_files) <= 1) return()
-        message(str_glue(" - Rebuilding 's{scen} / ebvs.csv'"))
+        message(str_glue("- Rebuilding 's{scen} / ebvs.csv'"))
         
         ebvs <- map(ebv_files, fread) |>
         rbindlist()
@@ -84,18 +84,18 @@ combine_replicates(dataset = "fb-final2") {
     walk(scens, \(scen) {
         walk(reps, \(rep) {
             if (rep == 1) return()
-            message(str_glue(" - Deleting files for scen-{scen}-{rep} ..."))
+            message(str_glue("- Deleting files for scen-{scen}-{rep} ..."))
             
             out_dir <- str_glue("{data_dir}/scen-{scen}-{rep}-out")
             files <- list.files(out_dir, full.names = TRUE, recursive = TRUE)
             if (length(files) > 0) file.remove(files)
             if (dir.exists(out_dir)) {
-                message(str_glue("     - Deleting output files"))
+                message(str_glue("    - Deleting output files"))
                 file.remove(out_dir)
             }
             files <- list.files(data_dir, str_glue("-{scen}-{rep}(-|\\.)"), full.names = TRUE)
             if (length(files) > 0) {
-                message(str_glue("     - Deleting input files"))
+                message(str_glue("    - Deleting input files"))
                 file.remove(files)
             }
         })

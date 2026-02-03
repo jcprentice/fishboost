@@ -14,21 +14,21 @@ remove_bici_fes <- function(params) {
     # Trial ----
     if (params$ntrials > 1) {
         if (!str_detect(trial_fe, "s|i")) {
-            message(" - Merging beta across trials")
+            message("- Merging beta across trials")
             priors[str_detect(parameter, "beta_Tr"), true_val := mean(true_val)]
         }
         if (!str_detect(trial_fe, "l")) {
-            message(" - Merging LP across trials")
+            message("- Merging LP across trials")
             priors[str_detect(parameter, "lat.*Don"), true_val := mean(true_val)]
             priors[str_detect(parameter, "lat.*Rec"), true_val := mean(true_val)]
         }
         if (!str_detect(trial_fe, "d")) {
-            message(" - Merging DP across trials")
+            message("- Merging DP across trials")
             priors[str_detect(parameter, "det.*Don"), true_val := mean(true_val)]
             priors[str_detect(parameter, "det.*Rec"), true_val := mean(true_val)]
         }
         if (!str_detect(trial_fe, "t")) {
-            message(" - Merging RP across trials")
+            message("- Merging RP across trials")
             priors[str_detect(parameter, "rem.*Don"), true_val := mean(true_val)]
             priors[str_detect(parameter, "rem.*Rec"), true_val := mean(true_val)]
         }
@@ -41,17 +41,17 @@ remove_bici_fes <- function(params) {
     wtI <- c(pD, 1 - pD)
     
     if (!str_detect(donor_fe, "l")) {
-        message(" - Merging LP across inoculation status")
+        message("- Merging LP across inoculation status")
         priors[str_detect(parameter, "lat.*Tr1"), true_val := sum(wtI * true_val)]
         priors[str_detect(parameter, "lat.*Tr2"), true_val := sum(wtI * true_val)]
     }
     if (!str_detect(donor_fe, "d")) {
-        message(" - Merging DP across inoculation status")
+        message("- Merging DP across inoculation status")
         priors[str_detect(parameter, "det.*Tr1"), true_val := sum(wtI * true_val)]
         priors[str_detect(parameter, "det.*Tr2"), true_val := sum(wtI * true_val)]
     }
     if (!str_detect(donor_fe, "t")) {
-        message(" - Merging RP across inoculation status")
+        message("- Merging RP across inoculation status")
         priors[str_detect(parameter, "rem.*Tr1"), true_val := sum(wtI * true_val)]
         priors[str_detect(parameter, "rem.*Tr2"), true_val := sum(wtI * true_val)]
     }

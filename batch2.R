@@ -62,9 +62,9 @@ if (run_from_script) {
         if (is.na(value)) return()
         
         if (is.character(value)) {
-            message(str_glue(" - {param} = '{value}'"))
+            message(str_glue("- {param} = '{value}'"))
         } else {
-            message(str_glue(" - {param} = {value}"))
+            message(str_glue("- {param} = {value}"))
         }
         
         # Skip any values already provided to make_pars()
@@ -166,7 +166,7 @@ if (run_from_script) {
     # Overrule whatever is in the protocol and just take it from qsub
     num_slots <- as.integer(Sys.getenv("NUM_SLOTS"))
     if (!is.na(num_slots) && params$nchains != num_slots) {
-        message(" - Overriding nchains with $NUM_SLOTS = ", num_slots)
+        message("- Overriding nchains with $NUM_SLOTS = ", num_slots)
         params$nchains <- num_slots
     }
     

@@ -43,7 +43,7 @@ make_traits_from_pedigree <- function(pedigree, params) {
     
     # Check for positive definite matrix
     if (any(eigen(cov_G)$values <= 0)) {
-        message(" - Matrix is not positive definite, shrinking correlations")
+        message("- Matrix is not positive definite, shrinking correlations")
         n <- 0
         while (n < 50 && any(eigen(cov_G)$values < 0)) {
             message("shrinking")

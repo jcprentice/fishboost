@@ -62,9 +62,9 @@ if (run_from_script) {
         if (is.na(value)) return()
         
         if (is.character(value)) {
-            message(str_glue(" - {param} = '{value}'"))
+            message(str_glue("- {param} = '{value}'"))
         } else {
-            message(str_glue(" - {param} = {value}"))
+            message(str_glue("- {param} = {value}"))
         }
         
         # Skip any values already provided to make_pars()
@@ -166,7 +166,7 @@ if (run_from_script) {
     # Overrule whatever is in the protocol and just take it from qsub
     num_slots <- as.integer(Sys.getenv("NUM_SLOTS"))
     if (!is.na(num_slots) && params$nchains != num_slots) {
-        message(" - Overriding nchains with $NUM_SLOTS = ", num_slots)
+        message("- Overriding nchains with $NUM_SLOTS = ", num_slots)
         params$nchains <- num_slots
     }
     
@@ -277,7 +277,7 @@ message(str_glue("censor = {x}\nTmax = {y}",
     params[str_ends(names(params), "_dir")] |>
         as.character() |>
         discard(dir.exists) |>
-        walk(~ message(" - mkdir ", .x)) |>
+        walk(~ message("- mkdir ", .x)) |>
         walk(~ dir.create(.x, recursive = TRUE))
 
     # Clean up old config files and generate fresh one
@@ -307,7 +307,7 @@ message(str_glue("censor = {x}\nTmax = {y}",
             message("BICI ran successfully")
             break
         } else if (attempt < nattempts) {
-            message(str_glue(" - attempt {attempt}/{nattempts} failed, trying again"))
+            message(str_glue("- attempt {attempt}/{nattempts} failed, trying again"))
             inc_seed(params)
         } else {
             stop("BICI failed to finish")

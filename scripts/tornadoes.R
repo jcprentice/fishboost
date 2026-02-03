@@ -8,7 +8,7 @@ tornadoes <- function(dataset = "fb-test", scens = 1:8, combine = TRUE) {
     
     gfx_dir <- str_glue("datasets/{dataset}/gfx/tornadoes")
     if (!dir.exists(gfx_dir)) {
-        message(" - mkdir ", gfx_dir)
+        message("- mkdir ", gfx_dir)
         dir.create(gfx_dir, recursive = TRUE)
     }
     

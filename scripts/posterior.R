@@ -19,7 +19,7 @@ get_posterior <- function(dataset = "fb-final", scen = 1, rep = 1) {
         
         c(gfx_dir, post_dir, cov_dir) |>
             discard(dir.exists) |>
-            walk(~ message(" - mkdir ", .x)) |>
+            walk(~ message("- mkdir ", .x)) |>
             walk(dir.create, recursive = TRUE)
         
     }
@@ -88,7 +88,7 @@ get_posterior <- function(dataset = "fb-final", scen = 1, rep = 1) {
     plt_str <- str_glue("{post_dir}/{dataset}-s{scen}-{rep}-posteriors")
     ggsave(str_c(plt_str, ".png"), plt, width = 10, height = 12)
     # ggsave(str_c(plt_str, ".pdf"), plt, width = 10, height = 12)
-    message(str_glue(" - plotted '{plt_str}'"))
+    message(str_glue("- plotted '{plt_str}'"))
     
     
     # Covariance only
@@ -105,7 +105,7 @@ get_posterior <- function(dataset = "fb-final", scen = 1, rep = 1) {
     plt_names <- as.character(plt_mat)
     
     if (is_empty(plt_names)) {
-        message(" - No Genetic Variance parameters detected")
+        message("- No Genetic Variance parameters detected")
         return()
     }
     
@@ -119,7 +119,7 @@ get_posterior <- function(dataset = "fb-final", scen = 1, rep = 1) {
         str_replace("scen-", "s")
     ggsave(str_c(plt_str, ".png"), cov_plt, width = 9, height = 8)
     # ggsave(str_c(plt_str, ".pdf"), cov_plt, width = 9, height = 8)
-    message(str_glue(" - Plotted '{plt_str}'"))
+    message(str_glue("- Plotted '{plt_str}'"))
     
     plt
 }

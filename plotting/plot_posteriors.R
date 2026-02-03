@@ -59,7 +59,7 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
     }
     
     if (is_empty(trace_files)) {
-        message(" - No trace files found")
+        message("- No trace files found")
         return(NULL)
     }
     
@@ -68,7 +68,7 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
     x[, str_subset(names(x), "state|State|Group") := NULL]
     
     if (x[, all(is.na(map(.SD, sd)))]) {
-        message(" - All columns are NA!")
+        message("- All columns are NA!")
         return(NULL)
     }
     
@@ -86,7 +86,7 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
             params$sim_new_data <- if (str_detect(dataset, "sim")) "r" else "no"
         }
     } else {
-        message(" - No results file found, attempting to proceed without one.")
+        message("- No results file found, attempting to proceed without one.")
         rf <- str_glue("param_sets/{dataset}.rds")
         if (file.exists(rf)) {
             res <- readRDS(rf)

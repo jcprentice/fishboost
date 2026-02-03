@@ -142,7 +142,7 @@ plt <- plot_model(popn, params)
     params[str_ends(names(params), "_dir")] |>
         as.character() |>
         discard(dir.exists) |>
-        walk(~ message(" - mkdir ", .x)) |>
+        walk(~ message("- mkdir ", .x)) |>
         walk(~ dir.create(.x, recursive = TRUE))
 
     # Clean up old config files and generate fresh one

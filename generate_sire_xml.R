@@ -318,7 +318,7 @@ generate_sire_xml <- function(popn, params) {
         xml_add_child(x, xml_comment("Information about individuals"))
         
         dt <- str_glue("{data_dir}/{name}-data.tsv")
-        if (msgs) message(" - Writing data table to ", dt)
+        if (msgs) message("- Writing data table to ", dt)
         
         prepare_data(popn, params) |>
             write.table(file = dt, sep = "\t", quote = FALSE,
@@ -391,7 +391,7 @@ generate_sire_xml <- function(popn, params) {
                 xml_add_child(x, "A_nz", file = A_file, name = "A")
             }
             # xml_add_child(x, "A_nonzero", file = A_file, name = "A")
-            if (msgs) message(" - Writing GRM to ", A_file)
+            if (msgs) message("- Writing GRM to ", A_file)
             
         } else if (str_starts(use_grm, "H")) {
             
@@ -399,13 +399,13 @@ generate_sire_xml <- function(popn, params) {
                 # Just point to the pre-existing H matrix for FB
                 str <- str_remove(setup, "fb_")
                 sire_H_file <- str_glue("fb_data/{use_grm}_{str}.tsv")
-                if (msgs) message(str_glue(" - pointing {use_grm} to {sire_H_file}"))
+                if (msgs) message(str_glue("- pointing {use_grm} to {sire_H_file}"))
             } else {
                 # Write the passed GRM
                 write.table(GRM, file = sire_H_file, sep = "\t", quote = FALSE,
                             row.names = FALSE, col.names = FALSE)
                 sire_H_file <- str_glue("{data_dir}/{name}-H.tsv")
-                if (msgs) message(str_glue(" - Writing GRM to {sire_H_file}"))
+                if (msgs) message(str_glue("- Writing GRM to {sire_H_file}"))
             }
             
             if (str_detect(use_grm, "inv")) {

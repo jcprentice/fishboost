@@ -147,7 +147,7 @@ sildt <- c("s", "i", "l", "d", "t")
 
 cor_dir <- str_glue("datasets/{dataset}/gfx/correlations")
 if (!dir.exists(cor_dir)) {
-    message(" - mkdir ", cor_dir)
+    message("- mkdir ", cor_dir)
     dir.create(cor_dir)
 }
 

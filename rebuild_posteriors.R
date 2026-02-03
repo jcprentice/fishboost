@@ -67,7 +67,7 @@ rebuild_sire_posteriors <- function(dataset = "fb-final",
     }
     
     posteriors_tsv <- str_glue("{out_dir}/posterior.tsv")
-    message(str_glue(" - Writing '{posteriors_tsv}'"))
+    message(str_glue("- Writing '{posteriors_tsv}'"))
     fwrite(xp, posteriors_tsv, sep = "\t")
     xp
 }
@@ -139,7 +139,7 @@ rebuild_bici_posteriors <- function(dataset = "fb-test",
     
     # Write to trace_combine.tsv
     tc <- str_glue("{out_dir}/trace_combine.tsv")
-    message(str_glue(" - Writing '{tc}'"))
+    message(str_glue("- Writing '{tc}'"))
     fwrite(xs, file = tc, sep = "\t")
     xs[, state := NULL]
     
@@ -175,7 +175,7 @@ rebuild_bici_posteriors <- function(dataset = "fb-test",
     } 
     
     posteriors_tsv <- str_glue("{out_dir}/posterior.tsv")
-    message(str_glue(" - Writing '{posteriors_tsv}'"))
+    message(str_glue("- Writing '{posteriors_tsv}'"))
     fwrite(xp, posteriors_tsv, sep = "\t")
     xp
 }

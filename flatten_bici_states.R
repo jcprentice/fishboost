@@ -38,7 +38,7 @@ flatten_bici_states <- function(dataset = "fb-test",
         str_sort(numeric = TRUE)
     
     if (is_empty(files)) {
-        message(" - No state files found!")
+        message("- No state files found!")
         return(invisible(NULL))
     }
     
@@ -228,7 +228,7 @@ flatten_bici_states <- function(dataset = "fb-test",
             setNames(parts)
     })
     t_end <- as.integer(now())
-    message(str_glue(" - Completed in {tt}",
+    message(str_glue("- Completed in {tt}",
                      tt = seconds_to_period(t_end - t_start)))
     
     etc <- map(parts, ~ map(out2, .x) |> rbindlist(idcol = "state2")) |>
@@ -247,7 +247,7 @@ flatten_bici_states <- function(dataset = "fb-test",
                              "sim" = "_sim",
                              "post-sim" = "_ps",
                              ""))
-    message(str_glue(" - Saving to '{f}'"))
+    message(str_glue("- Saving to '{f}'"))
     saveRDS(etc, f)
     
     invisible(etc)

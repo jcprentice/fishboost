@@ -23,7 +23,7 @@ generate_bici_script <- function(popn, params) {
         
         out_dir <- str_glue("{data_dir}/{name}-out")
         if (!dir.exists(out_dir)) {
-            message(" - mkdir ", out_dir)
+            message("- mkdir ", out_dir)
             dir.create(out_dir)
         }
         
@@ -279,7 +279,7 @@ generate_bici_script <- function(popn, params) {
         
         if (sim_new_data != "bici") {
             if (popn_format == "intervals") {
-                message(" - Writing intervals")
+                message("- Writing intervals")
                 x$comp_data <- list(node = "comp-data",
                                     name = "DS observations",
                                     class = "DS",
@@ -290,7 +290,7 @@ generate_bici_script <- function(popn, params) {
                            sep = "\t", quote = TRUE)
                 
             } else if (popn_format == "times") {
-                message(" - Writing times")
+                message("- Writing times")
                 
                 # Censor the data
                 data <- popn[, .SD, .SDcols = c("id", "trial", "donor", timings)]
@@ -389,7 +389,7 @@ generate_bici_script <- function(popn, params) {
                            name = "gen",
                            ie = ies_str)
             
-            message(str_glue(" - using GRM = '{use_grm}'"))
+            message(str_glue("- using GRM = '{use_grm}'"))
             
             if (use_grm %in% c("", "none", "pedigree")) {
                 # Write the pedigree file

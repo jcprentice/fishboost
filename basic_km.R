@@ -36,7 +36,8 @@ basic_km <- function(popn, params) {
                                     Tsym = "Proportion of family with no symptoms vs time",
                                     RP   = "Proportion of family surviving vs time"),
                        trial = c("1" = "Trial 1",
-                                 "2" = "Trial 2")))
+                                 "2" = "Trial 2"))) +
+        theme_bw()
     
     if (params$show_plots) print(plt)
     

@@ -41,13 +41,13 @@ plot_covariances <- function(dataset = "fb-final",
         title_plot_str <- str_glue("{title_plot_str}: {params$description}")
         burn_prop <- params$burnprop
     } else {
-        message(str_glue(" - results file '{res_file}' not found, continuing without it"))
+        message(str_glue("- results file '{res_file}' not found, continuing without it"))
         burn_prop <- 0.2
     }
     
     trace_file <- str_glue("{data_dir}/scen-{scen}-{itn}-out/trace_combine.tsv")
     if (!file.exists(trace_file)) {
-        message(" - No trace file, exiting.")
+        message("- No trace file, exiting.")
         return(NULL)
     }
     x <- fread(trace_file)
@@ -179,7 +179,7 @@ plot_covariances <- function(dataset = "fb-final",
     
     cov_dir <- str_glue("{gfx_dir}/cov")
     if (!dir.exists(cov_dir)) {
-        message(" - mkdir ", cov_dir)
+        message("- mkdir ", cov_dir)
         dir.create(cov_dir, recursive = TRUE)
     }
     

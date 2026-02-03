@@ -13,7 +13,7 @@ model_fit_auc <- function(dataset = "fb-final", drop_outliers = FALSE) {
     
     message(str_glue("Calculating AUC model fit for '{dataset}'"))
     
-    if (drop_outliers) message(" - Dropping outliers")
+    if (drop_outliers) message("- Dropping outliers")
     outliers <- if (drop_outliers) "-drop" else ""
     
     km_data <- readRDS(str_glue("datasets/{dataset}/meta/km_data_ps.rds"))
@@ -129,7 +129,7 @@ model_fit_auc <- function(dataset = "fb-final", drop_outliers = FALSE) {
     
     mf_dir <- str_glue("datasets/{dataset}/gfx/model_fit")
     if (!dir.exists(mf_dir)) {
-        message(" - mkdir ", mf_dir)
+        message("- mkdir ", mf_dir)
         dir.create(mf_dir)
     }
     

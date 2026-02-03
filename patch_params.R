@@ -27,11 +27,11 @@ patch_params <- function(params, trace_row = 0) {
     if (msgs) message("Patching parameters ...")
 
     if (is.na(patch_dataset) || patch_dataset == "") {
-        if (msgs) message(" - no patches necessary")
+        if (msgs) message("- no patches necessary")
         return(params)
     }
     
-    if (msgs) message(str_glue(" - using *{patch_type}* posteriors from ",
+    if (msgs) message(str_glue("- using *{patch_type}* posteriors from ",
                                "'{patch_dataset}' scenario {patch_name} ..."))
     
     {
@@ -73,7 +73,7 @@ patch_params <- function(params, trace_row = 0) {
     
     # Use patch_state
     if (is.numeric(patch_state)) {
-        if (msgs) message(str_glue(" - using state: {patch_state}"))
+        if (msgs) message(str_glue("- using state: {patch_state}"))
         
         f <- str_glue("{out_dir}/{etc_src}.rds")
         tmp <- readRDS(f)$parameters[!str_starts(parameter, "^Group")]
@@ -103,7 +103,7 @@ patch_params <- function(params, trace_row = 0) {
                 stop("No trace file")
             }
         }
-        if (msgs) message(str_glue(" - reading trace file '{f}'"))
+        if (msgs) message(str_glue("- reading trace file '{f}'"))
         trace_file <- fread(f)
         # trace_file[, str_subset(names(trace_file), "^\\d", negate = TRUE) := NULL]
         
@@ -117,7 +117,7 @@ patch_params <- function(params, trace_row = 0) {
                 trace_row <- sample(nrow(trace_file), 1)
             }
             params2$trace_row <- trace_row
-            if (msgs) message(str_glue(" - using row {trace_row} from trace file"))
+            if (msgs) message(str_glue("- using row {trace_row} from trace file"))
             as.list(trace_file[trace_row])
         }
         rm(trace_file)
@@ -129,11 +129,11 @@ patch_params <- function(params, trace_row = 0) {
     # Save this for later
     resfile_exists <- file.exists(rf)
     if (resfile_exists) {
-        if (msgs) message(str_glue(" - extracting parameters from '{rf}'"))
+        if (msgs) message(str_glue("- extracting parameters from '{rf}'"))
         tmp_params <- readRDS(rf)$params
         priors <- tmp_params$priors
     } else {
-        if (msgs) message(" - no results file")
+        if (msgs) message("- no results file")
         priors <- params$priors
     }
     
@@ -311,7 +311,7 @@ patch_params <- function(params, trace_row = 0) {
     # Ensure priors are wide enough to include true_vals
     widen_priors(params2$priors)
     
-    if (msgs) message(" - ", str_flatten_comma(pars_patched))
+    if (msgs) message("- ", str_flatten_comma(pars_patched))
     
     params2
 }

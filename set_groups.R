@@ -34,16 +34,16 @@ set_groups <- function(popn, params) {
     # Set groups
     switch(group_layout,
            "random" = {
-               if (msgs) message(" - shuffling groups")
+               if (msgs) message("- shuffling groups")
                dt[, group := sample(rep(1:ngroups, length.out = .N))]
            }, "family" = {
-               if (msgs) message(" - by family")
+               if (msgs) message("- by family")
                dt[, group := rep(1:ngroups, each = group_size, length.out = .N)]
            }, "striped" = {
-               if (msgs) message(" - by stripes")
+               if (msgs) message("- by stripes")
                dt[, group := rep(1:ngroups, length.out = .N)]
            }, "fishboost" = {
-               if (msgs) message(" - copying Fishboost groups")
+               if (msgs) message("- copying Fishboost groups")
                dt[, group := fb_data[dt$id, group]]
            }, stop("Unrecognised group_layout!")
     )
@@ -59,7 +59,7 @@ set_groups <- function(popn, params) {
     # note: group_effect is a multiplier, so x1 means no effect
     if (group_effect >= 0) {
         # also need to handle the case where groups are not of equal size
-        if (msgs) message(" - group_effect = ", group_effect)
+        if (msgs) message("- group_effect = ", group_effect)
         dt[, GE := exp(rnorm(1L, 0, group_effect)), by = group]
     } else {
         dt[, GE := 1]

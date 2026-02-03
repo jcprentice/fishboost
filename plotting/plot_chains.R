@@ -148,7 +148,7 @@ plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
                      ncol = 1, rel_heights = c(0.08, 1))
     
     if (!dir.exists(gfx_dir)) {
-        message(" - mkdir ", gfx_dir)
+        message("- mkdir ", gfx_dir)
         dir.create(gfx_dir)
     }
     # PDFs are huge here

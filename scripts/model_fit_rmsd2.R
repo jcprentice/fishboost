@@ -20,7 +20,7 @@ model_fit_rmsd2 <- function(dataset = "fb-final", scens = 1:8,
     # dataset <- "sim-base-inf"; scens <- 1:14; drop_outliers = FALSE; alt = ""
     message(str_glue("Calculating RMS model fit for '{dataset}'"))
     
-    if ("drop_outliers" %in% opts) message(" - Dropping outliers")
+    if ("drop_outliers" %in% opts) message("- Dropping outliers")
     outliers <- if ("drop_outliers" %in% opts) "-drop" else ""
     
     if (str_1st(alt) %notin% c("", "-")) alt <- str_c("-", alt)
@@ -140,7 +140,7 @@ model_fit_rmsd2 <- function(dataset = "fb-final", scens = 1:8,
     
     mf_dir <- str_glue("datasets/{dataset}/gfx/model_fit")
     if (!dir.exists(mf_dir)) {
-        message(" - mkdir ", mf_dir)
+        message("- mkdir ", mf_dir)
         dir.create(mf_dir)
     }
     mf_base <- str_glue("{mf_dir}/{dataset}-model_fit-rmv_dev2")

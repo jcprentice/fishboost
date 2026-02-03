@@ -101,7 +101,7 @@ timings_hist <- function(dataset = "sim-test1",
     
     gfx_dir <- str_glue("datasets/{dataset}/gfx/timings")
     if (!dir.exists(gfx_dir)) {
-        message(" - mkdir ", gfx_dir)
+        message("- mkdir ", gfx_dir)
         dir.create(gfx_dir)
     }
     

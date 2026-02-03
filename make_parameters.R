@@ -113,8 +113,8 @@ make_parameters <- function(
     }
     
     # Population setup ----
-    message(str_glue(" - Setup is: '{setup}'\n",
-                     " - Group layout is: '{group_layout}'"))
+    message(str_glue("- Setup is: '{setup}'\n",
+                     "- Group layout is: '{group_layout}'"))
     
     # Note: the FB dataset isn't balanced
     # otherwise dpsire = dams per sire, ppdam = progeny per dam
@@ -131,7 +131,8 @@ make_parameters <- function(
         "fb_2_rpw"     = c(17,   14,   875,    35,    1,     5),
         "chris"        = c(100,  2000, 2000,   200,   1,     5),
         "small"        = c(3,    6,    12,     4,     1,     1),
-        "single"       = c(10,   20,   200,    8,     1,     5),
+        "single"       = c(10,   20,   500,    1,     1,     5),
+        "multiple"     = c(10,   20,   500,    20,    1,     5),
                          c(28,   25,   1750,   70,    2,     5)) |>
         as.integer() |> 
         setNames(c("nsires", "ndams", "nprogeny", "ngroups", "ntrials", "I0")) |>
@@ -159,7 +160,7 @@ make_parameters <- function(
     }
     
     # Traits ----
-    message(str_glue(" - Model type is: '{model_type}'"))
+    message(str_glue("- Model type is: '{model_type}'"))
     
     # Compartments are just the letters in model_type (ignore repeated S)
     compartments <- uniq_char(model_type)
@@ -189,7 +190,7 @@ make_parameters <- function(
                model_traits <- all_traits[c("s", "i")]
                timings <- c("Tinf")
            }, {
-               stop(" - Unknown model!")
+               stop("- Unknown model!")
         })
     
     ## Genetic and Environmental covariances ----
@@ -206,9 +207,9 @@ make_parameters <- function(
     traits_used <- model_traits[str_split_1(use_traits, "")]
     
     if (n_traits_used > 0) {
-        message(" - ", n_traits_used, " GE traits: ", str_flatten_comma(traits_used))
+        message("- ", n_traits_used, " GE traits: ", str_flatten_comma(traits_used))
     } else {
-        message(" - 0 GE traits used")
+        message("- 0 GE traits used")
     }
     
     ## Covariance matrices ----
@@ -641,20 +642,33 @@ summarise_params <- function(params) {
         param_file <- str_glue("{data_dir}/{name}.bici")
         
         message(str_glue(
-            " - Demography is:\n",
-            "     {nsires} sires, {ndams} dams, {nprogeny} progeny ",
-            "({ntotal} total), {ngroups} groups ({group_size} per group)\n",
-            "     R0 = {r0}\n",
-            " - FEs are\n",
-            "     Trial = {trial_fe}, Donor = {donor_fe}, TxD = {txd_fe}, Weight = {weight_fe}\n",
-            " - Running MCMC with:\n",
-            "     {ns} updates / {th} samples / {burnprop} burnin / {nchains} chains\n",
-            " - Data will be saved to '{param_file}'",
-            r0 = signif(R0, 3),
+            "- Demography is:\n",
+            "    {nsires} sires, {ndams} dams, {nprogeny} progeny ",
+            "({ntotal} total), {ngroups} group{s} (group size {group_size})\n",
+            "    R0 = {r0}",
+            s = if (ngroups > 1) "s" else "",
+            r0 = signif(R0, 3)
+        ))
+        
+        message("Sigma_G = ")
+        capture_message(Sigma_G[model_traits, model_traits])
+        
+        message(str_glue(
+            "- FEs are\n",
+            "    Trial = '{tfe}', Donor = '{dfe}', TxD = '{xfe}', Weight = '{wfe}'",
+            tfe = if (trial_fe  %in% c("", "none")) "none" else trial_fe,
+            dfe = if (donor_fe  %in% c("", "none")) "none" else donor_fe,
+            xfe = if (txd_fe    %in% c("", "none")) "none" else txd_fe,
+            wfe = if (weight_fe %in% c("", "none")) "none" else weight_fe,
+        ))
+        
+        message(str_glue(
+            "- Running MCMC with:\n",
+            "    {ns} updates / {th} samples / {burnprop} burnin / {nchains} chains\n",
+            "- BICI script file: '{param_file}'\n",
+            "- Results file: '{results_dir}/{name}.rds'",
             ns = format(nsample, scientific = FALSE, big.mark = ","),
             th = format(thinto, scientific = FALSE, big.mark = ",")
         ))
-        message("Sigma_G = ")
-        capture_message(Sigma_G[model_traits, model_traits])
     })
 }

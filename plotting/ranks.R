@@ -24,7 +24,7 @@ plot_ranks <- function(dataset = "sim-Gcov", scen = 1) {
     # Directory to save all files to
     gfx_dir <- str_glue("datasets/{dataset}/gfx")
     if (!dir.exists(gfx_dir)) {
-        message(" - mkdir ", gfx_dir)
+        message("- mkdir ", gfx_dir)
         dir.create(gfx_dir)
     }
     

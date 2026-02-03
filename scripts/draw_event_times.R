@@ -77,7 +77,7 @@ draw_event_times <- function(dataset = "fb-test", scen = 1, rep = 1) {
     
     gfx_dir <- str_glue("datasets/{dataset}/gfx/events")
     if (!dir.exists(gfx_dir)) {
-        message(" - mkdir ", gfx_dir)
+        message("- mkdir ", gfx_dir)
         dir.create(gfx_dir)
     }
     

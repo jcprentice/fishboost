@@ -33,6 +33,7 @@ plot_SxxDR <- function(popn, params) {
                             values = c("blue", "red", "green")) +
         labs(title = "SxxDR", x = "Time (days)", y = "Proportion") +
         coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
+        theme_bw() +
         theme(legend.position = "bottom")
 
     plt
@@ -60,6 +61,7 @@ plot_SEIDR <- function(popn, params) {
                             values = c(viridis(5), "red")) +
         labs(title = "SEIDR", x = "Time (days)", y = "Proportion") +
         coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
+        theme_bw() +
         theme(legend.position = "bottom")
 
     if (params$show_plots) {
@@ -89,6 +91,7 @@ plot_SIDR <- function(popn, params) {
                             values = c("blue", "mediumpurple", "purple", "red", "green")) +
         labs(title = "SIDR", x = "Time (days)", y = "Proportion") +
         coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
+        theme_bw() +
         theme(legend.position = "bottom")
 
     print(plt)
@@ -114,6 +117,7 @@ plot_SEIR <- function(popn, params) {
                             values = c("blue", "pink", "red", "green")) +
         labs(title = "SEIR", x = "Time (days)", y = "Proportion") +
         coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
+        theme_bw() +
         theme(legend.position = "bottom")
 
     print(plt)
@@ -138,6 +142,7 @@ plot_SIR <- function(popn, params) {
                             values = c("blue", "red", "green")) +
         labs(title = "SIR", x = "Time (days)", y = "Proportion") +
         coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
+        theme_bw() +
         theme(legend.position = "bottom")
 
     print(plt)
@@ -161,6 +166,7 @@ plot_SIS <- function(popn, params) {
                             values = c("blue", "red")) +
         labs(title = "SIR", x = "Time (days)", y = "Proportion") +
         coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
+        theme_bw() +
         theme(legend.position = "bottom")
 
     print(plt)

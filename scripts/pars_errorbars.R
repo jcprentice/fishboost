@@ -22,7 +22,7 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
         gfx_dir  <- str_glue("{base_dir}/gfx")
         
         if (!dir.exists(gfx_dir)) {
-            message(" - mkdir ", gfx_dir)
+            message("- mkdir ", gfx_dir)
             dir.create(gfx_dir)
         }
     }

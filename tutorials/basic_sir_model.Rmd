@@ -2,9 +2,11 @@
 title: "Basic SIR Model"
 author: "Jamie Prentice"
 date: "`r Sys.Date()`"
-output: pdf_document
-papersize: a4
-fontsize: 11pt
+output: html_document
+df_print: paged
+# output: pdf_document
+# papersize: a4
+# fontsize: 11pt
 ---
 
 ```{r setup, include=FALSE}

@@ -122,7 +122,10 @@ model_SEIR_res <- function(popn, params) {
             print(X[, .(group, donor, status, Tinf, Tsym, Tdeath, group_inf, event_rate)])
         }
     }
-    message(" - Final t = ", signif(epi_time, 5), ", values are:",
+
+    final_t <- epi_time |> signif(5)
+
+    message(str_glue("- Final t = {final_t}, values are:"),
             str_flatten(capture.output(table(X$status)), "\n"))
 
     # tidy up X

@@ -15,7 +15,7 @@ make_pedigree <- function(params) {
     
     # if "fishboost", we already have a pedigree)
     if (str_starts(setup, "fb")) {
-        if (msgs) message(" - copying FB pedigree: ", setup)
+        if (msgs) message("- copying FB pedigree: ", setup)
         fb_data <- readRDS(str_glue("fb_data/{setup}.rds"))
         ped <- fb_data[, .(id, sire, dam, sdp, weight)]
         return(ped)

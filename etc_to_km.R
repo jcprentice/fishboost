@@ -59,7 +59,7 @@ etc_to_km <- function(dataset = "fb-test", scens = 0, opts, bici_cmd = "post-sim
     })
     
     if (!dir.exists(meta_dir)) {
-        message(" - mkdir ", meta_dir)
+        message("- mkdir ", meta_dir)
         dir.create(meta_dir)
     }
     
