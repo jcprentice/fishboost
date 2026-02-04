@@ -18,6 +18,10 @@ check_convergence <- function(dataset = "fb-test") {
         map("parameter_estimates") |>
         rbindlist(idcol = "file")
     
+    nsamples <- map(files, readRDS) |>
+        map("params") |>
+        map_dbl("nsample")
+    
     {
         # Remove group effects
         pes <- pes[!str_starts(parameter, "G_")]
@@ -27,7 +31,7 @@ check_convergence <- function(dataset = "fb-test") {
         reps <- files |> str_split_i("/", 4) |> str_split_i("-", 3) |>
             str_remove_all(".rds") |> as.integer()
         descriptions <- map(files, readRDS) |> map("params") |> map_chr("description") |>
-            str_remove_all("FB_12_rpw, |, GRM \\w*|, convergence")
+            str_remove_all(", GRM \\w*|, convergence")
         
         pes[, `:=`(scen = scens[file],
                    rep = reps[file],
@@ -58,6 +62,7 @@ check_convergence <- function(dataset = "fb-test") {
                     mean_GR = mean(GR, na.rm = TRUE) |> round(2),
                     max_GR = GR |> max(na.rm = TRUE) |> round(2)),
                 .(scen, rep)]
+    pes2[, nsample := format(nsamples, scientific = FALSE, big.mark = ",")]
     pes2[, converged := fcase(min_ESS >= 500 & max_GR < 1.05, "***",
                               min_ESS >= 200 & max_GR < 1.1,  "**",
                               min_ESS >= 100 & max_GR < 1.2,  "*",

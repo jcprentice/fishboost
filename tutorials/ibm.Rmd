@@ -1,0 +1,237 @@
+---
+title: "Individual Based Model in R"
+author: "Jamie Prentice"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+```
+
+## The stochastic SIR model
+
+We assume a population can be grouped into a few categories that behave
+similarly (i.e. there is no individual variation).
+
+-   *Susceptibles*
+    -   Do not have the disease but may catch it from infectives
+-   *Infectives*
+    -   May pass on the disease to susceptibles.
+    -   Eventually recover or die
+-   *Recovered* (or *Removed*)
+    -   No longer participate in the epidemic
+
+## Events
+
+The model is driven by events
+
+-   *Infection*
+    -   Occurs at rate $\beta SI/N$
+    -   $\beta = 0.5$ is the disease transmission coefficient
+-   *Recovery*
+    -   Occurs at rate $\gamma I$
+    -   $\gamma = 0.1$ is the daily recovery rate
+
+```{r}
+events <- list(
+    Infection = c(-1, 1, 0),
+    Recovery = c(0, -1, 1)
+)
+pars <- list(
+    beta = 0.5,
+    gamma = 0.1
+)
+```
+
+## Variables
+
+The Population is composed of 3 time-dependent variables
+$$x(t) = \{S(t), I(t), R(t)\}$$
+
+These have initial conditions at $t=0$ $$x(0) = \{99, 1, 0\}$$
+
+```{r}
+x <- c(S = 95, I = 5, R = 0)
+print(x)
+```
+
+## Model
+
+We can now outline the rate of events
+
+```{r}
+tab <- with(as.list(c(x, pars)), rowwiseDT(
+    Event=,      Rate=,
+    "Infection", beta * S * I / (S + I),
+    "Recovery",  gamma * I
+))
+print(tab)
+```
+
+## The Gillespie Algorithm
+
+To progress the model, we need to simulate events, one at a time. We
+have the event rates, so the total event rate $$
+\begin{align}
+R_\text{total} &= \sum \text{rates} \\
+&= \beta SI/N + \gamma I \\
+&= 0.495 + 0.1 \\
+&= 0.595
+\end{align}
+$$
+
+```{r}
+(Rtotal <- sum(tab$Rate))
+```
+
+We make a time step $$dt \sim \exp(R_\text{total})$$
+
+```{r}
+(dt <- rexp(1, rate = Rtotal))
+```
+
+So our new time is $t = `r dt`$. Now, we need to decide which event
+happened. For this we draw a number
+$$ z \sim \mathcal{U}(0, R_\text{total})$$ And then we choose the next
+event by which "bin" it falls into, which involves calculating the
+cumulative event rate
+
+```{r}
+tab[, CRate := cumsum(Rate)]
+print(tab)
+```
+
+But there's actually a nicer way to do this in R:
+
+```{r}
+(event <- with(tab, sample(Event, 1, prob = Rate)))
+```
+
+We have an event, which we apply to the state $x$
+
+```{r}
+x <- x + events[[event]]
+print(x)
+```
+
+So now we have a new state $x(t)$, so just continue until the epidemic
+ends or some other criteria like $t>T_\text{end}$ is met.
+
+## Individual effects
+
+Now we want to consider what happens when we introduce individual
+variation. Now every individual has its own unique susceptibility,
+infectivity, and recoverability traits.
+
+Let's assume we have a (tiny) population of $N=10$ individuals, all with
+log-normally distributed trait values
+
+```{r}
+N <- 10
+popn <- data.table(
+    id = seq_len(N),
+    sus = rlnorm(N, 0, 0.5) |> round(3),
+    inf = rlnorm(N, 0, 0.5) |> round(3),
+    rec = rlnorm(N, 0, 0.5) |> round(3)
+)
+print(popn)
+```
+
+Now we can assign everyone to an initial status of either $S$ or $I$,
+and to infectious individuals an infection time $T_\text{inf}$ and
+recovery time $T_\text{rec}$.
+
+```{r}
+popn[, `:=`(status = "S", Tinf = NA_real_, Trec = NA_real_)]
+popn[1:2, `:=`(status = "I", Tinf = 0)]
+print(popn)
+```
+
+Previously infection rate was $\beta SI/N$, now there is a force of
+infection
+
+$$ \lambda = \beta \sum_{j\in J} f_j / N $$
+
+where $J$ is the set of infectious individuals and $f_j$ is an
+infectious individual's own infectivity. Every individual has its own
+infection rate
+
+$$r_i = \lambda g_i$$
+
+where $g_i$ is an individual's own susceptibility.
+
+```{r}
+lambda <- popn[, pars$beta * mean((status == "I") * inf, 0)]
+popn[, event_i := lambda * fifelse(status == "S", lambda * sus, 0)]
+print(popn)
+```
+
+Finally we need to consider the recovery times $T_\text{rec}$ of
+infected individuals. This is
+
+$$T_\text{rec} = T_\text{inf} + t_{IR}$$
+
+where
+
+$$t_{IR} \sim \exp(\gamma)r_i$$
+
+We have to calculate this at the point of infection, so now an infection
+event does two things: change the status of the selected individual from
+$S$ to $I$, and calculate the $T_\text{rec}$.
+
+```{r}
+popn[status == "I", Trec := rexp(.N, rate = pars$gamma) * inf]
+print(popn)
+```
+
+## The modified Gillespie Algorithm
+
+We have two sets of event now, infection events, which are random, and
+change as the number of infectives change, and recovery events which are
+fixed at the point of infection. How do we handle this?
+
+As before we calculate $R_\text{total}$, and the time to the next event,
+but now we need to check if $t+dt$ is greater than any $T_\text{rec}$.
+
+-   If it is less, then we randomly select an individual to be infected,
+    setting its status to $I$, weighted by its own individual event
+    rate.
+
+-   If it is more, then we instead advance to $T_\text{rec}$, and set
+    the infective's status to $R$.
+
+```{r}
+t <- 0
+Rtotal <- sum(popn$event_i)
+dt <- rexp(1, Rtotal)
+subpop <- popn[status == "I" & t < Trec & t + dt > Trec]
+
+if (nrow(subpop) > 0) {
+    id_next_ni <- subpop[, id[which.min(Trec)]]
+    t_next_ni <- subpop[, min(Trec)]
+} else {
+    id_next_ni <- 0
+    t_next_ni <- Inf
+}
+
+if (t + dt < t_next_ni) {
+    id_next_inf <- popn[status == "S", sample(id, 1, prob = event_i)]
+    popn[id == id_next_inf, `:=`(
+        status = "I",
+        Tinf = t,
+        Trec = t + dt + rexp(1, pars$gamma) * rec
+    )]
+    t <- t + dt
+    message("Infection of id ", id_next_inf)
+} else {
+    popn[id == id_next_ni, status := "R"]
+    t <- t_next_ni
+    message("Recovery of id ", id_next_ni)
+}
+print(popn)
+```

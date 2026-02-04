@@ -17,12 +17,15 @@
 #' @param use_traits Which traits to use (this is going to be "clever") use
 #'   "all" or "none", or a subset using the first letter of each trait
 #'   "sildt" = "sus", "inf", "lat", "det", "tol"
-#' @param vars Variances: diagonal of cov matrix, either a single value, or a
-#'   list wrapped named vector or a vector compatible with the number of possible traits
-#' @param cors Correlations for Sigma matrix, should be either
-#'   - a single numerical value 0.2
-#'   - a list-wrapped vector, either namd, or compatible with the lower triangle order
-#'   i.e. in col order as list(si, sl, sd, st, il, id, it, ld, lt, dt)
+#' @param vars Variances: diagonal of cov matrix, either
+#'   - a single value, e.g. 1.0
+#'   - a list wrapped vector of compatible length, e.g. list(1, 1.5, 0, 0, 0.5)
+#'   - a list wrapped named vector e.g. list(sus = 1, inf = 1.5, tol = 0.5, default = 0)
+#' @param cors Correlations for Sigma matrix, either
+#'   - a single numerical value, e.g. 0.2
+#'   - a named list-wrapped vector, e.g. list(si = 0.3, st = -0.1, it = 0.2, default = 0)
+#'   - a named list of compatible with the lower triangle order, e.g.
+#'     list(si, sl, sd, st, il, id, it, ld, lt, dt)
 #' @param group_layout How to arrange individuals into groups: "random",
 #'   "striped", "family", "fishboost"
 #' @param group_effect Include group effect if >= 0, simulate if appropriate and
@@ -302,6 +305,8 @@ make_parameters <- function(
                       ncol = 5, nrow = 6, byrow = TRUE,
                       dimnames = list(fe = c("trial", "donor", "txd", "weight", "weight1", "weight2"),
                                       traits = unname(all_traits)))
+    
+    fe_vals[] <- 0
     
     ## Map traits and FEs ----
     

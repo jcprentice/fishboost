@@ -2,8 +2,9 @@
 title: "Basic SIR Model"
 author: "Jamie Prentice"
 date: "`r Sys.Date()`"
-output: html_document
-df_print: paged
+output: slidy_presentation
+# output: html_document
+# df_print: paged
 # output: pdf_document
 # papersize: a4
 # fontsize: 11pt
@@ -30,10 +31,10 @@ The params list might not fully do everything we want, but as it is just a basic
 
 ```{r}
 params <- make_parameters(
-    model_type = "SIR",       # a Susceptible-Infected-Removed model
-    setup = "single",         # a single group
-    use_traits = "none",      # no genetic effects applied to traits
-    sim_new_data = "r"        # simulate in R (rather than in BICI)
+    model_type = "SIR",  # a Susceptible-Infected-Removed model
+    setup = "single",    # a single group
+    use_traits = "none", # no genetic effects applied to traits
+    sim_new_data = "r"   # simulate in R (rather than in BICI)
 )
 ```
 
@@ -68,7 +69,7 @@ Where:
 -   `id`: the unique ID of the individual. Sires come first, then dams, then progeny.
 -   `sire` and `dam` of the individual (together with `id` this makes a pedigree).
 -   `sdp`: whether the individual is a sire, dam, or progeny.
--   The `weight` in kg at start of experiment.
+-   The `weight` in g at start of experiment.
 -   Which `trial` the individual was assigned to.
 -   Which `group` the individual was assigned to.
 -   `donor`: if the individual was inoculated (1) or not (0).
@@ -131,24 +132,31 @@ p1b <- basic_km(popn, params)
 
 ## Add in genetic variance
 
-```{r, message = TRUE}
-params <- make_parameters(
-    model_type = "SIR",       # a Susceptible-Infected-Removed model
-    setup = "single",         # a single group
-    use_traits = "sit",       # no genetic effects applied to traits
-    sim_new_data = "r"        # simulate in R (rather than in BICI)
+```{r}
+params2 <- make_parameters(
+    model_type = "SIR", # a Susceptible-Infected-Removed model
+    setup = "single",   # a single group
+    use_traits = "sit", # no genetic effects applied to traits
+    vars = list(sus = 0.5, inf = 1, tol = 0.2),
+    cors = list(si = 0.3, st = -0.2, it = 0.2),
+    sim_new_data = "r"  # simulate in R (rather than in BICI)
 )
-summarise_params(params)
+```
+
+A quick look at the summary
+
+```{r, message = TRUE}
+summarise_params(params2)
 ```
 
 Now rebuild the population
 
 ```{r}
-popn2 <- make_pedigree(params) |>
-    set_groups(params) |>
-    set_traits(params) |>
-    set_weights(params) |>
-    apply_fixed_effects(params)
+popn2 <- make_pedigree(params2) |>
+    set_groups(params2) |>
+    set_traits(params2) |>
+    set_weights(params2) |>
+    apply_fixed_effects(params2)
 ```
 
 If we look at some of the individuals, we can see that they now have individual values for their genotypes, and different phenotypes
@@ -161,16 +169,62 @@ popn2[sdp == "progeny", map(.SD, round, 2),
 We can now run a simulation with the new setup
 
 ```{r}
-popn2 <- simulate_epidemic(popn2, params)
+popn2 <- simulate_epidemic(popn2, params2)
 get_R0(popn2)
 ```
 
 And plot the results, noting a much faster epidemic
 
 ```{r}
-p2a <- plot_model(popn2, params)
+p2a <- plot_model(popn2, params2)
 ```
 
 ```{r}
-p2b <- basic_km(popn2, params)
+p2b <- basic_km(popn2, params2)
+```
+
+Now we can add in some fixed effects.
+
+```{r}
+params3 <- make_parameters(
+    model_type = "SIR", # a Susceptible-Infected-Removed model
+    setup = "multiple", # a single group
+    use_traits = "sit", # no genetic effects applied to traits
+    vars = list(sus = 0.5, inf = 1, tol = 0.2),
+    cors = list(si = 0.3, st = -0.2, it = 0.2),
+    donor_fe = "it",    # donor FE on inf, tol
+    weight_fe = "sit",  # weight FE on sus, inf, tol
+    sim_new_data = "r"  # simulate in R (rather than in BICI)
+)
+summarise_params(params3)
+```
+
+There's one more step here, we need to specify the FE values we want to use. It's just a matrix containing all the combinations.
+
+```{r}
+params3$fe_vals["donor", "inf"] <- 1
+params3$fe_vals["donor", "tol"] <- -1
+params3$fe_vals["weight", c("sus", "inf", "tol")] <- c(-0.5, 0.5, 0.5)
+params3$fe_vals[, params3$model_traits]
+```
+
+And generate and simulate
+
+```{r}
+popn3 <- make_pedigree(params3) |>
+    set_groups(params3) |>
+    set_traits(params3) |>
+    set_weights(params3) |>
+    apply_fixed_effects(params3) |>
+    simulate_epidemic(params3)
+```
+
+And plot
+
+```{r}
+p2a <- plot_model(popn3, params3)
+```
+
+```{r}
+p2b <- basic_km(popn3, params3)
 ```
