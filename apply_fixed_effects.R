@@ -36,9 +36,14 @@ apply_fixed_effects <- function(popn, params) {
     # looking for either log_recentre() or recentre()
     recentre_f <- get(if (use_weight == "log") "log_recentre" else "recentre")
     
+    # TODO: remake this as a matrix operation if possible
+    
     walk(model_traits, \(trait) {
-        # trait <- "sus"
+        # trait <- model_traits[[1]]
         trait1 <- str_1st(trait)
+        
+        # str_detect() returns TRUE or FALSE, which is effectively 1 or 0 when
+        # multiplied by a FE value, so an unused trait becomes 0.
         trial_val   <- str_detect(sim_trial_fe,  trait1) * fe_vals["trial",   trait]
         donor_val   <- str_detect(sim_donor_fe,  trait1) * fe_vals["donor",   trait]
         txd_val     <- str_detect(sim_txd_fe,    trait1) * fe_vals["txd",     trait]
@@ -63,14 +68,9 @@ apply_fixed_effects <- function(popn, params) {
 
         popn2[, tmp := tmp - mean(tmp, na.rm = TRUE)]
 
-        trait_g <- str_c(trait, "_g")
-        trait_e <- str_c(trait, "_e")
         popn2[, (trait) := {
-            # This corrects for log-normally distributed traits so that mean ~ 1
-            gv <- get(trait_g)
-            gv <- gv - var(gv, na.rm = TRUE) / 2
-            ev <- get(trait_e)
-            ev <- ev - var(ev, na.rm = TRUE) / 2
+            gv <- get(str_c(trait, "_g"))
+            ev <- get(str_c(trait, "_e"))
             exp(gv + ev + tmp)
         }]
     })

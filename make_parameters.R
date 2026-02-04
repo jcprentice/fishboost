@@ -640,38 +640,50 @@ summarise_params <- function(params) {
         }
 
         message(str_glue(
-            "- Demography is:\n",
-            "    {nsires} sires, {ndams} dams, {nprogeny} progeny ",
-            "({ntotal} total), {ngroups} group{s} (group size {group_size})\n",
-            "    R0 = {r0}",
+            "- Demography is:",
+            "\t{nsires} sires, {ndams} dams, {nprogeny} progeny ({ntotal} total)",
+            "\t{ngroups} group{s} (group size {group_size})",
             s = if (ngroups > 1) "s" else "",
-            r0 = signif(R0, 3),
-            .trim = FALSE
+            .trim = FALSE, .sep = "\n"
         ))
         
-        message("Sigma_G = ")
+        message(str_glue(
+            "- Individual Effects on:",
+            str_c("\t", if (use_traits %in% c("", "none")) "none" else
+                str_flatten_comma(model_traits[str_split_1(use_traits, "")])),
+            .trim = FALSE, .sep = "\n"
+        ))
+        
+        message("- Sigma_G: ")
         capture_message(Sigma_G[model_traits, model_traits])
         
         message(str_glue(
-            "- FEs are\n",
-            "    Trial = '{tfe}', Donor = '{dfe}', TxD = '{xfe}', Weight = '{wfe}'",
+            "- Fixed Effects are:",
+            "\tTrial = '{tfe}', Donor = '{dfe}', TxD = '{xfe}', Weight = '{wfe}'",
             tfe = if (trial_fe  %in% c("", "none")) "none" else trial_fe,
             dfe = if (donor_fe  %in% c("", "none")) "none" else donor_fe,
             xfe = if (txd_fe    %in% c("", "none")) "none" else txd_fe,
             wfe = if (weight_fe %in% c("", "none")) "none" else weight_fe,
-            .trim = FALSE
+            .trim = FALSE, .sep = "\n"
         ))
         
         message(str_glue(
-            "- Running MCMC with:\n",
-            "    {ns} updates / {th} samples / {burnprop} burnin / {nchains} chains\n",
-            "- BICI script file:\n",
-            "    '{data_dir}/{name}.bici'\n",
-            "- Results file:\n",
-            "    '{results_dir}/{name}.rds'",
+            "- Estimated R0:",
+            "\t{r0}",
+            r0 = signif(R0, 3),
+            .trim = FALSE, .sep = "\n"
+        ))
+        
+        message(str_glue(
+            "- Running MCMC with:",
+            "\t{ns} updates, {th} samples, {burnprop} burnin, {nchains} chains",
+            "- BICI script file:",
+            "\t'{data_dir}/{name}.bici'",
+            "- Results file:",
+            "\t'{results_dir}/{name}.rds'",
             ns = format(nsample, scientific = FALSE, big.mark = ","),
             th = format(thinto,  scientific = FALSE, big.mark = ","),
-            .trim = FALSE
+            .trim = FALSE, .sep = "\n"
         ))
     })
 }

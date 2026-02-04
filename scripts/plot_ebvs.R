@@ -24,7 +24,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
     
     c(meta_dir, gfx_dir, ebvs_dir) |>
         discard(dir.exists) |>
-        walk(~ message("- mkdir ", .x)) |>
+        walk(~ message(" - mkdir ", .x)) |>
         walk(dir.create)
     
     etc <- str_glue("{data_dir}/scen-{scen}-{rep}-out/etc_inf.rds")
@@ -144,7 +144,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         geom_hline(yintercept = 0, colour = "black") +
         labs(x = "Sire",
              y = "Trait",
-             title = "Sorted Sire Trait estimates",
+             title = "Sorted Sire Traits 95% HDI",
              subtitle = st) +
         facet_wrap(. ~ trait,
                    ncol = 3,
@@ -263,52 +263,96 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
            plts$hist, width = 9, height = 6)
     
     # Sus x Inf x Tol ----
-    popn_sit <- popn[sdp != "dam",
-                     .(sire = first(sire),
-                       sdp = first(sdp),
-                       trial = first(trial),
-                       donor = first(donor),
-                       sus_g = mean(sus_g),
-                       inf_g = mean(inf_g),
-                       tol_g = mean(tol_g)),
-                     id]
+    popn_sit <- rbind(
+        popn[sdp == "progeny",
+             .(group = "Susceptibility x Infectivity", sdp = first(sdp),
+               trial = first(trial), donor = first(donor),
+               x = median(sus_g), y = median(inf_g)),
+             id],
+        popn[sdp == "progeny",
+             .(group = "Susceptibility x Tolerance", sdp = first(sdp),
+               trial = first(trial), donor = first(donor),
+               x = median(sus_g), y = median(tol_g)),
+             id],
+        popn[sdp == "progeny",
+             .(group = "Infectivity x Tolerance", sdp = first(sdp),
+               trial = first(trial), donor = first(donor),
+               x = median(inf_g), y = median(tol_g)),
+             id]
+    )
+    popn_sit[, `:=`(
+        inoc = factor(fifelse(donor == 1, "Yes", "No")),
+        group = ordered(group, levels = c("Susceptibility x Infectivity",
+                                          "Susceptibility x Tolerance",
+                                          "Infectivity x Tolerance"))
+    )]
     
-    plts$si <- popn_sit |>
-        ggplot(aes(x = sus_g, y = inf_g, group = trial, colour = factor(donor))) +
+    plts$sit <- popn_sit |>
+        ggplot(aes(x = x, y = y, colour = inoc)) +
         geom_hline(yintercept = 0, linewidth = 1, linetype = "dashed") +
         geom_vline(xintercept = 0, linewidth = 1, linetype = "dashed") +
         geom_point() +
-        labs(x = "Susceptibility",
-             y = "Infectivity") +
-        theme_bw() +
-        theme(legend.position = "none")
-    plts$si
+        scale_colour_manual("Inoculated",
+                            breaks = c("Yes", "No"),
+                            # labels = c("Yes", "No"),
+                            values = c("dodgerblue", "tomato")) +
+        labs(x = "Trait",
+             y = "Trait",
+             title = "Trait x Trait with Inoculation status") +
+        facet_wrap(. ~ group,
+                   scales = "free") +
+        theme_bw()
+    plts$sit
     
-    plts$st <- popn_sit |>
-        ggplot(aes(x = sus_g, y = tol_g, group = trial, colour = factor(donor))) +
-        geom_hline(yintercept = 0, linewidth = 1, linetype = "dashed") +
-        geom_vline(xintercept = 0, linewidth = 1, linetype = "dashed") +
-        geom_point() +
-        labs(x = "Susceptibility",
-             y = "Tolerance") +
-        theme_bw() +
-        theme(legend.position = "none")
-    plts$st
+    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-{rep}-ebvs-sit.png"),
+           plts$sit, width = 12, height = 5)
     
-    plts$it <- popn_sit |>
-        ggplot(aes(x = inf_g, y = tol_g, group = trial, colour = factor(donor))) +
-        geom_hline(yintercept = 0, linewidth = 1, linetype = "dashed") +
-        geom_vline(xintercept = 0, linewidth = 1, linetype = "dashed") +
-        geom_point() +
-        labs(x = "Infectivity",
-             y = "Tolerance") +
-        theme_bw() +
-        theme(legend.position = "none")
-    plts$it
-    
-    plts$sit <- plot_grid(plotlist = plts[c("si", "st", "it")],
-                          nrow = 1, align = "hv")
-    
+    # popn_sit <- popn[sdp != "dam",
+    #                  .(sire = first(sire),
+    #                    sdp = first(sdp),
+    #                    trial = first(trial),
+    #                    donor = first(donor),
+    #                    sus_g = median(sus_g),
+    #                    inf_g = median(inf_g),
+    #                    tol_g = median(tol_g)),
+    #                  id]
+    # 
+    # plts$si <- popn_sit |>
+    #     ggplot(aes(x = sus_g, y = inf_g, group = trial, colour = factor(donor))) +
+    #     geom_hline(yintercept = 0, linewidth = 1, linetype = "dashed") +
+    #     geom_vline(xintercept = 0, linewidth = 1, linetype = "dashed") +
+    #     geom_point() +
+    #     labs(x = "Susceptibility",
+    #          y = "Infectivity") +
+    #     theme_bw() +
+    #     theme(legend.position = "none")
+    # plts$si
+    # 
+    # plts$st <- popn_sit |>
+    #     ggplot(aes(x = sus_g, y = tol_g, group = trial, colour = factor(donor))) +
+    #     geom_hline(yintercept = 0, linewidth = 1, linetype = "dashed") +
+    #     geom_vline(xintercept = 0, linewidth = 1, linetype = "dashed") +
+    #     geom_point() +
+    #     labs(x = "Susceptibility",
+    #          y = "Tolerance") +
+    #     theme_bw() +
+    #     theme(legend.position = "none")
+    # plts$st
+    # 
+    # plts$it <- popn_sit |>
+    #     ggplot(aes(x = inf_g, y = tol_g, group = trial, colour = factor(donor))) +
+    #     geom_hline(yintercept = 0, linewidth = 1, linetype = "dashed") +
+    #     geom_vline(xintercept = 0, linewidth = 1, linetype = "dashed") +
+    #     geom_point() +
+    #     labs(x = "Infectivity",
+    #          y = "Tolerance") +
+    #     theme_bw() +
+    #     theme(legend.position = "none")
+    # plts$it
+    # 
+    # plts$sit <- plot_grid(plotlist = plts[c("si", "st", "it")],
+    #                       nrow = 1, align = "hv")
+
     ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-{rep}-ebvs-sit.png"),
            plts$sit, width = 12, height = 5)
     
@@ -335,7 +379,7 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
     
     c(meta_dir, gfx_dir, ebvs_dir) |>
         discard(dir.exists) |>
-        walk(~ message("- mkdir ", .x)) |>
+        walk(~ message(" - mkdir ", .x)) |>
         walk(dir.create)
     
     etc <- str_glue("{data_dir}/scen-{scen}-{rep}-out/etc_inf.rds")

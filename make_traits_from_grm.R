@@ -68,6 +68,12 @@ make_traits_from_grm <- function(popn, params) {
     # trait = exp(genetic + environment components)
     popn2[, (traitnames_GV)] <- as.data.table(traits_GV)
     popn2[, (traitnames_EV)] <- as.data.table(traits_EV)
+    
+    # We need to shift the traits down by var/2 in order for the exp() values to
+    # have mean 1.
+    popn[, names(.SD) := map(.SD, ~ {.x - var(.x, na.rm = TRUE) / 2}),
+         .SDcols = c(traitnames_GV, traitnames_EV)]
+    
     popn2[, (traits)] <- as.data.table(exp(traits_GV + traits_EV))
     
     # we need these so the models run, but they don't do anything

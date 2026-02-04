@@ -90,10 +90,16 @@ make_traits_from_pedigree <- function(pedigree, params) {
     # Generate environmental values
     EVs <- mvrnorm(ntotal, rep(0, n_traits), cov_E)
     colnames(EVs) <- traitnames_EV
-
+    
     # Generate log-normally dist'd phenotypes P ~ G + E
     GVs <- rbind(parent_GVs, progeny_GVs)
     colnames(GVs) <- traitnames_GV
+    
+    # We need to shift the traits by the mean in order for the exp() values to
+    # have mean 1.
+    GVs <- GVs - apply(GVs, 2, var) / 2
+    EVs <- EVs - apply(EVs, 2, var) / 2
+    
     phenotypes <- exp(GVs + EVs)
     colnames(phenotypes) <- traitnames
 

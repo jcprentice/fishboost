@@ -3,18 +3,19 @@ set_weights <- function(popn, params) {
         return(popn)
     }
     
-    # If weights aren't assigned, assign new ones
+    # If weights aren't assigned, assign new ones. We're unlikely to ever use
+    # this, but it's there if we need it.
     
     weight_type <- params$weight_type %||% "none"
     
-    popn[, weight := 1]
+    popn[, weight := 50]
     setcolorder(popn, "weight", after = "group")
     
-    if (weight_type == "sampled") {
+    if (weight_type == "fb") {
         fb <- readRDS("fb_data/fb_12_rpw.rds")
         popn[trial == 1, weight := sample(fb[trial == 1, weight], .N, replace = TRUE)]
         popn[trial == 2, weight := sample(fb[trial == 2, weight], .N, replace = TRUE)]
-    } else {
+    } else if (weight_type == "random") {
         # Generate a truncated log-normal distribution
         fb <- readRDS("fb_data/fb_12_rpw.rds")
         
@@ -30,6 +31,8 @@ set_weights <- function(popn, params) {
                                                 fit$estimate[[1]],
                                                 fit$estimate[[2]]))]
         })
+    } else {
+        # Just leave as is
     }
     
     popn

@@ -9,7 +9,7 @@ df_print: paged
 # fontsize: 11pt
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
@@ -18,10 +18,8 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 This pulls in all the necessary libraries and source files
 
 ```{r}
-suppressPackageStartupMessages({
-    source("libraries.R")
-    source("source_files.R")
-})
+source("libraries.R")
+source("source_files.R")
 ```
 
 ## Generating a params list
@@ -30,48 +28,53 @@ The first step is to generate a params list that contains the basic information,
 
 The params list might not fully do everything we want, but as it is just a basic R list, we can easily modify it afterwards.
 
-```{r build-params}
+```{r}
 params <- make_parameters(
     model_type = "SIR",       # a Susceptible-Infected-Removed model
     setup = "single",         # a single group
     use_traits = "none",      # no genetic effects applied to traits
-    group_layout = "striped", # group layout
     sim_new_data = "r"        # simulate in R (rather than in BICI)
 )
 ```
 
 This provides a short summary of the params
-```{r, message=TRUE}
+
+```{r, message = TRUE}
 summarise_params(params)
 ```
 
 ## Generate pedigree and popn
 
-Next we take the `params` file, set the groups and traits, and apply any fixed effects. Note that you these are piped into each other, but you can save the intermediate result at any point to examine what's happening (e.g. for bug fixing).
+Next we take the `params` file and use it to generate a population with groups, traits, weights, and fixed effects applied to the phenotypes. Note that you these are piped into each other, but you can save the intermediate result at any point to examine what's happening (e.g. for bug fixing).
 
-```{r build-popn}
+First `make_pedigree()` creates a population with the appropriate structure (either cp
+
+```{r}
 popn <- make_pedigree(params) |>
     set_groups(params) |>
     set_traits(params) |>
     set_weights(params) |>
     apply_fixed_effects(params)
 ```
+
 It's worth taking a look at the `popn` file to see what it includes. The columns are:
+
 ```{r}
 names(popn)
 ```
+
 Where:
 
-- `id`: the unique ID of the individual. Sires come first, then dams, then progeny.
-- `sire` and `dam` of the individual (together with `id` this makes a pedigree).
-- `sdp`: whether the individual is a sire, dam, or progeny.
-- The `weight` in kg at start of experiment.
-- Which `trial` the individual was assigned to.
-- Which `group` the individual was assigned to.
-- `donor`: if the individual was inoculated (1) or not (0).
-- `GE`: a small tank dependent group effect.
-- `sus_g`, `inf_g`, `tol_g`, `sus_e`, `inf_e`, `tol_e`: genetic and environmental values. These are normally distributed with mean 0.
-- `sus`, `inf`, `tol`, `lat`, `det`: phenotypic values. These are log-normally distributed and incorporate any fixed effects.
+-   `id`: the unique ID of the individual. Sires come first, then dams, then progeny.
+-   `sire` and `dam` of the individual (together with `id` this makes a pedigree).
+-   `sdp`: whether the individual is a sire, dam, or progeny.
+-   The `weight` in kg at start of experiment.
+-   Which `trial` the individual was assigned to.
+-   Which `group` the individual was assigned to.
+-   `donor`: if the individual was inoculated (1) or not (0).
+-   `GE`: a small tank dependent group effect.
+-   `sus_g`, `inf_g`, `tol_g`, `sus_e`, `inf_e`, `tol_e`: genetic and environmental values. These are normally distributed with mean 0.
+-   `sus`, `inf`, `tol`, `lat`, `det`: phenotypic values. These are log-normally distributed and incorporate any fixed effects.
 
 A typical progeny looks like:
 
@@ -79,18 +82,17 @@ A typical progeny looks like:
 popn[sdp == "progeny"][1]
 ```
 
-
 ## Simulate and plot epidemic
 
-We now pass the population file `popn` and the parameters `params` to `simulate_epidemic()`, which will run the appropriate model and return a _new_ `popn` file with event times, final status, which generation infective they were, and the individual responsible for their infection. You can generate multiple realisations of the epidemic from the same inputs if you save the `popn` output each time.
+We now pass the population file `popn` and the parameters `params` to `simulate_epidemic()`, which will run the appropriate model and return a *new* `popn` file with event times, final status, which generation infective they were, and the individual responsible for their infection. You can generate multiple realisations of the epidemic from the same inputs if you save the `popn` output each time.
 
-```{r simulate-epidemic}
+```{r}
 tic(); popn <- simulate_epidemic(popn, params); toc()
 ```
 
 We can also use the generation value to calculate $R_0$, which is the mean across all groups of the ratio of secondary to primary infectives. Also it's useful to see how long the epidemic took until it completed (since this information is necessary for BICI to use).
 
-```{r get-metrics, message = TRUE}
+```{r, message = TRUE}
 params$estimated_R0 <- get_R0(popn)
 params$tmax <- get_tmax(popn, params)
 
@@ -99,30 +101,76 @@ message("Tmax = [", str_flatten_comma(round(params$tmax, 1)), "]")
 
 The progeny we had before now looks like this, with the additional columns:
 
-- `Tinf`: the infection time ($t:S\rightarrow E$). In actual data this is 0 for inoculated individuals, and missing for all others.
-- `Tinc`: the incubation time ($t:E\rightarrow I$), missing in the data.
-- `Tsym`: the time of symptoms ($t:I\rightarrow D$), present in data.
-- `Tdeath`: the time of death ($t:D\rightarrow R$), present in data.
-- `status`: which compartment the individual is in at the end of the epidemic (should only be `S` or `R`)
-- `generation`: if an individual is a primary, secondary, tertiary etc. infective.
-- `infected_by`: the id of the individual responsible for this infection (0 for inoculated individuals).
-- `parasites` `TRUE` if an individual was infected. In actual data the sensitivity is not 100%.
+-   `Tinf`: the infection time ($t:S\rightarrow E$). In actual data this is 0 for inoculated individuals, and missing for all others.
+-   `Tinc`: the incubation time ($t:E\rightarrow I$), missing in the data.
+-   `Tsym`: the time of symptoms ($t:I\rightarrow D$), present in data.
+-   `Tdeath`: the time of death ($t:D\rightarrow R$), present in data.
+-   `status`: which compartment the individual is in at the end of the epidemic (should only be `S` or `R`)
+-   `generation`: if an individual is a primary, secondary, tertiary etc. infective.
+-   `infected_by`: the id of the individual responsible for this infection (0 for inoculated individuals).
+-   `parasites` `TRUE` if an individual was infected. In actual data the sensitivity is not 100%.
 
 ```{r}
-popn[sdp == "progeny"][1]
+popn[sdp == "progeny",
+     .(id, donor, Tinf, Tdeath, status, generation, infected_by)][1:10]
 ```
-
 
 ## Plot the epidemic
 
 We can take a look at the time trajectory
 
-```{r tj-plot, fig.cap = "Time trajectory of SEIDR model"}
-plt <- plot_model(popn, params)
+```{r, fig.cap = "Time trajectory of SEIDR model"}
+p1a <- plot_model(popn, params)
 ```
 
 It's also important to look at the Kaplan-Meier survival plot.
-```{r km-plot, fig.cap = "KM plot of SEIDR model, showing the proportion of each family surviving over time."}
-plt2 <- basic_km(popn, params)
+
+```{r, fig.cap = "KM plot of SEIDR model, showing the proportion of each family surviving over time."}
+p1b <- basic_km(popn, params)
 ```
 
+## Add in genetic variance
+
+```{r, message = TRUE}
+params <- make_parameters(
+    model_type = "SIR",       # a Susceptible-Infected-Removed model
+    setup = "single",         # a single group
+    use_traits = "sit",       # no genetic effects applied to traits
+    sim_new_data = "r"        # simulate in R (rather than in BICI)
+)
+summarise_params(params)
+```
+
+Now rebuild the population
+
+```{r}
+popn2 <- make_pedigree(params) |>
+    set_groups(params) |>
+    set_traits(params) |>
+    set_weights(params) |>
+    apply_fixed_effects(params)
+```
+
+If we look at some of the individuals, we can see that they now have individual values for their genotypes, and different phenotypes
+
+```{r}
+popn2[sdp == "progeny", map(.SD, round, 2),
+     .SDcols = str_subset(names(popn2), "sus|inf|tol")][1:5]
+```
+
+We can now run a simulation with the new setup
+
+```{r}
+popn2 <- simulate_epidemic(popn2, params)
+get_R0(popn2)
+```
+
+And plot the results, noting a much faster epidemic
+
+```{r}
+p2a <- plot_model(popn2, params)
+```
+
+```{r}
+p2b <- basic_km(popn2, params)
+```
