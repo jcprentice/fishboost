@@ -158,7 +158,7 @@ plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
 }
 
 if (FALSE) {
-    dataset <- "fb-test-1e7"
+    dataset <- "fb-qtest"
     scens <- str_glue("datasets/{dataset}/results") |>
         list.files() |> str_split_i("-", 2) |> as.integer() |> sort() |> unique()
     

@@ -6,7 +6,7 @@ library(stringr)
 # recalculating the trait
 
 apply_fixed_effects <- function(popn, params) {
-    message("Applying fixed effects ...")
+    # message("Applying fixed effects ...")
 
     {
         model_traits     <- params$model_traits
@@ -24,60 +24,49 @@ apply_fixed_effects <- function(popn, params) {
     popn2 <- copy(popn)
 
     # Some traits don't have GVs and EVs, need to generate fake ones = 0
-    all_Vs <- c(str_c(model_traits, "_g"), str_c(model_traits, "_e"))
-    missing_Vs <- setdiff(all_Vs, names(popn))
-    popn2[, (missing_Vs) := 0]
-
-    # the set of donors and trial2 individuals
-    popn2[, `:=`(trial2 = trial == 2,
-                 donor2 = donor == 1,
-                 txd2 = trial == 2 & donor == 1)]
-
+    all_GEVs <- c(str_c(model_traits, "_g"), str_c(model_traits, "_e"))
+    missing_GEVs <- setdiff(all_GEVs, names(popn2))
+    popn2[, (missing_GEVs) := 0]
+    
     # looking for either log_recentre() or recentre()
     recentre_f <- get(if (use_weight == "log") "log_recentre" else "recentre")
     
-    # TODO: remake this as a matrix operation if possible
+    mat <- popn2[sdp == "progeny",
+                 .(trial = recentre(trial == 2),
+                   donor = recentre(donor == 1),
+                   txd   = recentre(trial == 2 & donor == 1),
+                   weight  = recentre_f(weight),
+                   weight1 = c(recentre_f(weight[trial == 1]),
+                               rep(0, sum(trial == 1))),
+                   weight2 = c(rep(0, sum(trial == 2)),
+                               recentre_f(weight[trial == 2])))] |>
+        as.matrix()
     
-    walk(model_traits, \(trait) {
-        # trait <- model_traits[[1]]
-        trait1 <- str_1st(trait)
-        
-        # str_detect() returns TRUE or FALSE, which is effectively 1 or 0 when
-        # multiplied by a FE value, so an unused trait becomes 0.
-        trial_val   <- str_detect(sim_trial_fe,  trait1) * fe_vals["trial",   trait]
-        donor_val   <- str_detect(sim_donor_fe,  trait1) * fe_vals["donor",   trait]
-        txd_val     <- str_detect(sim_txd_fe,    trait1) * fe_vals["txd",     trait]
-        weight_val  <- str_detect(sim_weight_fe, trait1) * fe_vals["weight",  trait]
-        weight1_val <- str_detect(sim_weight_fe, trait1) * fe_vals["weight1", trait]
-        weight2_val <- str_detect(sim_weight_fe, trait1) * fe_vals["weight2", trait]
+    if (weight_is_nested) {
+        fe_vals["weight", ] <- 0
+    } else {
+        fe_vals[c("weight1", "weight2"), ] <- 0
+    }
+    
+    fe_vals["trial", sildt %notin% str_split_1(sim_trial_fe,  "")] <- 0
+    fe_vals["donor", sildt %notin% str_split_1(sim_donor_fe,  "")] <- 0
+    fe_vals["txd",   sildt %notin% str_split_1(sim_txd_fe,    "")] <- 0
+    fe_vals[str_detect(rownames(fe_vals), "weight"),
+            sildt %notin% str_split_1(sim_weight_fe, "")] <- 0
+    
+    mat_fe <- mat %*% fe_vals
+    
+    traits_g <- str_c(model_traits, "_g")
+    traits_e <- str_c(model_traits, "_e")
+    mat_g <- popn2[sdp == "progeny", ..traits_g] |> as.matrix()
+    mat_e <- popn2[sdp == "progeny", ..traits_e] |> as.matrix()
+    
+    mat_pt <- exp(mat_g + mat_e + mat_fe)
+    colnames(mat_pt) <- model_traits
+    
+    popn2[sdp == "progeny", (model_traits) := as.data.frame(mat_pt)]
 
-        popn2[, tmp := trial2 * trial_val + donor2 * donor_val + txd2 * txd_val]
-
-        if (DEBUG && msgs) {
-            message(trait)
-            ls() |> str_subset("_val$") |> mget() |> unlist() |> print() |> capture_message()
-        }
-
-        # Weight needs a bit more care
-        if (weight_is_nested) {
-            popn2[trial == 1, tmp := tmp + weight1_val * recentre_f(weight)]
-            popn2[trial == 2, tmp := tmp + weight2_val * recentre_f(weight)]
-        } else {
-            popn2[trial %in% 1:2, tmp := tmp + weight_val * recentre_f(weight)]
-        }
-
-        popn2[, tmp := tmp - mean(tmp, na.rm = TRUE)]
-
-        popn2[, (trait) := {
-            gv <- get(str_c(trait, "_g"))
-            ev <- get(str_c(trait, "_e"))
-            exp(gv + ev + tmp)
-        }]
-    })
-
-    # Clean up
-    popn2[, c("trial2", "donor2", "txd2", "tmp") := NULL]
-    popn2[, (missing_Vs) := NULL]
+    popn2[, (missing_GEVs) := NULL]
 
     popn2
 }

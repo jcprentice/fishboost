@@ -1,0 +1,955 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+  a4paper,
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Basic SIR Model},
+  pdfauthor={Jamie Prentice},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Basic SIR Model}
+\author{Jamie Prentice}
+\date{2026-02-05}
+
+\begin{document}
+\maketitle
+
+\subsection{Load libraries and source
+files}\label{load-libraries-and-source-files}
+
+This pulls in all the necessary libraries and source files
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{source}\NormalTok{(}\StringTok{"libraries.R"}\NormalTok{)}
+\FunctionTok{source}\NormalTok{(}\StringTok{"source\_files.R"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Generating a params list}\label{generating-a-params-list}
+
+The first step is to generate a params list that contains the basic
+information, with some messages to note exactly what it's using. All
+elements in \texttt{make\_parameters()} have default values, so these
+are just to see what you can add.
+
+The params list might not fully do everything we want, but as it is just
+a basic R list, we can easily modify it afterwards.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{params }\OtherTok{\textless{}{-}} \FunctionTok{make\_parameters}\NormalTok{(}
+    \AttributeTok{model\_type =} \StringTok{"SIR"}\NormalTok{,  }\CommentTok{\# a Susceptible{-}Infected{-}Removed model}
+    \AttributeTok{setup =} \StringTok{"single"}\NormalTok{,    }\CommentTok{\# a single group}
+    \AttributeTok{use\_traits =} \StringTok{"none"}\NormalTok{, }\CommentTok{\# no genetic effects applied to traits}
+    \AttributeTok{sim\_new\_data =} \StringTok{"r"}   \CommentTok{\# simulate in R (rather than in BICI)}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+This provides a short summary of the params
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summarise\_params}\NormalTok{(params)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Simulating new SIR data via R
+\end{verbatim}
+
+\begin{verbatim}
+## - Demography is:
+##  10 sires, 20 dams, 500 progeny (530 total)
+##  1 group (group size 500)
+\end{verbatim}
+
+\begin{verbatim}
+## - Individual Effects on:
+##  none
+\end{verbatim}
+
+\begin{verbatim}
+## - Sigma_G:
+\end{verbatim}
+
+\begin{verbatim}
+##     sus inf tol
+## sus   0   0   0
+## inf   0   0   0
+## tol   0   0   0
+\end{verbatim}
+
+\begin{verbatim}
+## - Fixed Effects are:
+##  Trial = 'none', Donor = 'none', TxD = 'none', Weight = 'none'
+\end{verbatim}
+
+\begin{verbatim}
+## - Estimated R0:
+##  5
+\end{verbatim}
+
+\begin{verbatim}
+## - Running MCMC with:
+##  10,000 updates, 10,000 samples, 0.2 burnin, 16 chains
+## - BICI script file:
+##  'datasets/testing/data/scen-1-1.bici'
+## - Results file:
+##  'datasets/testing/results/scen-1-1.rds'
+\end{verbatim}
+
+\subsection{Generate pedigree and
+popn}\label{generate-pedigree-and-popn}
+
+Next we take the \texttt{params} file and use it to generate a
+population with groups, traits, weights, and fixed effects applied to
+the phenotypes. Note that you these are piped into each other, but you
+can save the intermediate result at any point to examine what's
+happening (e.g.~for bug fixing).
+
+First \texttt{make\_pedigree()} creates a population with the
+appropriate structure (this may be a balanced population with given
+numbers of sires, dams per sire, and progeny per dam, it may copy an
+existing structure, or you can just set your own structure)
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{popn }\OtherTok{\textless{}{-}} \FunctionTok{make\_pedigree}\NormalTok{(params) }\SpecialCharTok{|\textgreater{}}
+    \FunctionTok{set\_groups}\NormalTok{(params) }\SpecialCharTok{|\textgreater{}}
+    \FunctionTok{set\_traits}\NormalTok{(params) }\SpecialCharTok{|\textgreater{}}
+    \FunctionTok{set\_weights}\NormalTok{(params) }\SpecialCharTok{|\textgreater{}}
+    \FunctionTok{apply\_fixed\_effects}\NormalTok{(params)}
+\end{Highlighting}
+\end{Shaded}
+
+It's worth taking a look at the \texttt{popn} file to see what it
+includes. The columns are:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{names}\NormalTok{(popn)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##  [1] "id"     "sire"   "dam"    "sdp"    "trial"  "group"  "weight" "donor" 
+##  [9] "GE"     "sus_g"  "inf_g"  "tol_g"  "sus_e"  "inf_e"  "tol_e"  "sus"   
+## [17] "inf"    "tol"
+\end{verbatim}
+
+Where:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{id}: the unique ID of the individual. Sires come first, then
+  dams, then progeny.
+\item
+  \texttt{sire} and \texttt{dam} of the individual (together with
+  \texttt{id} this makes a pedigree).
+\item
+  \texttt{sdp}: whether the individual is a sire, dam, or progeny.
+\item
+  The \texttt{weight} in g at start of experiment.
+\item
+  Which \texttt{trial} the individual was assigned to.
+\item
+  Which \texttt{group} the individual was assigned to.
+\item
+  \texttt{donor}: if the individual was inoculated (1) or not (0).
+\item
+  \texttt{GE}: a small tank dependent group effect.
+\item
+  \texttt{sus\_g}, \texttt{inf\_g}, \texttt{tol\_g}, \texttt{sus\_e},
+  \texttt{inf\_e}, \texttt{tol\_e}: genetic and environmental values.
+  These are normally distributed with mean 0.
+\item
+  \texttt{sus}, \texttt{inf}, \texttt{tol}, \texttt{lat}, \texttt{det}:
+  phenotypic values. These are log-normally distributed and incorporate
+  any fixed effects.
+\end{itemize}
+
+A typical progeny looks like:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{popn[sdp }\SpecialCharTok{==} \StringTok{"progeny"}\NormalTok{][}\DecValTok{1}\NormalTok{] }\SpecialCharTok{|\textgreater{}}
+\NormalTok{    knitr}\SpecialCharTok{::}\FunctionTok{kable}\NormalTok{(}\StringTok{"html"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+id
+
+sire
+
+dam
+
+sdp
+
+trial
+
+group
+
+weight
+
+donor
+
+GE
+
+sus\_g
+
+inf\_g
+
+tol\_g
+
+sus\_e
+
+inf\_e
+
+tol\_e
+
+sus
+
+inf
+
+tol
+
+31
+
+1
+
+11
+
+progeny
+
+1
+
+1
+
+50
+
+1
+
+1
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+1
+
+1
+
+1
+
+\subsection{Simulate and plot
+epidemic}\label{simulate-and-plot-epidemic}
+
+We now pass the population file \texttt{popn} and the parameters
+\texttt{params} to \texttt{simulate\_epidemic()}, which will run the
+appropriate model and return a \emph{new} \texttt{popn} file with event
+times, final status, which generation infective they were, and the
+individual responsible for their infection. You can generate multiple
+realisations of the epidemic from the same inputs if you save the
+\texttt{popn} output each time.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{tic}\NormalTok{(); popn }\OtherTok{\textless{}{-}} \FunctionTok{simulate\_epidemic}\NormalTok{(popn, params); }\FunctionTok{toc}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 5.169 sec elapsed
+\end{verbatim}
+
+We can also use the generation value to calculate \(R_0\), which is the
+mean across all groups of the ratio of secondary to primary infectives.
+Also it's useful to see how long the epidemic took until it completed
+(since this information is necessary for BICI to use).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{params}\SpecialCharTok{$}\NormalTok{estimated\_R0 }\OtherTok{\textless{}{-}} \FunctionTok{get\_R0}\NormalTok{(popn)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## R0 estimate: 7.4
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{params}\SpecialCharTok{$}\NormalTok{tmax }\OtherTok{\textless{}{-}} \FunctionTok{get\_tmax}\NormalTok{(popn, params)}
+
+\FunctionTok{message}\NormalTok{(}\StringTok{"Tmax = ["}\NormalTok{, }\FunctionTok{str\_flatten\_comma}\NormalTok{(}\FunctionTok{round}\NormalTok{(params}\SpecialCharTok{$}\NormalTok{tmax, }\DecValTok{1}\NormalTok{)), }\StringTok{"]"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Tmax = [78.6]
+\end{verbatim}
+
+The progeny we had before now looks like this, with the additional
+columns:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{Tinf}: the infection time (\(t:S\rightarrow E\)). In actual
+  data this is 0 for inoculated individuals, and missing for all others.
+\item
+  \texttt{Tinc}: the incubation time (\(t:E\rightarrow I\)), missing in
+  the data.
+\item
+  \texttt{Tsym}: the time of symptoms (\(t:I\rightarrow D\)), present in
+  data.
+\item
+  \texttt{Tdeath}: the time of death (\(t:D\rightarrow R\)), present in
+  data.
+\item
+  \texttt{status}: which compartment the individual is in at the end of
+  the epidemic (should only be \texttt{S} or \texttt{R})
+\item
+  \texttt{generation}: if an individual is a primary, secondary,
+  tertiary etc. infective.
+\item
+  \texttt{infected\_by}: the id of the individual responsible for this
+  infection (0 for inoculated individuals).
+\item
+  \texttt{parasites} \texttt{TRUE} if an individual was infected. In
+  actual data the sensitivity is not 100\%.
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{popn[sdp }\SpecialCharTok{==} \StringTok{"progeny"}\NormalTok{,}
+\NormalTok{     .(id, donor, Tinf, Tdeath, status, generation, infected\_by)][}\DecValTok{1}\SpecialCharTok{:}\DecValTok{10}\NormalTok{] }\SpecialCharTok{|\textgreater{}}
+\NormalTok{    knitr}\SpecialCharTok{::}\FunctionTok{kable}\NormalTok{(}\StringTok{"html"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+id
+
+donor
+
+Tinf
+
+Tdeath
+
+status
+
+generation
+
+infected\_by
+
+31
+
+1
+
+0.00000
+
+22.381736
+
+R
+
+1
+
+0
+
+32
+
+1
+
+0.00000
+
+10.104750
+
+R
+
+1
+
+0
+
+33
+
+1
+
+0.00000
+
+0.144765
+
+R
+
+1
+
+0
+
+34
+
+1
+
+0.00000
+
+3.853585
+
+R
+
+1
+
+0
+
+35
+
+1
+
+0.00000
+
+3.714627
+
+R
+
+1
+
+0
+
+36
+
+0
+
+23.51434
+
+39.132388
+
+R
+
+NA
+
+111
+
+37
+
+0
+
+29.20198
+
+41.491427
+
+R
+
+NA
+
+57
+
+38
+
+0
+
+13.60348
+
+15.852539
+
+R
+
+NA
+
+21
+
+39
+
+0
+
+20.38388
+
+45.431064
+
+R
+
+NA
+
+61
+
+40
+
+0
+
+24.00863
+
+52.788157
+
+R
+
+NA
+
+104
+
+\subsection{Plot the epidemic}\label{plot-the-epidemic}
+
+We can take a look at the time trajectory
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{p1a }\OtherTok{\textless{}{-}} \FunctionTok{plot\_model}\NormalTok{(popn, params)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio]{basic_sir_model_files/figure-latex/unnamed-chunk-10-1.pdf}}
+\caption{Time trajectory of SEIDR model}
+\end{figure}
+
+It's also important to look at the Kaplan-Meier survival plot.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{p1b }\OtherTok{\textless{}{-}} \FunctionTok{basic\_km}\NormalTok{(popn, params)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio]{basic_sir_model_files/figure-latex/unnamed-chunk-11-1.pdf}}
+\caption{KM plot of SEIDR model, showing the proportion of each family
+surviving over time.}
+\end{figure}
+
+\subsection{Add in genetic variance}\label{add-in-genetic-variance}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{params2 }\OtherTok{\textless{}{-}} \FunctionTok{make\_parameters}\NormalTok{(}
+    \AttributeTok{model\_type =} \StringTok{"SIR"}\NormalTok{, }\CommentTok{\# a Susceptible{-}Infected{-}Removed model}
+    \AttributeTok{setup =} \StringTok{"single"}\NormalTok{,   }\CommentTok{\# a single group}
+    \AttributeTok{use\_traits =} \StringTok{"sit"}\NormalTok{, }\CommentTok{\# no genetic effects applied to traits}
+    \AttributeTok{vars =} \FunctionTok{list}\NormalTok{(}\AttributeTok{sus =} \FloatTok{0.5}\NormalTok{, }\AttributeTok{inf =} \DecValTok{1}\NormalTok{, }\AttributeTok{tol =} \FloatTok{0.2}\NormalTok{),}
+    \AttributeTok{cors =} \FunctionTok{list}\NormalTok{(}\AttributeTok{si =} \FloatTok{0.3}\NormalTok{, }\AttributeTok{st =} \SpecialCharTok{{-}}\FloatTok{0.2}\NormalTok{, }\AttributeTok{it =} \FloatTok{0.2}\NormalTok{),}
+    \AttributeTok{sim\_new\_data =} \StringTok{"r"}  \CommentTok{\# simulate in R (rather than in BICI)}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+A quick look at the summary
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summarise\_params}\NormalTok{(params2)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Simulating new SIR data via R
+\end{verbatim}
+
+\begin{verbatim}
+## - Demography is:
+##  10 sires, 20 dams, 500 progeny (530 total)
+##  1 group (group size 500)
+\end{verbatim}
+
+\begin{verbatim}
+## - Individual Effects on:
+##  sus, inf, tol
+\end{verbatim}
+
+\begin{verbatim}
+## - Sigma_G:
+\end{verbatim}
+
+\begin{verbatim}
+##      sus inf  tol
+## sus  0.5 0.3 -0.2
+## inf  0.3 1.0  0.2
+## tol -0.2 0.2  0.2
+\end{verbatim}
+
+\begin{verbatim}
+## - Fixed Effects are:
+##  Trial = 'none', Donor = 'none', TxD = 'none', Weight = 'none'
+\end{verbatim}
+
+\begin{verbatim}
+## - Estimated R0:
+##  5
+\end{verbatim}
+
+\begin{verbatim}
+## - Running MCMC with:
+##  10,000 updates, 10,000 samples, 0.2 burnin, 16 chains
+## - BICI script file:
+##  'datasets/testing/data/scen-1-1.bici'
+## - Results file:
+##  'datasets/testing/results/scen-1-1.rds'
+\end{verbatim}
+
+Now rebuild the population
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{popn2 }\OtherTok{\textless{}{-}} \FunctionTok{make\_pedigree}\NormalTok{(params2) }\SpecialCharTok{|\textgreater{}}
+    \FunctionTok{set\_groups}\NormalTok{(params2) }\SpecialCharTok{|\textgreater{}}
+    \FunctionTok{set\_traits}\NormalTok{(params2) }\SpecialCharTok{|\textgreater{}}
+    \FunctionTok{set\_weights}\NormalTok{(params2) }\SpecialCharTok{|\textgreater{}}
+    \FunctionTok{apply\_fixed\_effects}\NormalTok{(params2)}
+\end{Highlighting}
+\end{Shaded}
+
+If we look at some of the individuals, we can see that they now have
+individual values for their genotypes, and different phenotypes
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{popn2[sdp }\SpecialCharTok{==} \StringTok{"progeny"}\NormalTok{, }\FunctionTok{map}\NormalTok{(.SD, round, }\DecValTok{2}\NormalTok{),}
+\NormalTok{     .SDcols }\OtherTok{=} \FunctionTok{str\_subset}\NormalTok{(}\FunctionTok{names}\NormalTok{(popn2), }\StringTok{"id|sus|inf|tol"}\NormalTok{)][}\DecValTok{1}\SpecialCharTok{:}\DecValTok{5}\NormalTok{] }\SpecialCharTok{|\textgreater{}}
+\NormalTok{    knitr}\SpecialCharTok{::}\FunctionTok{kable}\NormalTok{(}\StringTok{"html"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+id
+
+sus\_g
+
+inf\_g
+
+tol\_g
+
+sus\_e
+
+inf\_e
+
+tol\_e
+
+sus
+
+inf
+
+tol
+
+31
+
+-0.27
+
+1.09
+
+-0.94
+
+-1.15
+
+0.06
+
+-0.01
+
+0.24
+
+3.15
+
+0.39
+
+32
+
+-0.25
+
+-0.24
+
+-0.57
+
+-0.79
+
+0.45
+
+-0.92
+
+0.36
+
+1.23
+
+0.23
+
+33
+
+-0.41
+
+-2.22
+
+-0.57
+
+-0.42
+
+-1.07
+
+-0.81
+
+0.44
+
+0.04
+
+0.25
+
+34
+
+-0.10
+
+-0.24
+
+-1.66
+
+0.51
+
+1.12
+
+-1.23
+
+1.50
+
+2.41
+
+0.06
+
+35
+
+-0.74
+
+-1.34
+
+-0.49
+
+-1.18
+
+0.42
+
+0.41
+
+0.15
+
+0.40
+
+0.92
+
+We can now run a simulation with the new setup
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{popn2 }\OtherTok{\textless{}{-}} \FunctionTok{simulate\_epidemic}\NormalTok{(popn2, params2)}
+\FunctionTok{get\_R0}\NormalTok{(popn2)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.4
+\end{verbatim}
+
+\subsection{Plot the epidemic}\label{plot-the-epidemic-1}
+
+And plot the results, noting a much faster epidemic
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{p2a }\OtherTok{\textless{}{-}} \FunctionTok{plot\_model}\NormalTok{(popn2, params2)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{basic_sir_model_files/figure-latex/unnamed-chunk-17-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{p2b }\OtherTok{\textless{}{-}} \FunctionTok{basic\_km}\NormalTok{(popn2, params2)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{basic_sir_model_files/figure-latex/unnamed-chunk-18-1.pdf}}
+
+Now we can add in some fixed effects.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{params3 }\OtherTok{\textless{}{-}} \FunctionTok{make\_parameters}\NormalTok{(}
+    \AttributeTok{model\_type =} \StringTok{"SIR"}\NormalTok{, }\CommentTok{\# a Susceptible{-}Infected{-}Removed model}
+    \AttributeTok{setup =} \StringTok{"multiple"}\NormalTok{, }\CommentTok{\# a single group}
+    \AttributeTok{use\_traits =} \StringTok{"sit"}\NormalTok{, }\CommentTok{\# no genetic effects applied to traits}
+    \AttributeTok{vars =} \FunctionTok{list}\NormalTok{(}\AttributeTok{sus =} \FloatTok{0.5}\NormalTok{, }\AttributeTok{inf =} \DecValTok{1}\NormalTok{, }\AttributeTok{tol =} \FloatTok{0.2}\NormalTok{),}
+    \AttributeTok{cors =} \FunctionTok{list}\NormalTok{(}\AttributeTok{si =} \FloatTok{0.3}\NormalTok{, }\AttributeTok{st =} \SpecialCharTok{{-}}\FloatTok{0.2}\NormalTok{, }\AttributeTok{it =} \FloatTok{0.2}\NormalTok{),}
+    \AttributeTok{donor\_fe =} \StringTok{"it"}\NormalTok{,    }\CommentTok{\# donor FE on inf, tol}
+    \AttributeTok{weight\_fe =} \StringTok{"sit"}\NormalTok{,  }\CommentTok{\# weight FE on sus, inf, tol}
+    \AttributeTok{sim\_new\_data =} \StringTok{"r"}  \CommentTok{\# simulate in R (rather than in BICI)}
+\NormalTok{)}
+\FunctionTok{summarise\_params}\NormalTok{(params3)}
+\end{Highlighting}
+\end{Shaded}
+
+There's one more step here, we need to specify the FE values we want to
+use. It's just a matrix containing all the combinations.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{params3}\SpecialCharTok{$}\NormalTok{fe\_vals[}\StringTok{"donor"}\NormalTok{, }\StringTok{"inf"}\NormalTok{] }\OtherTok{\textless{}{-}} \DecValTok{1}
+\NormalTok{params3}\SpecialCharTok{$}\NormalTok{fe\_vals[}\StringTok{"donor"}\NormalTok{, }\StringTok{"tol"}\NormalTok{] }\OtherTok{\textless{}{-}} \SpecialCharTok{{-}}\DecValTok{1}
+\NormalTok{params3}\SpecialCharTok{$}\NormalTok{fe\_vals[}\StringTok{"weight"}\NormalTok{, }\FunctionTok{c}\NormalTok{(}\StringTok{"sus"}\NormalTok{, }\StringTok{"inf"}\NormalTok{, }\StringTok{"tol"}\NormalTok{)] }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\SpecialCharTok{{-}}\FloatTok{0.5}\NormalTok{, }\FloatTok{0.5}\NormalTok{, }\FloatTok{0.5}\NormalTok{)}
+\NormalTok{params3}\SpecialCharTok{$}\NormalTok{fe\_vals[, params3}\SpecialCharTok{$}\NormalTok{model\_traits]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##          traits
+## fe         sus inf  tol
+##   trial    0.0 0.0  0.0
+##   donor    0.0 1.0 -1.0
+##   txd      0.0 0.0  0.0
+##   weight  -0.5 0.5  0.5
+##   weight1  0.0 0.0  0.0
+##   weight2  0.0 0.0  0.0
+\end{verbatim}
+
+And generate and simulate
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{popn3 }\OtherTok{\textless{}{-}} \FunctionTok{make\_pedigree}\NormalTok{(params3) }\SpecialCharTok{|\textgreater{}}
+    \FunctionTok{set\_groups}\NormalTok{(params3) }\SpecialCharTok{|\textgreater{}}
+    \FunctionTok{set\_traits}\NormalTok{(params3) }\SpecialCharTok{|\textgreater{}}
+    \FunctionTok{set\_weights}\NormalTok{(params3) }\SpecialCharTok{|\textgreater{}}
+    \FunctionTok{apply\_fixed\_effects}\NormalTok{(params3) }\SpecialCharTok{|\textgreater{}}
+    \FunctionTok{simulate\_epidemic}\NormalTok{(params3)}
+\end{Highlighting}
+\end{Shaded}
+
+And plot
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{p2a }\OtherTok{\textless{}{-}} \FunctionTok{plot\_model}\NormalTok{(popn3, params3)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{basic_sir_model_files/figure-latex/unnamed-chunk-22-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{p2b }\OtherTok{\textless{}{-}} \FunctionTok{basic\_km}\NormalTok{(popn3, params3)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{basic_sir_model_files/figure-latex/unnamed-chunk-23-1.pdf}}
+
+\end{document}

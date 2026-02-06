@@ -100,7 +100,7 @@ msg_pars <- function(x) {
 }
 
 # Recentering weights
-recentre <- function(x, digits = 5L) {
+recentre <- function(x, digits = -1L) {
     y <- x - mean(x, na.rm = TRUE)
     if (digits >= 0L) {
         y <- round(y, digits)
@@ -108,7 +108,7 @@ recentre <- function(x, digits = 5L) {
     y
 }
 
-log_recentre <- function(x, digits = 5L) {
+log_recentre <- function(x, digits = -1L) {
     lx <- log(x)
     y <- lx - mean(lx, na.rm = TRUE)
     if (digits >= 0L) {

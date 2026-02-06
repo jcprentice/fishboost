@@ -64,6 +64,7 @@ params$censor <- 0.8
 ```
 
 This provides a short summary of the params
+
 ```{r, message=TRUE}
 summarise_params(params)
 ```
@@ -84,7 +85,6 @@ popn <- make_pedigree(params) |>
 params$tmax <- c(t1 = 200, t2 = 200)
 ```
 
-
 ## Generate directories and config files
 
 In order for BICI to work, it needs the data and the model to fit to the data. We first generate the directories (all stored in the `params` file) and then create the BICI script file.
@@ -98,7 +98,6 @@ walk(params[str_ends(names(params), "_dir")], ~ {
 cleanup_bici_files(params)
 bici_txt <- generate_bici_script(popn, params)
 ```
-
 
 ## Run BICI
 
@@ -121,7 +120,6 @@ if (out != 0) {
     stop("BICI failed to finish")
 }
 ```
-
 
 ## Retrieve results and save
 
@@ -172,13 +170,12 @@ Finally `flatten_bici_states()` creates an `etc-inf.rds` or `etc-ps.rds` summary
 ```{r flatten-states, eval = FALSE}
 flatten_bici_states(dataset, name, bici_cmd)
 ```
+
 Now we can examine the output of BICI more closely. First generate a posterior plot
+
 ```{r generate-posterior, fig.dim = c(10, 12), fig.cap = "Posterior distributions"}
 source("scripts/posterior.R")
 get_posterior(dataset, scen_rep = str_remove(params$name, "scen-"))
 ```
-The output is pretty bad as we using only 10^4 samples, but it's enough to get the idea.
 
-
-
-
+The output is pretty bad as we using only 10\^4 samples, but it's enough to get the idea.

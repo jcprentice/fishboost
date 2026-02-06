@@ -129,7 +129,7 @@ if (FALSE) {
     dataset <- "fb-test-1e7"; scens <- 1:6
     walk(scens, possibly(\(i) get_posterior(dataset, i, 1)))
     
-    dataset <- "fb-qtest"; scens <- 1:13
+    dataset <- "fb-qtest"; scens <- 1:18
     walk(scens, possibly(\(i) get_posterior(dataset, i, 1)))
     
     # get_posteriors(dataset = "sim-base-inf", scens = 5, reps = 1:5, combine = FALSE)

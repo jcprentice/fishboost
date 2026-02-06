@@ -74,4 +74,5 @@ check_convergence <- function(dataset = "fb-test") {
 
 if (FALSE) {
     out <- check_convergence("fb-qtest")
+    out$summary
 }

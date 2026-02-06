@@ -35,7 +35,7 @@ run_from_script <- length(cmd_args) > 0
         txd_fe = "ildt",
         weight_fe = "sildt",
         weight_is_nested = TRUE,
-        sim_new_data = "bici"
+        sim_new_data = "r"
     )
     
     # Temporary override of some parameters
