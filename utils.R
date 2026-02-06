@@ -1,3 +1,10 @@
+# We often just want the first or last letter of a string
+str_1st <- function(x) str_sub(x, 1L, 1L)
+str_last <- function(x) str_sub(x, -1L)
+
+# split a string into individual characters
+str_chars <- function(x) str_split_1(x, "")
+
 # Write sparse matrix so that SIRE can read it
 write_sparse_matrix <- function(M, file) {
     dt <- as.data.table(summary(M))
@@ -62,9 +69,7 @@ obsize <- function(x) {
 nuniq <- function(x) length(unique(x))
 
 # Get all unique characters in a string
-uniq_char <- function(x) {
-    unique(str_split_1(x, ""))
-}
+uniq_chars <- function(x) str_chars(x) |> unique()
 
 
 # Clamp values
@@ -116,10 +121,6 @@ log_recentre <- function(x, digits = -1L) {
     }
     y
 }
-
-# We often just want the first letter of a string
-str_1st <- function(x) str_sub(x, 1L, 1L)
-str_last <- function(x) str_sub(x, -1L)
 
 # Get part of description
 get_part <- function(x, y) {

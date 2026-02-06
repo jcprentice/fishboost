@@ -9,7 +9,7 @@ set_ge_opts <- function(params) {
     params2 <- copy(params)
     
     if (any(str_starts(ge_opts, "no_ev"))) {
-        evs <- ge_opts |> str_subset("no_ev") |> str_remove("no_ev_") |> str_split_1("")
+        evs <- ge_opts |> str_subset("no_ev") |> str_remove("no_ev_") |> str_chars()
         
         if (msgs) message("Removing VarE from ", evs)
         

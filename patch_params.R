@@ -199,7 +199,7 @@ patch_params <- function(params, trace_row = 0) {
         out <- make_matrices_from_priors(priors1)
         
         # Copy the used values, discarding the rest (even if non-zero)
-        used <- model_traits[str_split_1(use_traits, "")]
+        used <- model_traits[str_chars(use_traits)]
         
         params2$Sigma_G[used, used] <- out$Sigma_G[used, used]
         params2$Sigma_E[used, used] <- out$Sigma_E[used, used]

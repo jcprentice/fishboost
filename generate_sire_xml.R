@@ -127,12 +127,12 @@ generate_sire_xml <- function(popn, params) {
         
         # evs to remove
         no_evs <- if (any(str_starts(ge_opts, "no_ev"))) {
-            ge_opts |> str_subset("no_ev") |> str_remove("no_ev_") |> str_split_1("")
+            ge_opts |> str_subset("no_ev") |> str_remove("no_ev_") |> str_chars()
         } else if ("gt_only" %in% ge_opts) {
             sildt
         }
         
-        link_traits1 <- str_split_1(link_traits, "")
+        link_traits1 <- str_chars(link_traits)
         xaxe <- if ("pt_only" %in% ge_opts) {
             str_c(link_traits1, "_e") |> setNames(sildt)
         } else if ("gt_only" %in% ge_opts) {
@@ -158,12 +158,12 @@ generate_sire_xml <- function(popn, params) {
         ### Add fixed effects ----
         
         # Want to create vectors c(s="trial_s", ...) where the values may be linked
-        trial_names   <- setNames(str_c("trial_",   str_split_1(link_trial,  "")), sildt)
-        donor_names   <- setNames(str_c("donor_",   str_split_1(link_donor,  "")), sildt)
-        txd_names     <- setNames(str_c("txd_",     str_split_1(link_txd,    "")), sildt)
-        weight_names  <- setNames(str_c("weight_",  str_split_1(link_weight, "")), sildt)
-        weight1_names <- setNames(str_c("weight1_", str_split_1(link_weight, "")), sildt)
-        weight2_names <- setNames(str_c("weight2_", str_split_1(link_weight, "")), sildt)
+        trial_names   <- setNames(str_c("trial_",   str_chars(link_trial)),  sildt)
+        donor_names   <- setNames(str_c("donor_",   str_chars(link_donor)),  sildt)
+        txd_names     <- setNames(str_c("txd_",     str_chars(link_txd)),    sildt)
+        weight_names  <- setNames(str_c("weight_",  str_chars(link_weight)), sildt)
+        weight1_names <- setNames(str_c("weight1_", str_chars(link_weight)), sildt)
+        weight2_names <- setNames(str_c("weight2_", str_chars(link_weight)), sildt)
         
         
         # Build a string for fixed_effects like "trial_i,donor_i,txd_i", and account
@@ -345,28 +345,28 @@ generate_sire_xml <- function(popn, params) {
             if (used_traits["t"]) xml_set_attr(xdt, "t_g", "t_g")
         }
         
-        walk(unique(trial_names[str_split_1(trial_fe, "")]), \(str) {
+        walk(unique(trial_names[str_chars(trial_fe)]), \(str) {
             xml_set_attr(xdt, str, "trial_fe")
         })
         
-        walk(unique(donor_names[str_split_1(donor_fe, "")]), \(str) {
+        walk(unique(donor_names[str_chars(donor_fe)]), \(str) {
             xml_set_attr(xdt, str, "donor_fe")
         })
         
-        walk(unique(txd_names[str_split_1(txd_fe, "")]), \(str) {
+        walk(unique(txd_names[str_chars(txd_fe)]), \(str) {
             xml_set_attr(xdt, str, "txd_fe")
         })
         
         if (weight_is_nested) {
-            walk(unique(weight1_names[str_split_1(weight_fe, "")]), \(str) {
+            walk(unique(weight1_names[str_chars(weight_fe)]), \(str) {
                 xml_set_attr(xdt, str, "weight1_fe")
             })
             
-            walk(unique(weight2_names[str_split_1(weight_fe, "")]), \(str) {
+            walk(unique(weight2_names[str_chars(weight_fe)]), \(str) {
                 xml_set_attr(xdt, str, "weight2_fe")
             })
         } else {
-            walk(unique(weight_names[str_split_1(weight_fe, "")]), \(str) {
+            walk(unique(weight_names[str_chars(weight_fe)]), \(str) {
                 xml_set_attr(xdt, str, "weight_fe")
             })
         }

@@ -166,7 +166,7 @@ make_parameters <- function(
     message(str_glue("- Model type is: '{model_type}'"))
     
     # Compartments are just the letters in model_type (ignore repeated S)
-    compartments <- uniq_char(model_type)
+    compartments <- uniq_chars(model_type)
     
     all_traits <- c(s = "sus", i = "inf", l = "lat", d = "det", t = "tol")
     
@@ -207,7 +207,7 @@ make_parameters <- function(
     
     n_traits <- length(model_traits)
     n_traits_used <- str_length(use_traits)
-    traits_used <- model_traits[str_split_1(use_traits, "")]
+    traits_used <- model_traits[str_chars(use_traits)]
     
     if (n_traits_used > 0) {
         message("- ", n_traits_used, " GE traits: ", str_flatten_comma(traits_used))
@@ -494,8 +494,8 @@ make_parameters <- function(
     priors[parameter %in% use_parameters, use := TRUE]
     
     GE_traits <- used |>
-        intersect(str_split_1(use_traits, "")) |>
-        intersect(str_split_1(link_traits, ""))
+        intersect(str_chars(use_traits)) |>
+        intersect(str_chars(link_traits))
     
     pwalk(expand.grid(x = used, y = used), \(x, y) {
         priors[str_ends(parameter, str_glue("_[GE]_{x}{y}")),
@@ -512,8 +512,8 @@ make_parameters <- function(
         if (base_str %in% c("", "none")) return("XYZ")
         
         used |>
-            intersect(str_split_1(base_str, "")) |>
-            intersect(str_split_1(link_str, "")) |>
+            intersect(str_chars(base_str)) |>
+            intersect(str_chars(link_str)) |>
             str_flatten() |>
             str_glue("{base}{wt}_[{fe}]",
                      fe = _,
@@ -655,7 +655,7 @@ summarise_params <- function(params) {
         message(str_glue(
             "- Individual Effects on:",
             str_c("\t", if (use_traits %in% c("", "none")) "none" else
-                str_flatten_comma(model_traits[str_split_1(use_traits, "")])),
+                str_flatten_comma(model_traits[str_chars(use_traits)])),
             .trim = FALSE, .sep = "\n"
         ))
         

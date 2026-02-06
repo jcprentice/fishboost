@@ -92,7 +92,7 @@ plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
     
     plts$empty <- ggplot() + theme_classic()
     
-    sildt1 <- "sildt" |> str_split_1("")
+    sildt1 <- str_chars("sildt")
     sildt2 <- str_c(sildt1, sildt1)
     any_non_empty <- function(x) any(x != "empty")
     

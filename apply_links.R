@@ -50,7 +50,7 @@ apply_links <- function(params) {
     sildt <- c("s", "i", "l", "d", "t")
     ntraits <- 5L
 
-    get_idxs <- function(s) match(str_split_1(s, ""), sildt)
+    get_idxs <- function(s) match(str_chars(s), sildt)
 
     # Individual Effects ----
     if (use_traits %notin% c("", "none")) {
@@ -83,8 +83,8 @@ apply_links <- function(params) {
     }
 
     get_priors <- function(fe = "trial") {
-        str  <- get(str_c(fe, "_fe"))   |> str_split_1("") # ildtt
-        link <- get(str_c("link_", fe)) |> str_split_1("") # sittt
+        str  <- get(str_c(fe, "_fe"))   |> str_chars() # ildtt
+        link <- get(str_c("link_", fe)) |> str_chars() # sittt
         str_c(fe, "_", intersect(str, link)) # trial_i, trial_t
     }
 
@@ -140,7 +140,7 @@ apply_links <- function(params) {
 
     # Shape parameters ----
     shapes <- c(l = LP_shape, d = DP_shape, t = RP_shape)
-    shape <- shapes[str_split_1(sim_link_shapes, "")]
+    shape <- shapes[str_chars(sim_link_shapes)]
     params2[c("LP_shape", "DP_shape", "RP_shape")] <- shape
 
     # Set values in priors (be careful not to accidentally turn them back on if the type is "exp")

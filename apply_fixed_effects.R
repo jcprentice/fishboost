@@ -42,12 +42,12 @@ apply_fixed_effects <- function(popn, params) {
         as.matrix()
     
     # Zero out all fe_vals that aren't in sim_X_fe
-    fe_vals["trial",   sildt %notin% str_split_1(sim_trial_fe,  "")] <- 0
-    fe_vals["donor",   sildt %notin% str_split_1(sim_donor_fe,  "")] <- 0
-    fe_vals["txd",     sildt %notin% str_split_1(sim_txd_fe,    "")] <- 0
-    fe_vals["weight",  sildt %notin% str_split_1(sim_weight_fe, "")] <- 0
-    fe_vals["weight1", sildt %notin% str_split_1(sim_weight_fe, "")] <- 0
-    fe_vals["weight2", sildt %notin% str_split_1(sim_weight_fe, "")] <- 0
+    fe_vals["trial",   sildt %notin% str_chars(sim_trial_fe)]  <- 0
+    fe_vals["donor",   sildt %notin% str_chars(sim_donor_fe)]  <- 0
+    fe_vals["txd",     sildt %notin% str_chars(sim_txd_fe)]    <- 0
+    fe_vals["weight",  sildt %notin% str_chars(sim_weight_fe)] <- 0
+    fe_vals["weight1", sildt %notin% str_chars(sim_weight_fe)] <- 0
+    fe_vals["weight2", sildt %notin% str_chars(sim_weight_fe)] <- 0
     
     if (weight_is_nested) {
         fe_vals["weight", ] <- 0

@@ -155,7 +155,7 @@ generate_bici_script <- function(popn, params) {
         if (model_type %in% c("SIR", "SEIR")) x$comp_ds_D <- NULL
         
         # The flashy way:
-        # walk(model_type |> str_split_1("") |> unique(),
+        # walk(model_type |> uniq_chars(),
         #      ~ {x[[str_glue("comp_ds_{.x}")]] <<- list(node = "comp", name = .x)})
         
         ### Transitions ----
@@ -172,7 +172,7 @@ generate_bici_script <- function(popn, params) {
             # link_shapes = "lll" means use "eta^shape" for det and tol
             cv1 <- c(l = "LP^shape", d = "DP^shape", t = "RP^shape")
             ldt <- names(cv1)
-            cv <- setNames(cv1[str_split_1(link_shapes, "")], ldt)[[p]]
+            cv <- setNames(cv1[str_chars(link_shapes)], ldt)[[p]]
             
             switch(dist_type, 
                    "gamma" = str_glue("gamma(mean:FE_IE_{m}_b,c, cv:{cv}_b,c)"),
@@ -363,8 +363,8 @@ generate_bici_script <- function(popn, params) {
         ## Additive genetic effects ----
         
         # IEs as "sg,ig,tg". We use this several times, so keep it.
-        ies_str <- str_c(intersect(str_split_1(use_traits, ""),
-                                   str_split_1(link_traits, "")),
+        ies_str <- str_c(intersect(str_chars(use_traits),
+                                   str_chars(link_traits)),
                          "g", collapse = ",")
     
         if (use_traits %notin% c("", "none")) {
@@ -449,8 +449,8 @@ generate_bici_script <- function(popn, params) {
         
         ## True BVs ----
         if (bici_cmd == "inf" && str_detect(dataset, "sim")) {
-            traits_to_fit <- model_traits[intersect(str_split_1(use_traits, ""),
-                                                    str_split_1(link_traits, ""))]
+            traits_to_fit <- model_traits[intersect(str_chars(use_traits),
+                                                    str_chars(link_traits))]
             ie_names <- expand.grid(traits_to_fit, c("g", "e")) |>
                 apply(1, str_flatten, "_")
             ie_vars <- expand.grid(str_1st(traits_to_fit),
@@ -503,7 +503,7 @@ generate_bici_script <- function(popn, params) {
         x$comment_fe <- "Fixed effects"
         
         # Get the appropriate linked effect for a given trait
-        get_LE <- function(links, t1) setNames(str_split_1(links, ""), sildt)[[t1]]
+        get_LE <- function(links, t1) setNames(str_chars(links), sildt)[[t1]]
         
         get_FEs <- function(trait) {
             t1 <- str_1st(trait)
@@ -703,8 +703,8 @@ generate_bici_script <- function(popn, params) {
             )
             
             # Possibly already defined, maybe not
-            traits_to_fit <- model_traits[intersect(str_split_1(use_traits, ""),
-                                                    str_split_1(link_traits, ""))]
+            traits_to_fit <- model_traits[intersect(str_chars(use_traits),
+                                                    str_chars(link_traits))]
             
             XG <- Sigma_G[traits_to_fit, traits_to_fit] |> round(5)
             dimnames(XG) <- list(NULL, str_c(str_1st(traits_to_fit), "g"))
@@ -779,7 +779,7 @@ generate_bici_script <- function(popn, params) {
             #     # "r_G_si" -> "ω^sg,ig"
             #     tmp <- str_split_1(pname, "_")
             #     ge <- str_to_lower(tmp[[2]])
-            #     tr <- str_split_1(tmp[[3]], "")
+            #     tr <- str_chars(tmp[[3]])
             #     pname <- str_glue("\\omega^{tr[[1]]}{ge},{tr[[2]]}{ge}")
             # }
             

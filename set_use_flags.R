@@ -52,8 +52,8 @@ set_use_flags <- function(params) {
     
     # Only use traits if in used AND in link_traits
     GE_traits <- intersect(used,
-                           intersect(str_split_1(use_traits, ""),
-                                     str_split_1(link_traits, "")))
+                           intersect(str_chars(use_traits),
+                                     str_chars(link_traits)))
     
     pwalk(expand.grid(x = used, y = used), \(x, y) {
         priors[str_ends(parameter, str_glue("_[GE]_{x}{y}")),
@@ -71,8 +71,8 @@ set_use_flags <- function(params) {
         if (base_str %in% c("", "none")) return("XYZ")
         
         used |>
-            intersect(str_split_1(base_str, "")) |>
-            intersect(str_split_1(link_str, "")) |>
+            intersect(str_chars(base_str)) |>
+            intersect(str_chars(link_str)) |>
             str_flatten() |>
             str_glue("{base}{wt}_[{fe}]",
                      fe = _,
