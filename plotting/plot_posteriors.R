@@ -10,7 +10,7 @@
     
     source("make_parameters.R")
     source("rename_pars.R")
-    source("add_h2.R")
+    source("add_h2_to_pars.R")
     source("utils.R")
 }
 
@@ -127,7 +127,7 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
     x[, names(x) := map(.SD, as.numeric)]
     
     # Calculate heritability
-    pars <- add_h2(x, pars)
+    pars <- add_h2_to_pars(x, pars)
     h2_priors <- data.table(parameter = c("cov_P_ss", "cov_P_ii", "cov_P_tt",
                                           "h2_ss", "h2_ii", "h2_tt"),
                             type = "Flat", val1 = 0, val2 = 1,

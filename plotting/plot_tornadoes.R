@@ -10,7 +10,7 @@
     library(extrafont)
     
     source("rename_pars.R")
-    source("add_h2.R")
+    source("add_h2_to_pars.R")
     source("utils.R")
 }
 

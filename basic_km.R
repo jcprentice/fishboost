@@ -1,11 +1,17 @@
-{
-    library(data.table)
-    library(stringr)
-    library(ggplot2)
-}
+library(data.table)
+library(stringr)
+library(ggplot2)
+
+#' Generate a basic KM plot from a single data.table
+#'
+#' @param popn A population data.table
+#' @param params A parameters list
+#'
+#' @returns A KM plot
 
 basic_km <- function(popn, params) {
-    cols <- intersect(c("sire", "trial", "Tinf", "Tsym", "Tdeath"), names(popn))
+    cols <- intersect(c("sire", "trial", "Tinf", "Tsym", "Tdeath"),
+                      names(popn))
     
     x <- popn[sdp == "progeny", ..cols]
     

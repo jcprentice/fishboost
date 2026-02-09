@@ -1,14 +1,13 @@
-#' Take params and ensure that linked traits are correct by setting Sigma_G,
-#' priors, and fe_vals.
-#' 
+#' Ensure linked traits are correctly applied
+#'
+#' @description Take `params` and ensure that linked traits are correct by
+#'   setting `Sigma_G`, `priors`, and `fe_vals.`
+#'
 #' @param params The list of model parameters
 #' @returns A new modified model parameters
 
 apply_links <- function(params) {
     {
-        all_traits       <- params$all_traits
-        model_traits     <- params$model_traits
-        use_traits       <- params$use_traits
         sim_trial_fe     <- params$sim_trial_fe
         sim_donor_fe     <- params$sim_donor_fe
         sim_txd_fe       <- params$sim_txd_fe
@@ -40,13 +39,13 @@ apply_links <- function(params) {
         RP_shape         <- params$RP_shape %||% "ldt"
     }
 
-    # Need to make explicit copies because datatables work by reference
+    # Make explicit copies because data.tables work by reference
     params2 <- copy(params)
     
     # All changes made to priors also happen in params2
     priors  <- params2$priors
 
-    # Grab the first letter of each model traitname for convenience
+    # Get the first letter of each model traitname for convenience
     sildt <- c("s", "i", "l", "d", "t")
     ntraits <- 5L
 
@@ -64,19 +63,25 @@ apply_links <- function(params) {
         params2$cov_E[] <- cov_E[new_idxs, new_idxs, drop = FALSE]
 
         # Be careful here in case any traits aren't used
-
+        set_diag_to_cov <- function(x) {
+            diag(x) <- str_replace(diag(x), "r", "cov")
+            x
+        }
+        get_LT_pars <- function(x) c(diag(x), t(x)[lower.tri(x)])
+        duplicate_GE <- function(x) c(x, str_replace(x, "G", "E"))
+        
         pars <- expand.grid("r_G_", sildt, sildt) |>
             apply(1, str_flatten) |>
             matrix(ntraits, ntraits) |>
-            {\(x) {diag(x) <- str_replace(diag(x), "r", "cov"); x}}() |>
-            {\(x) {
-                y <- c(diag(x), t(x)[lower.tri(x)])
-                c(y, str_replace(y, "G", "E"))
-            }}()
+            set_diag_to_cov() |>
+            get_LT_pars() |>
+            duplicate_GE()
 
         parvals <- data.table(par = pars,
-                              val = c(diag(Sigma_G), Sigma_G[lower.tri(Sigma_G)],
-                                      diag(Sigma_E), Sigma_E[lower.tri(Sigma_E)]))
+                              val = c(diag(Sigma_G),
+                                      Sigma_G[lower.tri(Sigma_G)],
+                                      diag(Sigma_E),
+                                      Sigma_E[lower.tri(Sigma_E)]))
 
         priors[parameter %in% parvals$par,
                true_val := fifelse(use, parvals$val, true_val)]

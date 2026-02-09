@@ -1,17 +1,25 @@
-# setup makes multiple changes to params, which either need to be provided as an
-# arg to make_parameters(), or carefully patched afterwards.
+#' Apply `setup` to `params`
+#'
+#' @descrition Modify `params` according to `setup.` This is only necessary if
+#'   the `popn` data.table needs to be constructed from scratch, otherwise the
+#'   values set are never used.
+#'
+#' @param setup A string describing `popn`'s family structure
+#' @param params A params list
+#'
+#' @returns A new modified params list
 
 apply_setup <- function(setup, params) {
     switch(setup,
-           "fb_12_drop71" = {
+           "fb_12_rpw" = {
                nsires <- 28L; ndams <- 25L; nprogeny <- 1750L;
                dpsire <- 1L; ppdam <- 72L;
                ngroups <- 70L; I0 <- 5L;
-           }, "fb_1_drop71" = {
+           }, "fb_1_rpw" = {
                nsires <- 14L; ndams <- 14L; nprogeny <- 875L;
                dpsire <- 1L; ppdam <- 72L;
                ngroups <- 35L; I0 <- 5L;
-           }, "fb_2_drop71" = {
+           }, "fb_2_rpw" = {
                nsires <- 17L; ndams <- 14L; nprogeny <- 875L;
                dpsire <- 1L; ppdam <- 72L;
                ngroups <- 35L; I0 <- 5L;

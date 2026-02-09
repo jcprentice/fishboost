@@ -1,13 +1,18 @@
 library(data.table)
 library(stringr)
 
-# Apply trial and donor FEs, by making a copy of popn, copying the GV,
-# applying the FE to the relevant individuals, normalising the population, and
-# recalculating the trait
+#' Apply trial, donor, and weight FEs to popn.
+#'
+#' @description `apply_fixed_effects()` takes a population data.table and a
+#'   parameters list and applies all the fixed effects defined by `sim_X_fe`
+#'   according to the FE values contained in `fe_vals`.
+#'
+#' @param popn A population data.table
+#' @param params A parameters list
+#'
+#' @returns A new population file with FEs applied to phenotypes
 
 apply_fixed_effects <- function(popn, params) {
-    # message("Applying fixed effects ...")
-
     {
         model_traits     <- params$model_traits
         sim_trial_fe     <- params$sim_trial_fe
@@ -17,27 +22,33 @@ apply_fixed_effects <- function(popn, params) {
         fe_vals          <- params$fe_vals
         use_weight       <- params$use_weight
         weight_is_nested <- params$weight_is_nested
-        msgs             <- params$msgs
-        DEBUG            <- params$DEBUG
     }
+
+    message("Applying fixed effects to popn...")
 
     popn2 <- copy(popn)
 
-    # Some traits don't have GVs and EVs, need to generate fake ones = 0
-    all_GEVs <- c(str_c(model_traits, "_g"), str_c(model_traits, "_e"))
-    missing_GEVs <- setdiff(all_GEVs, names(popn2))
+    # Some traits don't have GVs and EVs, so we give placeholders with value 0
+
+    traits_g <- str_c(model_traits, "_g")
+    traits_e <- str_c(model_traits, "_e")
+    missing_GEVs <- setdiff(c(traits_g, traits_e),
+                            names(popn2))
     popn2[, (missing_GEVs) := 0]
     
-    # looking for either log_recentre() or recentre()
+    # Choose how to recentre the weights, log (default) or linear
     recentre_f <- get(if (use_weight == "log") "log_recentre" else "recentre")
+    
+    N1 <- popn2[trial == 1, .N]
+    N2 <- popn2[trial == 2, .N]
     
     mat <- popn2[sdp == "progeny",
                  .(trial = recentre(trial == 2),
                    donor = recentre(donor == 1),
                    txd   = recentre(trial == 2 & donor == 1),
                    weight  = recentre_f(weight),
-                   weight1 = c(recentre_f(weight[trial == 1]), rep(0, sum(trial == 1))),
-                   weight2 = c(rep(0, sum(trial == 2)), recentre_f(weight[trial == 2]))
+                   weight1 = c(recentre_f(weight[trial == 1]), rep(0, N2)),
+                   weight2 = c(rep(0, N1), recentre_f(weight[trial == 2]))
                  )] |>
         as.matrix()
     
@@ -58,8 +69,6 @@ apply_fixed_effects <- function(popn, params) {
     
     mat_fe <- mat %*% fe_vals
     
-    traits_g <- str_c(model_traits, "_g")
-    traits_e <- str_c(model_traits, "_e")
     mat_g <- popn2[sdp == "progeny", ..traits_g] |> as.matrix()
     mat_e <- popn2[sdp == "progeny", ..traits_e] |> as.matrix()
     

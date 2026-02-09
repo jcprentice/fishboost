@@ -122,7 +122,7 @@ log_recentre <- function(x, digits = -1L) {
     y
 }
 
-# Get part of description
+# Get part of description (used in param_generators)
 get_part <- function(x, y) {
     x |>
         str_squish() |>
