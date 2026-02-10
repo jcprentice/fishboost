@@ -4,7 +4,8 @@ library(purrr)
 # For BICI config files, modify them to increment the seed by 100 if they fail
 # to run properly
 inc_seed <- function(params) {
-    f <- str_glue("{params$config}.bici")
+    f <- params$config
+
     lines <- readLines(f)
     n1 <- str_which(lines, "inf.*seed")
     line <- lines[[n1]]

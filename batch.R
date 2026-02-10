@@ -20,7 +20,7 @@ if (run_from_script) {
     row_no <- as.integer(cmd_args[[2]])
 } else {
     pname <- "fb-qtest"
-    row_no <- 14L
+    row_no <- 1L
 }
 
 {
@@ -292,7 +292,7 @@ message(str_glue("censor = {x}\nTmax = {y}",
     cmd <- with(params, str_glue(
         if (algorithm == "pas")
             "mpirun -n {nchains} --output :raw --oversubscribe " else "",
-        "../BICI/bici-{platform} {config}.bici {bici_cmd}",
+        "../BICI/bici-{platform} {config} {bici_cmd}",
         platform = Sys.info()[["sysname"]]
     ))
     message(str_glue("Running:\n$ {cmd}"))

@@ -112,7 +112,7 @@ make_parameters <- function(
         meta_dir    <- c(str_glue("{base_dir}/meta"))
         output_dir  <- c(str_glue("{data_dir}/{name}-out"))
         states_dir  <- c(str_glue("{output_dir}/states"))
-        config      <- c(str_glue("{data_dir}/{name}"))
+        config      <- c(str_glue("{data_dir}/{name}.bici"))
     }
     
     # Population setup ----
@@ -398,7 +398,7 @@ make_parameters <- function(
         "removal_period_Tr1,Rec",   single_prior, 0,   30,  removal_period,
         "removal_period_Tr2,Don",   single_prior, 0,   30,  removal_period,
         "removal_period_Tr2,Rec",   single_prior, 0,   30,  removal_period,
-        "infrat",                   "uniform",    0,    1,  inf_ratio,
+        "infrat",                   "uniform",    0,    2,  inf_ratio,
 
         # parameter type       val1 val2    true_val
         "sigma",    "inverse", 0,   2 * ge, ge,

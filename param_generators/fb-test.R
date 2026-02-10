@@ -14,7 +14,7 @@ n <- 1
 goal <- c("convergence", "coverage")[[n]]
 message("Goal = ", goal)
 
-dataset <- "fb-test"
+dataset <- "fb-qtest"
 
 # Variable parameters ----
 protocol <- rbind(
@@ -74,10 +74,13 @@ common <- list(use_grm = "HG_inv",
                prior__weight2_i__val2 = +6,
                prior__weight2_l__val1 = -2,
                prior__weight2_l__val2 = +6,
-               `prior__latent_period_Tr2,Don__val1` = 1,
                `prior__latent_period_Tr2,Don__val2` = 20,
+               `prior__latent_period_Tr2,Rec__val2` = 10,
+               `prior__detection_period_Tr2,Don__val1` = 50,
+               `prior__detection_period_Tr2,Rec__val2` = 10,
+               `prior__removal_period_Tr2,Don__val1` = 10,
                fix_donors = "no_Tsym_survivors",
-               nsample = if (str_detect(dataset, "q")) 2e5 else 2e6,
+               nsample = if (str_detect(dataset, "q")) 1e5 else 2e6,
                sample_states = if (str_detect(dataset, "q")) 1e2 else 1e3,
                ie_output = "true") |>
     safe_merge(common2)
