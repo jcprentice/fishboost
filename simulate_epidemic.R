@@ -13,6 +13,6 @@ simulate_epidemic <- function(popn, params) {
            "SIR" = model_SIR(popn, params),
            "SEIR" = model_SEIR(popn, params),
            "SIDR" = model_SIDR(popn, params),
-           "SEIDR" = model_SIDR(popn, params))
+           "SEIDR" = model_SEIDR(popn, params))
 }
 
