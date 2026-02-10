@@ -8,6 +8,7 @@
 
 apply_links <- function(params) {
     {
+        use_traits       <- params$use_traits
         sim_trial_fe     <- params$sim_trial_fe
         sim_donor_fe     <- params$sim_donor_fe
         sim_txd_fe       <- params$sim_txd_fe
