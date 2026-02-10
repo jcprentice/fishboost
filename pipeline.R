@@ -22,7 +22,7 @@ run_from_script <- length(cmd_args) > 0
 
 {
     params <- make_parameters(
-        model_type = "SEIDR", # "SIR", "SEIR", "SIDR", or "SEIDR"
+        model_type = "SIDR", # "SIR", "SEIR", "SIDR", or "SEIDR"
         dataset = "testing",
         name = "scen-1-1",
         setup = "fb_12_rpw", # chris, small, fb_12, fb_1, fb_2, single
@@ -37,11 +37,11 @@ run_from_script <- length(cmd_args) > 0
         weight_is_nested = TRUE,
         sim_new_data = "r"
     )
-    
+
     # Temporary override of some parameters
     # params$group_effect <- 0.3
     # params$priors[parameter == "latent_period", `:=`(type = "Fixed", val1 = 5, true_val = 5)]
-    
+
     if (!run_from_script) {
         params$nchains <- 2L
         params$nsample <- 1e2L
@@ -58,26 +58,26 @@ run_from_script <- length(cmd_args) > 0
     params$use_grm <- "pedigree"
     params$weight_is_nested <- TRUE
     # params$fix_donors <- c(params$fix_donors, "set_to_R")
-    
+
     # Tidy up LP, DP, RP, including rate, shape, and priors
     params <- tidy_up_periods(params)
-    
+
     # Patch params with posterior mean values from data set/scenario
     params$patch_dataset <- "" # "fb-test"
     params$patch_name <- "scen-1-1"
-    params$traits_source <- "posterior"
+    params$traits_source <- "pedigree" # posterior
     params$patch_type <- "median"
     params$patch_state <- TRUE
     params$skip_patches <- c("") #, "covariance")
-    
+
     # params$ge_opts <- "e1" # Optional genetic effects
-    
+
     params <- params |>
         patch_params() |>  # Patch params with posteriors from dataset / scenario
         # set_ge_opts() |>   # Genetic covariance options
         set_use_flags() |> # Ensure priors are correctly enabled
         apply_links()      # Fix any traits that need to be linked
-    
+
     # Quick check of how things are looking
     summarise_params(params)
 }
@@ -93,9 +93,9 @@ if (params$sim_new_data != "no") {
         apply_fixed_effects(params)
 } else {
     popn <- readRDS(str_glue("fb_data/{params$setup}.rds"))
-    
+
     params$fix_donors <- "no_Tsym_survivors" # c("time", "no_Tsym_survivors")
-    
+
     # Create a GRM or A matrix
     GRM <- make_grm(popn, params$use_grm)
 }
@@ -106,7 +106,7 @@ if (params$sim_new_data != "no") {
 if (params$sim_new_data == "r") {
     tic(); popn <- simulate_epidemic(popn, params); toc()
     popn[sdp == "progeny", parasites := !is.na(Tinf)]
-    
+
     params$estimated_R0 <- get_R0(popn)
     params$tmax <- get_tmax(popn, params)
 
@@ -121,10 +121,10 @@ if (params$sim_new_data == "r") {
         setcolorder(popn, params$timings, after = "donor")
     }
     params$tmax <- get_tmax(popn, params)
-    
+
     # Correct for donors not properly infected
     popn <- fix_fb_data(popn, params)
-    
+
     popn[Tdeath >= params$tmax[trial], Tdeath := NA]
 }
 
@@ -161,11 +161,11 @@ plt <- plot_model(popn, params)
         platform = Sys.info()[["sysname"]]
     ))
     message(str_glue("Running:\n$ {cmd}"))
-    
+
     tic()
     out <- system(cmd)
     time_taken <- toc()
-    
+
     if (out != 0) {
         stop("BICI failed to finish")
     }
@@ -176,43 +176,43 @@ plt <- plot_model(popn, params)
 
 {
     message("Retrieving results ...")
-    
+
     name <- params$name
     dataset <- params$dataset
     output_dir <- params$output_dir
     results_dir <- params$results_dir
     bici_cmd <- params$bici_cmd
-    
+
     if (bici_cmd == "inf") {
         # pe_name <- str_glue("{output_dir}/posterior.csv")
         # parameter_estimates <- fread(pe_name)
         parameter_estimates <- rebuild_bici_posteriors(dataset, name)
-        
+
         ebvs_name     <- str_glue("{output_dir}/ebvs.csv")
         estimated_BVs <- if (file.exists(ebvs_name)) fread(ebvs_name)
-        
+
         pa_name   <- str_glue("{output_dir}/pred_accs.csv")
         pred_accs <- if (file.exists(pa_name)) fread(pa_name)
-        
+
         ranks <- if (!is.null(estimated_BVs)) get_ranks(popn, estimated_BVs, params)
-        
+
         message("Parameter estimates:")
         msg_pars(parameter_estimates)
-        
+
         results_pars <- c("params", "popn", "time_taken", "time_start", "time_end",
                           "parameter_estimates", "estimated_BVs","ranks", "pred_accs")
     } else {
         results_pars <- c("params", "popn", "time_taken", "time_start", "time_end")
     }
-    
+
     time_end <- now()
-    
+
     # Filter for results that we have and save
     results_pars |>
         keep(exists) |>
         mget() |>
         saveRDS(file = str_glue("{results_dir}/{name}.rds"))
-    
+
     # Generate etc_inf.rds summary file
     flatten_bici_states(dataset, name, bici_cmd)
 }
