@@ -35,13 +35,13 @@ apply_fixed_effects <- function(popn, params) {
     missing_GEVs <- setdiff(c(traits_g, traits_e),
                             names(popn2))
     popn2[, (missing_GEVs) := 0]
-    
+
     # Choose how to recentre the weights, log (default) or linear
     recentre_f <- get(if (use_weight == "log") "log_recentre" else "recentre")
-    
+
     N1 <- popn2[trial == 1, .N]
     N2 <- popn2[trial == 2, .N]
-    
+
     mat <- popn2[sdp == "progeny",
                  .(trial = recentre(trial == 2),
                    donor = recentre(donor == 1),
@@ -51,7 +51,7 @@ apply_fixed_effects <- function(popn, params) {
                    weight2 = c(rep(0, N1), recentre_f(weight[trial == 2]))
                  )] |>
         as.matrix()
-    
+
     # Zero out all fe_vals that aren't in sim_X_fe
     fe_vals["trial",   sildt %notin% str_chars(sim_trial_fe)]  <- 0
     fe_vals["donor",   sildt %notin% str_chars(sim_donor_fe)]  <- 0
@@ -59,23 +59,23 @@ apply_fixed_effects <- function(popn, params) {
     fe_vals["weight",  sildt %notin% str_chars(sim_weight_fe)] <- 0
     fe_vals["weight1", sildt %notin% str_chars(sim_weight_fe)] <- 0
     fe_vals["weight2", sildt %notin% str_chars(sim_weight_fe)] <- 0
-    
+
     if (weight_is_nested) {
         fe_vals["weight", ] <- 0
     } else {
         fe_vals[c("weight1", "weight2"), ] <- 0
     }
-    
-    
-    mat_fe <- mat %*% fe_vals
-    
+
+
+    mat_fe <- mat %*% fe_vals[, model_traits]
+
     mat_g <- popn2[sdp == "progeny", ..traits_g] |> as.matrix()
     mat_e <- popn2[sdp == "progeny", ..traits_e] |> as.matrix()
-    
+
     # Calculate the phenotype
     mat_pt <- exp(mat_g + mat_e + mat_fe)
     colnames(mat_pt) <- model_traits
-    
+
     popn2[sdp == "progeny", (model_traits) := as.data.frame(mat_pt)]
 
     popn2[, (missing_GEVs) := NULL]
