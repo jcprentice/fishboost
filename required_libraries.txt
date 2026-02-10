@@ -3,6 +3,7 @@ codetools
 corpcor
 cowplot
 data.table
+devtools
 extrafont
 fitdistrplus
 gganimate

@@ -1,7 +1,7 @@
-# Full Pipeline ----
+# Pipeline ----
 #
-# Either use the Fishboost data set or simulate a new data set, and then send it
-# to SIRE or BICI (Chris Pooley) for parameter inference.
+# Script to go through creating a params list and popn table, either simulating
+# from within R or from BICI, and submitting to BICI for posterior inference.
 
 ## Load libraries and source files ----
 
