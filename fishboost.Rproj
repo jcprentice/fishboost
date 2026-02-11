@@ -1,4 +1,5 @@
 Version: 1.0
+ProjectId: 1fed2bbb-7a5d-4432-bc44-3054b72a95ad
 
 RestoreWorkspace: No
 SaveWorkspace: No
@@ -15,8 +16,3 @@ LaTeX: pdfLaTeX
 AutoAppendNewline: Yes
 StripTrailingWhitespace: Yes
 LineEndingConversion: Posix
-
-BuildType: Package
-PackageUseDevtools: Yes
-PackageInstallArgs: --no-multiarch --with-keep.source
-PackageRoxygenize: rd,collate,namespace

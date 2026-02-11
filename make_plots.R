@@ -3,7 +3,7 @@ library(ggplot2)
 library(viridisLite)
 
 plot_model <- function(popn, params) {
-    pm <- get(str_c("plot_", str_replace(params$model_type, "_res", "")))
+    pm <- get(str_c("plot_", str_remove(params$model_type, "_res")))
 
     pm(popn, params)
 }

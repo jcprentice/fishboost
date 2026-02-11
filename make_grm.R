@@ -12,6 +12,7 @@ make_grm <- function(popn, use_grm) {
            "A_inv" = make_A_matrix(popn) |>
                with(sparseMatrix(i = i, j = j, x = x)) |>
                solve(),
+           "A_nz_inv" =,
            "A_inv_nz" = make_A_matrix(popn) |>
                with(sparseMatrix(i = i, j = j, x = x)) |>
                solve() |>

@@ -105,14 +105,13 @@ make_parameters <- function(
     }
     
     {
-        base_dir    <- c(str_glue("datasets/{dataset}"))
-        gfx_dir     <- c(str_glue("{base_dir}/gfx"))
-        data_dir    <- c(str_glue("{base_dir}/data"))
-        results_dir <- c(str_glue("{base_dir}/results"))
-        meta_dir    <- c(str_glue("{base_dir}/meta"))
-        output_dir  <- c(str_glue("{data_dir}/{name}-out"))
-        states_dir  <- c(str_glue("{output_dir}/states"))
-        config      <- c(str_glue("{data_dir}/{name}.bici"))
+        base_dir    <- file.path("datasets", dataset)
+        gfx_dir     <- file.path(base_dir, "gfx")
+        data_dir    <- file.path(base_dir, "data")
+        results_dir <- file.path(base_dir, "results")
+        meta_dir    <- file.path(base_dir, "meta")
+        config      <- file.path(data_dir, str_glue("{name}.bici"))
+        output_dir  <- file.path(data_dir, str_glue("{name}-out"))
     }
     
     # Population setup ----

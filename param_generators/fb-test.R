@@ -2,7 +2,7 @@
     library(data.table)
     library(purrr)
     library(stringr)
-    
+
     source("utils.R")
 }
 
@@ -24,21 +24,21 @@ protocol <- rbind(
     data.table(d = "FB_12_rpw, GEV SITTT, inf_model 1, cov_prior jeffreys, GRM HG_inv"), # 4
     data.table(d = "FB_1_rpw,  GEV SITTT, inf_model 1, cov_prior jeffreys, GRM HG_inv"), # 5
     data.table(d = "FB_2_rpw,  GEV SITTT, inf_model 1, cov_prior jeffreys, GRM HG_inv"), # 6
-    
+
     data.table(d = "FB_12_rpw, GEV SIT,   inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 7
     data.table(d = "FB_1_rpw,  GEV SIT,   inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 8
     data.table(d = "FB_2_rpw,  GEV SIT,   inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 9
     data.table(d = "FB_12_rpw, GEV SITTT, inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 10
     data.table(d = "FB_1_rpw,  GEV SITTT, inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 11
     data.table(d = "FB_2_rpw,  GEV SITTT, inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 12
-    
+
     data.table(d = "FB_12_rpw, GEV SIT,   inf_model 4, cov_prior uniform,  GRM HG_inv"), # 13
     data.table(d = "FB_1_rpw,  GEV SIT,   inf_model 4, cov_prior uniform,  GRM HG_inv"), # 14
     data.table(d = "FB_2_rpw,  GEV SIT,   inf_model 4, cov_prior uniform,  GRM HG_inv"), # 15
     data.table(d = "FB_12_rpw, GEV SITTT, inf_model 4, cov_prior uniform,  GRM HG_inv"), # 16
     data.table(d = "FB_1_rpw,  GEV SITTT, inf_model 4, cov_prior uniform,  GRM HG_inv"), # 17
     data.table(d = "FB_2_rpw,  GEV SITTT, inf_model 4, cov_prior uniform,  GRM HG_inv"), # 18
-    
+
     fill = TRUE
 )
 
@@ -80,7 +80,7 @@ common <- list(use_grm = "HG_inv",
                `prior__detection_period_Tr2,Rec__val2` = 10,
                `prior__removal_period_Tr2,Don__val1` = 10,
                fix_donors = "no_Tsym_survivors",
-               nsample = if (str_detect(dataset, "q")) 1e5 else 2e6,
+               nsample = if (str_detect(dataset, "q")) 5e5 else 2e6,
                sample_states = if (str_detect(dataset, "q")) 1e2 else 1e3,
                ie_output = "true") |>
     safe_merge(common2)
