@@ -112,6 +112,7 @@ make_parameters <- function(
         meta_dir    <- file.path(base_dir, "meta")
         config      <- file.path(data_dir, str_glue("{name}.bici"))
         output_dir  <- file.path(data_dir, str_glue("{name}-out"))
+        states_dir  <- file.path(output_dir, "states")
     }
     
     # Population setup ----

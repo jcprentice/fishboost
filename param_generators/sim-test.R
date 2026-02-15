@@ -18,14 +18,14 @@ dataset <- "sim-test"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit s2, GRM HG_inv"), # 1
-    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit s5, GRM HG_inv"), # 2
-    data.table(d = "FB_2_rpw,  GEV SITTT, FE SIT, Fit s6, GRM HG_inv"), # 3
-    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT, Fit s4, GRM HG_inv"), # 4
+    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit s8,  GRM HG_inv"), # 1
+    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit s11, GRM HG_inv"), # 2
+    data.table(d = "FB_2_rpw,  GEV SITTT, FE SIT, Fit s12, GRM HG_inv"), # 3
+    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT, Fit s10, GRM HG_inv"), # 4
     # Misspecified models
-    data.table(d = "FB_1_rpw,  GEV ST,    FE SIT, Fit s2, GRM HG_inv"), # 5
-    data.table(d = "FB_1_rpw,  GEV SILDT, FE SIT, Fit s2, GRM HG_inv"), # 6
-    
+    data.table(d = "FB_1_rpw,  GEV ST,    FE SIT, Fit s8,  GRM HG_inv"), # 5
+    data.table(d = "FB_1_rpw,  GEV SILDT, FE SIT, Fit s8,  GRM HG_inv"), # 6
+
     fill = TRUE
 )
 
@@ -50,17 +50,8 @@ protocol[, traits_source := "posterior"]
 
 protocol[, weight_fe := get_part(d, "FE") |> str_to_lower(), .I]
 
-protocol[, vars := fcase(
-    use_traits == "st",    list(c(sus = 0.54, tol = 0.18, default = 0)),
-    use_traits == "sit",   list(c(sus = 0.54, inf = 2.88, tol = 0.18, default = 0)),
-    use_traits == "sildt", list(c(sus = 0.54, inf = 2.88, lat = 0.5, det = 0.5, tol = 0.18)),
-    default = list(0))]
-
-protocol[, cors := fcase(
-    use_traits == "st",    list(c(st = 0.01, default = 0)),
-    use_traits == "sit",   list(c(si = 0.22, st = 0.24, it = 0.01, default = 0)),
-    use_traits == "sildt", list(c(si = 0.22, st = 0.24, it = 0.01, default = 0.2)),
-    default = list(0))]
+protocol[use_traits == "sildt", `:=`(vars = 0.5,
+                                     cors = 0.2)]
 
 # Skip patches when we want 0 variance
 protocol[use_traits == "st", skip_patches := "cov_G_ii,cov_E_ii"]
@@ -79,7 +70,7 @@ common <- list(sim_new_data = "bici",
                weight_is_nested = TRUE,
                # expand_priors = 4,
                group_effect = 0.05,
-               patch_dataset = "fb-test",
+               patch_dataset = "fb-qtest",
                patch_type = "median",
                patch_state = FALSE,
                # skip_patches = "beta", # "cov,base,beta",

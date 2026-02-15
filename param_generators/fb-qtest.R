@@ -2,7 +2,7 @@
     library(data.table)
     library(purrr)
     library(stringr)
-    
+
     source("utils.R")
 }
 
@@ -14,55 +14,66 @@ n <- 1
 goal <- c("convergence", "coverage")[[n]]
 message("Goal = ", goal)
 
-dataset <- "fb-qtest"
+dataset <- "fb-qtest2"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(d = "FB_12_rpw, GEV SIT,   FE SIT, LP_D2 low,  GRM HG_inv"), # 1
-    data.table(d = "FB_12_rpw, GEV SIT,   FE SIT, LP_D2 high, GRM HG_inv"), # 2
-    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT, LP_D2 low,  GRM HG_inv"), # 3
-    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT, LP_D2 high, GRM HG_inv"), # 4
-    
+    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   GRM HG_inv"), # 1
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SIT,   GRM HG_inv"), # 2
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, GRM HG_inv"), # 3
+
+    data.table(d = "FB_1_rpw,  GEV SIT,   Weight SIT,   GRM HG_inv"), # 4
+    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SIT,   GRM HG_inv"), # 5
+    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SITTT, GRM HG_inv"), # 6
+
+    data.table(d = "FB_2_rpw,  GEV SIT,   Weight SIT,   GRM HG_inv"), # 7
+    data.table(d = "FB_2_rpw,  GEV SITTT, Weight SIT,   GRM HG_inv"), # 8
+    data.table(d = "FB_2_rpw,  GEV SITTT, Weight SITTT, GRM HG_inv"), # 9
+
     fill = TRUE
 )
+
+protocol[, setup := d |> str_split_i(", ", 1) |> str_to_lower(), .I]
 
 protocol[str_detect(d, "GEV SIT"),
          use_traits := "sit"]
 protocol[str_detect(d, "GEV SITTT"),
          `:=`(use_traits = "sildt", link_traits = "sittt")]
 
-protocol[, weight_fe := get_part(d, "FE") |> str_to_lower(), .I]
+protocol[, link_weight := fifelse(str_detect(d, "Weight SITTT"), "sittt", "sildt")]
 
-protocol[str_detect(d, "LP_D2 low"),
-         `:=`(`prior__latent_period_Tr2,Don__val1` = 1,
-              `prior__latent_period_Tr2,Don__val2` = 20)]
-
-protocol[str_detect(d, "LP_D2 high"),
-         `:=`(`prior__latent_period_Tr2,Don__val1` = 20,
-              `prior__latent_period_Tr2,Don__val2` = 120)]
 
 # Common options ----
 source("param_generators/common2.R")
 
-common <- list(setup = "fb_12_rpw",
-               use_grm = "HG_inv",
+common <- list(use_grm = "HG_inv",
                popn_format = "intervals",
+               inf_model = 4L,
                group_effect = 0.05,
                weight_is_nested = TRUE,
-               cov_prior = "jeffreys",
                use_weight = "log",
                # expand_priors = 4,
+               cov_prior = "jeffreys",
                trial_fe = "ildt",
                donor_fe = "ildt",
                txd_fe = "ildt",
-               prior__beta_Tr1__val2 = 1,
-               prior__beta_Tr2__val2 = 1,
-               prior__beta_Tr1__val2 = 1,
-               prior__cov_G_ii__val2 = 4,
+               weight_fe = "sit",
+               prior__beta_Tr1__val2 = 4,
+               prior__beta_Tr2__val2 = 3,
+               prior__weight_i__val1 = -2,
+               prior__weight_i__val2 = +6,
+               prior__weight_l__val1 = -2,
+               prior__weight_l__val2 = +6,
                prior__weight2_i__val1 = -2,
-               prior__weight2_i__val2 = 6,
+               prior__weight2_i__val2 = +6,
                prior__weight2_l__val1 = -2,
-               prior__weight2_l__val2 = 6,
+               prior__weight2_l__val2 = +6,
+               `prior__latent_period_Tr1,Rec__val1` = 5,
+               `prior__latent_period_Tr2,Don__val2` = 20,
+               `prior__latent_period_Tr2,Rec__val2` = 10,
+               `prior__detection_period_Tr2,Don__val1` = 50,
+               `prior__detection_period_Tr2,Rec__val2` = 10,
+               `prior__removal_period_Tr2,Don__val1` = 10,
                fix_donors = "no_Tsym_survivors",
                nsample = 2e5,
                sample_states = 1e2,

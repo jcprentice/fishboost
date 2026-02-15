@@ -14,30 +14,21 @@ n <- 1
 goal <- c("convergence", "coverage")[[n]]
 message("Goal = ", goal)
 
-dataset <- "fb-qtest"
+dataset <- "fb-test"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(d = "FB_12_rpw, GEV SIT,   inf_model 1, cov_prior jeffreys, GRM HG_inv"), # 1
-    data.table(d = "FB_1_rpw,  GEV SIT,   inf_model 1, cov_prior jeffreys, GRM HG_inv"), # 2
-    data.table(d = "FB_2_rpw,  GEV SIT,   inf_model 1, cov_prior jeffreys, GRM HG_inv"), # 3
-    data.table(d = "FB_12_rpw, GEV SITTT, inf_model 1, cov_prior jeffreys, GRM HG_inv"), # 4
-    data.table(d = "FB_1_rpw,  GEV SITTT, inf_model 1, cov_prior jeffreys, GRM HG_inv"), # 5
-    data.table(d = "FB_2_rpw,  GEV SITTT, inf_model 1, cov_prior jeffreys, GRM HG_inv"), # 6
+    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   GRM HG_inv"), # 1
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SIT,   GRM HG_inv"), # 2
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, GRM HG_inv"), # 3
 
-    data.table(d = "FB_12_rpw, GEV SIT,   inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 7
-    data.table(d = "FB_1_rpw,  GEV SIT,   inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 8
-    data.table(d = "FB_2_rpw,  GEV SIT,   inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 9
-    data.table(d = "FB_12_rpw, GEV SITTT, inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 10
-    data.table(d = "FB_1_rpw,  GEV SITTT, inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 11
-    data.table(d = "FB_2_rpw,  GEV SITTT, inf_model 4, cov_prior jeffreys, GRM HG_inv"), # 12
+    data.table(d = "FB_1_rpw,  GEV SIT,   Weight SIT,   GRM HG_inv"), # 4
+    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SIT,   GRM HG_inv"), # 5
+    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SITTT, GRM HG_inv"), # 6
 
-    data.table(d = "FB_12_rpw, GEV SIT,   inf_model 4, cov_prior uniform,  GRM HG_inv"), # 13
-    data.table(d = "FB_1_rpw,  GEV SIT,   inf_model 4, cov_prior uniform,  GRM HG_inv"), # 14
-    data.table(d = "FB_2_rpw,  GEV SIT,   inf_model 4, cov_prior uniform,  GRM HG_inv"), # 15
-    data.table(d = "FB_12_rpw, GEV SITTT, inf_model 4, cov_prior uniform,  GRM HG_inv"), # 16
-    data.table(d = "FB_1_rpw,  GEV SITTT, inf_model 4, cov_prior uniform,  GRM HG_inv"), # 17
-    data.table(d = "FB_2_rpw,  GEV SITTT, inf_model 4, cov_prior uniform,  GRM HG_inv"), # 18
+    data.table(d = "FB_2_rpw,  GEV SIT,   Weight SIT,   GRM HG_inv"), # 7
+    data.table(d = "FB_2_rpw,  GEV SITTT, Weight SIT,   GRM HG_inv"), # 8
+    data.table(d = "FB_2_rpw,  GEV SITTT, Weight SITTT, GRM HG_inv"), # 9
 
     fill = TRUE
 )
@@ -49,9 +40,10 @@ protocol[str_detect(d, "GEV SIT"),
 protocol[str_detect(d, "GEV SITTT"),
          `:=`(use_traits = "sildt", link_traits = "sittt")]
 
-protocol[, inf_model := get_part(d, "inf_model") |> as.integer(), .I]
-
-protocol[, cov_prior := get_part(d, "cov_prior"), .I]
+protocol[!str_detect(d, "Weight SITTT"), `:=`(weight_fe = "sit",
+                                              link_weight = "sildt")]
+protocol[str_detect(d, "Weight SITTT"), `:=`(weight_fe = "sildt",
+                                             link_weight = "sittt")]
 
 
 # Common options ----
@@ -59,21 +51,27 @@ source("param_generators/common2.R")
 
 common <- list(use_grm = "HG_inv",
                popn_format = "intervals",
-               inf_model = 1L,
+               inf_model = 4L,
                group_effect = 0.05,
                weight_is_nested = TRUE,
                use_weight = "log",
                # expand_priors = 4,
+               cov_prior = "jeffreys",
                trial_fe = "ildt",
                donor_fe = "ildt",
                txd_fe = "ildt",
                weight_fe = "sit",
                prior__beta_Tr1__val2 = 4,
                prior__beta_Tr2__val2 = 3,
+               prior__weight_i__val1 = -2,
+               prior__weight_i__val2 = +6,
+               prior__weight_l__val1 = -2,
+               prior__weight_l__val2 = +6,
                prior__weight2_i__val1 = -2,
                prior__weight2_i__val2 = +6,
                prior__weight2_l__val1 = -2,
                prior__weight2_l__val2 = +6,
+               `prior__latent_period_Tr1,Rec__val1` = 5,
                `prior__latent_period_Tr2,Don__val2` = 20,
                `prior__latent_period_Tr2,Rec__val2` = 10,
                `prior__detection_period_Tr2,Don__val1` = 50,

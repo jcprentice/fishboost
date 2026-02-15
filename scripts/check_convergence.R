@@ -68,7 +68,7 @@ check_convergence <- function(dataset = "fb-test") {
     pes2[, converged := fcase(min_ESS >= 500 & max_GR < 1.05, "***",
                               min_ESS >= 200 & max_GR < 1.1,  "**",
                               min_ESS >= 100 & max_GR < 1.2,  "*",
-                              default = "")]
+                              default = "!")]
 
     list(summary = pes2,
          worst = pes[order(ESS)[1:20]])
