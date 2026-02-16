@@ -7,7 +7,7 @@ rename_bici_pars <- function(pars) {
           "\\^" = "_",
           "cv_G" = "sigma",
           "^G_" = "Group effect ",
-          # "infrat" = "ID ratio",
+          # "infrat" = "Inf ratio",
           "mu_weight([12]?)([slidt])" = "weight\\1_\\2",
           "Omega_gen_(.)g,(.)g" = "cov_G_\\1\\2",
           "Omega_env_(.)e,(.)e" = "cov_E_\\1\\2",
@@ -24,7 +24,7 @@ rename_pars <- function(pars) {
           "DP_shape" = "DP shape",
           "removal_period" = "Removal Period (days)",
           "RP_shape" = "RP shape",
-          "infrat" = "ID ratio",
+          "infrat" = "Inf ratio",
           "_s$" = "_Susceptibility",
           "_l$" = "_Latency",
           "_i$" = "_Infectivity",
@@ -56,11 +56,11 @@ fes <- expand.grid(sildt1,
 # Preferred parameter order
 param_order <- c(
     # BICI parameters
-    "beta_Tr1", "beta_Tr2", "LP_Tr1,Don", "LP_Tr1,Rec", "LP_Tr2,Don", 
-    "LP_Tr2,Rec", "DP_Tr1,Don", "DP_Tr1,Rec", "DP_Tr2,Don", "DP_Tr2,Rec", 
-    "RP_Tr1,Don", "RP_Tr1,Rec", "RP_Tr2,Don", "RP_Tr2,Rec", "gamma_shape_Tr1,Don", 
+    "beta_Tr1", "beta_Tr2", "LP_Tr1,Don", "LP_Tr1,Rec", "LP_Tr2,Don",
+    "LP_Tr2,Rec", "DP_Tr1,Don", "DP_Tr1,Rec", "DP_Tr2,Don", "DP_Tr2,Rec",
+    "RP_Tr1,Don", "RP_Tr1,Rec", "RP_Tr2,Don", "RP_Tr2,Rec", "gamma_shape_Tr1,Don",
     "gamma_shape_Tr1,Rec", "gamma_shape_Tr2,Don", "gamma_shape_Tr2,Rec",
-    
+
     # SIRE parameters
     "beta", "latent_period", "LP_shape", "detection_period", "DP_shape",
     "removal_period", "RP_shape", "sigma",
