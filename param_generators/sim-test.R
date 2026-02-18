@@ -18,13 +18,13 @@ dataset <- "sim-test"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit s8,  GRM HG_inv"), # 1
-    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit s11, GRM HG_inv"), # 2
-    data.table(d = "FB_2_rpw,  GEV SITTT, FE SIT, Fit s12, GRM HG_inv"), # 3
-    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT, Fit s10, GRM HG_inv"), # 4
+    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit s4, GRM HG_inv"), # 1
+    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit s5, GRM HG_inv"), # 2
+    data.table(d = "FB_2_rpw,  GEV SITTT, FE SIT, Fit s8, GRM HG_inv"), # 3
+    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT, Fit s2, GRM HG_inv"), # 4
     # Misspecified models
-    data.table(d = "FB_1_rpw,  GEV ST,    FE SIT, Fit s8,  GRM HG_inv"), # 5
-    data.table(d = "FB_1_rpw,  GEV SILDT, FE SIT, Fit s8,  GRM HG_inv"), # 6
+    data.table(d = "FB_1_rpw,  GEV ST,    FE SIT, Fit s4, GRM HG_inv"), # 5
+    data.table(d = "FB_1_rpw,  GEV SILDT, FE SIT, Fit s4, GRM HG_inv"), # 6
 
     fill = TRUE
 )

@@ -2,7 +2,7 @@
     library(data.table)
     library(purrr)
     library(stringr)
-    
+
     source("utils.R")
 }
 
@@ -30,7 +30,7 @@ protocol <- rbind(
     data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d5, GRM HG_inv, (Overfitting SITTT to ST)"),     # 8
     data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d6, GRM HG_inv, (Underfitting SIT to SILDT)"),   # 9
     data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d6, GRM HG_inv, (Underfitting SITTT to SILDT)"), # 10
-    
+
     fill = TRUE
 )
 
