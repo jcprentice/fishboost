@@ -11,7 +11,7 @@
 
 plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
     if (FALSE) {
-        dataset <- "fb-qtest"; scen <- 8; rep <- 1
+        dataset <- "fb-qtest"; scen <- 4; rep <- 1
     }
 
     message(str_glue("Generating EBV plots for '{dataset} / s{scen}-{rep}' ..."))
@@ -35,8 +35,13 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         return(NULL)
     }
 
-    popn <- readRDS(etc)$popn
+    covs <- readRDS(etc)$parameters[str_detect(parameter, "cov_G")] |>
+        dcast(... ~ parameter) |>
+        _[, cov_G_r0 := cov_G_ss + cov_G_ii + cov_G_tt] |>
+        _[, map(.SD, mean), .SDcols = -"state"] |>
+        as.list()
 
+    popn <- readRDS(etc)$popn
     popn[, `:=`(r0_g = sus_g + inf_g + tol_g,
                 r0_e = sus_e + inf_e + tol_e)]
 
@@ -48,13 +53,13 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
 
     rel_popn <- popn[sdp == "sire",
                      .(sus_g__med = median(sus_g),
-                       sus_g__rel = 1 - 1 / (var(sus_g) / var(sus_e) + 1),
+                       sus_g__rel = 1 - var(sus_g) / covs$cov_G_ss,
                        inf_g__med = median(inf_g),
-                       inf_g__rel = 1 - 1 / (var(inf_g) / var(inf_e) + 1),
+                       inf_g__rel = 1 - var(inf_g) / covs$cov_G_ii,
                        tol_g__med = median(tol_g),
-                       tol_g__rel = 1 - 1 / (var(tol_g) / var(tol_e) + 1),
+                       tol_g__rel = 1 - var(tol_g) / covs$cov_G_tt,
                        r0_g__med = median(r0_g),
-                       r0_g__rel = 1 - 1 / (var(r0_g) / var(r0_e) + 1)),
+                       r0_g__rel = 1 - var(r0_g) / covs$cov_G_r0),
                      id]
 
     traits <- traits[1:4]
@@ -67,7 +72,6 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
 
     st <- str_glue("{dataset} / s{scen}-{rep}")
 
-    mv_up <- function(y, dy) exp(log(y) + dy)
 
     # Trait estimates ----
 
@@ -106,7 +110,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         # scale_colour_manual(values = rep(brewer.pal(4, "Set1"),
         #                                  length.out = length(levels(x2$id)))) +
         facet_wrap(. ~ trait,
-                   nrow = 1,
+                   ncol = 2,
                    labeller = labeller(
                        trait = c(sus_g = "Sus G",
                                  inf_g = "Inf G",
@@ -137,7 +141,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         # scale_colour_manual(values = rep(brewer.pal(4, "Set1"),
         #                                  length.out = length(levels(x2$id)))) +
         facet_wrap(. ~ trait,
-                   nrow = 1,
+                   ncol = 2,
                    labeller = labeller(
                        trait = c(sus_g = "Sus G",
                                  inf_g = "Inf G",
@@ -156,30 +160,40 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
     xr <- rel_popn |>
         melt(id.var = "id",
              measure.vars = measure(trait, type, sep = "__")) |>
-        dcast(... ~ type)
-    xr[, trait := factor(trait, levels = traits)] |>
-        setorder(trait, med)
-    xr[, rank := seq(.N), trait] |>
+        dcast(... ~ type) |>
+        _[, trait := factor(trait, levels = traits)] |>
+        setorder(trait, med) |>
+        _[, rank := seq(.N), trait] |>
         setcolorder("rank")
 
+    xrm <- xr[, .(rel = mean(rel),
+                  lab = mean(rel) |> round(3)),
+              trait]
+
     plts$sire_rel <- xr |>
-        ggplot(aes(x = rank, colour = trait)) +
-        geom_errorbar(aes(ymin = med - rel, ymax = med + rel)) +
-        geom_point(aes(y = med)) +
-        geom_hline(yintercept = 0,
-                   colour = "black") +
-        geom_text(aes(y = med + rel + 0.5, label = id),
-                  colour = "black") +
-        labs(x = "Sire rank",
-             y = "EBV",
-             title = "Sire EBV with reliability, sorted by median") +
+        ggplot(aes(x = id, colour = trait)) +
+        geom_hline(yintercept = 0, colour = "black") +
+        geom_hline(data = xrm,
+                   aes(yintercept = rel, colour = trait),
+                   linetype = "dashed") +
+        geom_point(aes(y = rel)) +
+        # geom_errorbar(aes(ymin = med - rel, ymax = med + rel)) +
+        # geom_point(aes(y = med)) +
+        # geom_label(aes(y = med + rel + 0.3, label = id),
+        #            label.padding = unit(0.1, "line"),
+        #            size = 2, colour = "black") +
+        labs(x = "Sire id",
+             y = "Reliability",
+             title = "Sire EBV reliabilities",
+             subtitle = st) +
+        scale_y_continuous(limits = ~ range(.x, 0, 1)) +
         facet_wrap(. ~ trait,
-                   ncol = 4,
+                   ncol = 2,
                    labeller = labeller(
-                       trait = c(sus_g = "Sus G",
-                                 inf_g = "Inf G",
-                                 tol_g = "Tol G",
-                                 r0_g = "R0"))) +
+                       trait = c(sus_g = str_glue("Sus G (mean {xrm[1, 3]})"),
+                                 inf_g = str_glue("Inf G (mean {xrm[2, 3]})"),
+                                 tol_g = str_glue("Tol G (mean {xrm[3, 3]})"),
+                                 r0_g = str_glue("R0 (mean {xrm[4, 3]})")))) +
         theme_bw() +
         theme(legend.position = "none")
     plts$sire_rel
@@ -217,18 +231,19 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
 
     plts$sires_ebvs <- x2 |>
         ggplot(aes(x = rank, colour = trait)) +
+        geom_hline(yintercept = 1, colour = "black") +
         geom_errorbar(aes(ymin = lo, ymax = hi)) +
         geom_point(aes(y = med)) +
-        geom_hline(yintercept = 1, colour = "black") +
-        geom_text(aes(y = mv_up(hi, 1), label = id),
-                  colour = "black", size = 3) +
+        geom_label(aes(y = hi * 10, label = id),
+                   label.padding = unit(0.1, "line"),
+                   size = 2, colour = "black") +
         scale_y_log10(labels = scales::label_log(digits = 2)) +
         labs(x = "Sire rank",
              y = "Trait",
              title = "Sire trait estimates with 95% HDI, sorted by median",
              subtitle = st) +
         facet_wrap(. ~ trait,
-                   ncol = 4,
+                   ncol = 2,
                    labeller = labeller(
                        trait = c(sus_g = "Sus G",
                                  inf_g = "Inf G",
@@ -245,78 +260,82 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
     # Using stat_summary ----
 
     x3 <- sires |>
-        melt(id.vars = "id", variable.name = "trait")
-    x3[, trait := factor(trait, levels = traits)]
+        melt(id.vars = "id",
+             variable.name = "trait",
+             variable.factor = TRUE)
     x3[, med := median(value), .(trait, id)] |>
         setorder(trait, med)
     x3[, rank := match(id, unique(id)), trait] |>
         setcolorder(c("rank", "id", "trait", "med"))
-
-    hdi95 <- function(x) {
-        x <- na.omit(x)
-        y <- hdi(x)
-        data.frame(y = median(x),
-                   ymin = y[["lower"]],
-                   ymax = y[["upper"]])
-    }
-
-    my_med <- function(x) {
-        x <- na.omit(x)
-        data.frame(y = median(x, na.rm = TRUE))
-    }
-
-    plts$sires_hdi <- x3 |>
-        ggplot(aes(x = rank, y = value, colour = trait)) +
-        stat_summary(geom = "errorbar",
-                     fun.data = hdi95,
-                     show.legend = FALSE) +
-        stat_summary(geom = "point",
-                     fun.data = my_med,
-                     show.legend = FALSE) +
-        geom_hline(yintercept = 1, colour = "grey10") +
-        geom_text(data = x2,
-                  aes(x = rank, y = mv_up(hi, 1), label = id),
-                  colour = "black",
-                  size = 3) +
-        scale_y_log10(labels = scales::label_log(digits = 2)) +
-        labs(x = "Sire rank",
-             y = "Trait",
-             title = "Sire trait estimates with 95% HDI, sorted by median",
-             subtitle = st) +
-        facet_wrap(. ~ trait,
-                   ncol = 4,
-                   labeller = labeller(
-                       trait = c(sus_g = "Sus G",
-                                 inf_g = "Inf G",
-                                 tol_g = "Tol G",
-                                 r0_g = "R0"))) +
-        theme_bw()
-    plts$sires_hdi
-
-    ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-{rep}-sire-ebvs-hdi.png"),
-           plts$sires_hdi, width = 9, height = 6)
+    #
+    # hdi95 <- function(x) {
+    #     x <- na.omit(x)
+    #     y <- hdi(x)
+    #     data.frame(y = median(x),
+    #                ymin = y[["lower"]],
+    #                ymax = y[["upper"]])
+    # }
+    #
+    # my_med <- function(x) {
+    #     data.frame(y = median(x, na.rm = TRUE))
+    # }
+    #
+    # plts$sires_hdi <- x3 |>
+    #     ggplot(aes(x = rank, y = value, colour = trait)) +
+    #     stat_summary(geom = "errorbar",
+    #                  fun.data = hdi95,
+    #                  show.legend = FALSE) +
+    #     stat_summary(geom = "point",
+    #                  fun.data = my_med,
+    #                  show.legend = FALSE) +
+    #     geom_hline(yintercept = 1, colour = "grey10") +
+    #     geom_label(data = x2,
+    #                aes(x = rank, y = hi * 10, label = id),
+    #                label.padding = unit(0.1, "line"),
+    #                size = 2, colour = "black") +
+    #     scale_y_log10(labels = scales::label_log(digits = 2)) +
+    #     labs(x = "Sire rank",
+    #          y = "Trait",
+    #          title = "Sire trait estimates with 95% HDI, sorted by median",
+    #          subtitle = st) +
+    #     facet_wrap(. ~ trait,
+    #                ncol = 2,
+    #                labeller = labeller(
+    #                    trait = c(sus_g = "Sus G",
+    #                              inf_g = "Inf G",
+    #                              tol_g = "Tol G",
+    #                              r0_g = "R0"))) +
+    #     theme_bw()
+    # plts$sires_hdi
+    #
+    # ggsave(str_glue("{ebvs_dir}/{dataset}-s{scen}-{rep}-sire-ebvs-hdi.png"),
+    #        plts$sires_hdi, width = 9, height = 6)
 
 
     # Sires Violin ----
+
+    lx3 <- x3[, .(ymax = max(value)), .(rank, id, trait)]
 
     plts$violin <- x3 |>
         ggplot(aes(x = rank, y = value, fill = trait, group = rank)) +
         geom_hline(yintercept = 1, colour = "grey10") +
         labs(x = "Sire rank",
              y = "Trait",
-             title = "Sorted Sire Traits",
+             title = "Sire trait estimates, sorted by median",
              subtitle = st) +
         geom_violin(show.legend = FALSE) +
-        geom_text(data = lx3,
-                  aes(x = rank, y = mv_up(ymax, 2), label = id),
-                  colour = "black", size = 3) +
+        geom_label(data = lx3,
+                   aes(x = rank, y = ymax * 10, label = id),
+                   label.padding = unit(0.1, "line"),
+                   size = 2, colour = "black", fill = "white") +
         scale_y_log10(labels = scales::label_log(digits = 2)) +
         facet_wrap(. ~ trait,
-                   ncol = 4,
+                   ncol = 2,
                    labeller = labeller(
                        trait = c(sus_g = "Sus G",
                                  inf_g = "Inf G",
-                                 tol_g = "Tol G"))) +
+                                 tol_g = "Tol G",
+                                 r0_g  = "R0"))) +
         theme_bw()
     plts$violin
 
@@ -497,7 +516,7 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
         # scale_colour_manual(values = rep(brewer.pal(4, "Set1"),
         #                                  length.out = length(levels(x2$id)))) +
         facet_wrap(. ~ trait,
-                   ncol = 3,
+                   ncol = 2,
                    labeller = labeller(
                        trait = c(sus_g = "Sus G",
                                  inf_g = "Inf G",
@@ -542,7 +561,7 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
         # scale_colour_manual(values = rep(brewer.pal(4, "Set1"),
         #                                  length.out = length(levels(x2$id)))) +
         facet_wrap(. ~ trait,
-                   ncol = ntraits,
+                   ncol = 2,
                    labeller = labeller(
                        trait = c(sus_g = "Sus G",
                                  inf_g = "Inf G",
