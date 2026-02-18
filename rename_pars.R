@@ -1,6 +1,12 @@
 library(stringr)
 
-# Turn BICI pars into something useful
+# Take BICI parameters and make them consistent with internal parameter names,
+# e.g.
+# - "G_1" -> "Group effect 1"
+# - "\\mu^weight1s" -> "weight1_s"
+# - "\\Omega^gen_sg,sg" -> "cov_G_ss"
+# - "\\omega^gen_sg,ig" -> "r_G_si"
+
 rename_bici_pars <- function(pars) {
     pars |> str_replace_all(
         c("\\\\" = "",
@@ -8,6 +14,7 @@ rename_bici_pars <- function(pars) {
           "cv_G" = "sigma",
           "^G_" = "Group effect ",
           # "infrat" = "Inf ratio",
+          # "Ω" = "Omega", "ω" = "omega", "μ" = "mu",
           "mu_weight([12]?)([slidt])" = "weight\\1_\\2",
           "Omega_gen_(.)g,(.)g" = "cov_G_\\1\\2",
           "Omega_env_(.)e,(.)e" = "cov_E_\\1\\2",
