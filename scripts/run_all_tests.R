@@ -8,6 +8,7 @@
     source("scripts/plot_ebvs.R")
     source("scripts/pars_errorbars.R")
     source("plotting/plot_chains.R")
+    source("scripts/correlations.R")
     source("scripts/km_plots.R")
 }
 
@@ -31,18 +32,19 @@ run_all_tests <- function(dataset = "fb-qtest",
         str_split_i("-", 2) |>
         map_int(as.integer)
 
-    # Overall errorbar plot of data
-    pars_errorbars(dataset)
-
     # Check convergence statistics
     out <- check_convergence(dataset)
     print(out$summary)
 
-    walk2(scens, reps, possibly(~ plot_chains(dataset, .x, .y)))
+    # Overall errorbar plot of data
+    pars_errorbars(dataset)
 
-    walk2(scens, reps, possibly(~ get_posterior(dataset, .x, .y)))
-
-    walk2(scens, reps, possibly(~ plot_ebvs(dataset, .x, .y)))
+    walk2(scens, reps, {
+        possibly(~ plot_chains(dataset, .x, .y))
+        possibly(~ get_posterior(dataset, .x, .y))
+        possibly(~ plot_ebvs(dataset, .x, .y))
+        possibly(~ get_correlations(dataset, .x, .y))
+    })
 
     if (include_km_plots) {
         f <- str_glue("datasets/{dataset}/meta/km_data_ps.rds")
@@ -53,7 +55,7 @@ run_all_tests <- function(dataset = "fb-qtest",
                      "drop_donors",
                      "use_sire_Tinfs")[0]
 
-        km_plots(dataset, scens = 0,
+        km_plots(dataset, scens,
                  simulate_new_data = "bici", opts, plotopts)
     }
     out

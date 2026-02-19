@@ -145,7 +145,7 @@ if (FALSE) {
              plotopts = plotopts)
 }
 
-if (FALSE) {
+if (TRUE) {
     dataset <- "fb-qtest"
     scens <- 0
     simulate_new_data <- "bici"
