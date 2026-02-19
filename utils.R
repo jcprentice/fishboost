@@ -130,3 +130,12 @@ get_part <- function(x, y) {
         str_subset(y) |>
         str_split_i(" ", 2)
 }
+
+get_lpart <- function(x, y) {
+    x |>
+        str_squish() |>
+        str_split_1(", ") |>
+        str_subset(y) |>
+        str_split_i(" ", 2) |>
+        str_to_lower()
+}
