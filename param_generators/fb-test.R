@@ -21,29 +21,32 @@ protocol <- rbind(
     data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   GRM HG_inv"), # 1
     data.table(d = "FB_12_rpw, GEV SITTT, Weight SIT,   GRM HG_inv"), # 2
     data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, GRM HG_inv"), # 3
+    data.table(d = "FB_12_rpw, GEV none,  Weight SIT,   GRM HG_inv"), # 4
 
-    data.table(d = "FB_1_rpw,  GEV SIT,   Weight SIT,   GRM HG_inv"), # 4
-    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SIT,   GRM HG_inv"), # 5
-    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SITTT, GRM HG_inv"), # 6
+    data.table(d = "FB_1_rpw,  GEV SIT,   Weight SIT,   GRM HG_inv"), # 5
+    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SIT,   GRM HG_inv"), # 6
+    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SITTT, GRM HG_inv"), # 7
+    data.table(d = "FB_1_rpw,  GEV none,  Weight SIT,   GRM HG_inv"), # 8
 
-    data.table(d = "FB_2_rpw,  GEV SIT,   Weight SIT,   GRM HG_inv"), # 7
-    data.table(d = "FB_2_rpw,  GEV SITTT, Weight SIT,   GRM HG_inv"), # 8
-    data.table(d = "FB_2_rpw,  GEV SITTT, Weight SITTT, GRM HG_inv"), # 9
+    data.table(d = "FB_2_rpw,  GEV SIT,   Weight SIT,   GRM HG_inv"), # 9
+    data.table(d = "FB_2_rpw,  GEV SITTT, Weight SIT,   GRM HG_inv"), # 10
+    data.table(d = "FB_2_rpw,  GEV SITTT, Weight SITTT, GRM HG_inv"), # 11
+    data.table(d = "FB_2_rpw,  GEV none,  Weight SIT,   GRM HG_inv"), # 12
 
     fill = TRUE
 )
 
 protocol[, setup := d |> str_split_i(", ", 1) |> str_to_lower(), .I]
 
-protocol[str_detect(d, "GEV SIT"),
-         use_traits := "sit"]
-protocol[str_detect(d, "GEV SITTT"),
-         `:=`(use_traits = "sildt", link_traits = "sittt")]
+protocol[, use_traits := get_lpart(d, "GEV"), .I]
+protocol[str_detect(d, "GEV SITTT"), `:=`(
+    use_traits = "sildt", link_traits = "sittt"
+)]
 
-protocol[!str_detect(d, "Weight SITTT"), `:=`(weight_fe = "sit",
-                                              link_weight = "sildt")]
-protocol[str_detect(d, "Weight SITTT"), `:=`(weight_fe = "sildt",
-                                             link_weight = "sittt")]
+protocol[, weight_fe := get_lpart(d, "Weight"), .I]
+protocol[str_detect(d, "Weight SITTT"), `:=`(
+    weight_fe = "sildt", link_weight = "sittt"
+)]
 
 
 # Common options ----
