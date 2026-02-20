@@ -18,20 +18,20 @@ dataset <- "fb-test"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(d = "FB_1_rpw,  GEV SIT,   Weight SIT,   GRM HG_inv"), # 1
-    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SIT,   GRM HG_inv"), # 2
-    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SITTT, GRM HG_inv"), # 3
-    data.table(d = "FB_1_rpw,  GEV none,  Weight SIT,   GRM HG_inv"), # 4
+    data.table(d = "FB_1_rpw,  GEV SIT,   Weight SIT"),   # 1
+    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SIT"),   # 2
+    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SITTT"), # 3
+    data.table(d = "FB_1_rpw,  GEV none,  Weight SIT"),   # 4
 
-    data.table(d = "FB_2_rpw,  GEV SIT,   Weight SIT,   GRM HG_inv"), # 5
-    data.table(d = "FB_2_rpw,  GEV SITTT, Weight SIT,   GRM HG_inv"), # 6
-    data.table(d = "FB_2_rpw,  GEV SITTT, Weight SITTT, GRM HG_inv"), # 7
-    data.table(d = "FB_2_rpw,  GEV none,  Weight SIT,   GRM HG_inv"), # 8
+    data.table(d = "FB_2_rpw,  GEV SIT,   Weight SIT"),   # 5
+    data.table(d = "FB_2_rpw,  GEV SITTT, Weight SIT"),   # 6
+    data.table(d = "FB_2_rpw,  GEV SITTT, Weight SITTT"), # 7
+    data.table(d = "FB_2_rpw,  GEV none,  Weight SIT"),   # 8
 
-    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   GRM HG_inv"), # 9
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SIT,   GRM HG_inv"), # 10
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, GRM HG_inv"), # 11
-    data.table(d = "FB_12_rpw, GEV none,  Weight SIT,   GRM HG_inv"), # 12
+    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT"),   # 9
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SIT"),   # 10
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT"), # 11
+    data.table(d = "FB_12_rpw, GEV none,  Weight SIT"),   # 12
 
     fill = TRUE
 )

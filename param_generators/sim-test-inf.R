@@ -19,17 +19,17 @@ dataset <- "sim-test-inf"
 # Variable parameters ----
 protocol <- rbind(
     # Basic models
-    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d1, GRM HG_inv"), # 1
-    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d2, GRM HG_inv"), # 2
-    data.table(d = "FB_2_rpw,  GEV SITTT, FE SIT, Fit d3, GRM HG_inv"), # 3
-    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT, Fit d4, GRM HG_inv"), # 4
+    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d1"), # 1
+    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d2"), # 2
+    data.table(d = "FB_2_rpw,  GEV SITTT, FE SIT, Fit d3"), # 3
+    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT, Fit d4"), # 4
     # Misspecified models
-    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d2, GRM HG_inv, (Fitting SIT to SITTT)"),        # 5
-    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d1, GRM HG_inv, (Fitting SITTT to SIT)"),        # 6
-    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d5, GRM HG_inv, (Overfitting SIT to ST)"),       # 7
-    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d5, GRM HG_inv, (Overfitting SITTT to ST)"),     # 8
-    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d6, GRM HG_inv, (Underfitting SIT to SILDT)"),   # 9
-    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d6, GRM HG_inv, (Underfitting SITTT to SILDT)"), # 10
+    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d2, (Fitting SIT to SITTT)"),        # 5
+    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d1, (Fitting SITTT to SIT)"),        # 6
+    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d5, (Overfitting SIT to ST)"),       # 7
+    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d5, (Overfitting SITTT to ST)"),     # 8
+    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d6, (Underfitting SIT to SILDT)"),   # 9
+    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d6, (Underfitting SITTT to SILDT)"), # 10
 
     fill = TRUE
 )
@@ -51,11 +51,6 @@ protocol[, weight_fe := {
 }, .I]
 
 
-# Handle GRM
-protocol[, use_grm := get_part(d, "GRM"), .I]
-protocol[, traits_source := fifelse(use_grm == "pedigree", "pedigree", "grm")]
-
-
 # Handle patch_name: "Scen x" -> "scen-X-1"
 protocol[, patch_name := get_part(d, "Fit ") |>
              str_replace("d(.*)", "scen-\\1-1"), .I]
@@ -65,7 +60,9 @@ protocol[, patch_name := get_part(d, "Fit ") |>
 source("param_generators/common2.R")
 
 common <- list(sim_new_data = "etc_sim",
-               traits_source = "posterior",
+               use_grm = "HG_inv",
+               inf_model = 4L,
+               traits_source = "posterior", # should this be GRM?
                use_weight = "log",
                weight_is_nested = TRUE,
                cov_prior = "jeffreys",
