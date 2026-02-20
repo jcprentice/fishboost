@@ -18,20 +18,20 @@ dataset <- "fb-test"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   GRM HG_inv"), # 1
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SIT,   GRM HG_inv"), # 2
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, GRM HG_inv"), # 3
-    data.table(d = "FB_12_rpw, GEV none,  Weight SIT,   GRM HG_inv"), # 4
+    data.table(d = "FB_1_rpw,  GEV SIT,   Weight SIT,   GRM HG_inv"), # 1
+    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SIT,   GRM HG_inv"), # 2
+    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SITTT, GRM HG_inv"), # 3
+    data.table(d = "FB_1_rpw,  GEV none,  Weight SIT,   GRM HG_inv"), # 4
 
-    data.table(d = "FB_1_rpw,  GEV SIT,   Weight SIT,   GRM HG_inv"), # 5
-    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SIT,   GRM HG_inv"), # 6
-    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SITTT, GRM HG_inv"), # 7
-    data.table(d = "FB_1_rpw,  GEV none,  Weight SIT,   GRM HG_inv"), # 8
+    data.table(d = "FB_2_rpw,  GEV SIT,   Weight SIT,   GRM HG_inv"), # 5
+    data.table(d = "FB_2_rpw,  GEV SITTT, Weight SIT,   GRM HG_inv"), # 6
+    data.table(d = "FB_2_rpw,  GEV SITTT, Weight SITTT, GRM HG_inv"), # 7
+    data.table(d = "FB_2_rpw,  GEV none,  Weight SIT,   GRM HG_inv"), # 8
 
-    data.table(d = "FB_2_rpw,  GEV SIT,   Weight SIT,   GRM HG_inv"), # 9
-    data.table(d = "FB_2_rpw,  GEV SITTT, Weight SIT,   GRM HG_inv"), # 10
-    data.table(d = "FB_2_rpw,  GEV SITTT, Weight SITTT, GRM HG_inv"), # 11
-    data.table(d = "FB_2_rpw,  GEV none,  Weight SIT,   GRM HG_inv"), # 12
+    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   GRM HG_inv"), # 9
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SIT,   GRM HG_inv"), # 10
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, GRM HG_inv"), # 11
+    data.table(d = "FB_12_rpw, GEV none,  Weight SIT,   GRM HG_inv"), # 12
 
     fill = TRUE
 )
@@ -74,6 +74,7 @@ common <- list(use_grm = "HG_inv",
                prior__weight2_i__val2 = +6,
                prior__weight2_l__val1 = -2,
                prior__weight2_l__val2 = +6,
+               `prior__latent_period_Tr1,Don__val1` = 2,
                `prior__latent_period_Tr1,Rec__val1` = 5,
                `prior__latent_period_Tr2,Don__val2` = 20,
                `prior__latent_period_Tr2,Rec__val2` = 10,
