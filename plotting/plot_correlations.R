@@ -6,7 +6,7 @@
     library(ggcorrplot)
 }
 
-plot_correlations <- function(dataset = "fb-final", scen = 1, rep = 1) {
+plot_correlations <- function(dataset = "fb-test", scen = 1, rep = 1) {
     # dataset <- "fb-test"; scen <- 1; rep <- 1;
 
     message(str_glue("Plotting correlations for '{dataset}/s{scen}-{rep}'"))
@@ -130,20 +130,19 @@ plot_correlations <- function(dataset = "fb-final", scen = 1, rep = 1) {
     message(str_glue("- Plotting '{f}'"))
     ggsave(f, plts$all, width = 12, height = 12)
 
-    GxEpars <- intersect(c(GVs, EVs), nx)
-    plts$GxE <- if (length(GxEpars) > 0) {
-        ggcorrplot(cor(x[, ..GxEpars]),
+    pars_GxE <- intersect(c(GVs, EVs), nx)
+    if (length(pars_GxE) > 0) {
+        plts$GxE <- ggcorrplot(cor(x[, ..pars_GxE]),
                    method = "circle",
                    title = title_str) +
             my_theme()
+
+        f <- str_glue("{cov_str}-corr_GxE.pdf")
+        message(str_glue("- Plotting '{f}'"))
+        ggsave(f, plts$GxE, width = 6, height = 6)
     }
 
-    f <- str_glue("{cov_str}-corr_GxE.pdf")
-    message(str_glue("- Plotting '{f}'"))
-    ggsave(f, plts$GxE, width = 6, height = 6)
-
     pars_G_lp <- str_subset(nx, "cov_G|LP|DP|RP")
-
     if (length(pars_G_lp) > 0) {
         plts$G_lp <- ggcorrplot(cor(x[, ..pars_G_lp]),
                                 method = "circle",
