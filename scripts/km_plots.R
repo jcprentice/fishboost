@@ -86,8 +86,8 @@ km_plots <- function(dataset = "fb-test",
     }
 
     # Generate the plots
-    plts_st <- map(km_data, plot_km_sire_trial,  plotopts)
-    plts_dt <- map(km_data, plot_km_donor_trial, plotopts)
+    plts_st <- map(km_data, plot_km_sire_trial,  12, plotopts)
+    plts_dt <- map(km_data, plot_km_donor_trial, 12, plotopts)
 
     # Grab the descriptions of the first available result for each scen
     descriptions <- map_chr(scens, \(i) {
@@ -145,18 +145,14 @@ if (FALSE) {
              plotopts = plotopts)
 }
 
-if (TRUE) {
+if (FALSE) {
     dataset <- "fb-qtest"
     scens <- 0
     simulate_new_data <- "bici"
     opts <- list(n_plots = 50, use_means = FALSE)
     plotopts <- c("drop_small_groups", "drop_donors", "extreme_sires")[1]
 
-    km_plots(dataset = dataset,
-             scens = scens,
-             simulate_new_data = simulate_new_data,
-             opts = opts,
-             plotopts = plotopts)
+    km_plots(dataset, scens, simulate_new_data, opts, plotopts)
 }
 
 if (FALSE) {
