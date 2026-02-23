@@ -632,7 +632,8 @@ generate_bici_script <- function(popn, params) {
             # beta
             bp <- priors[parameter %in% str_c("beta_", trials),
                          .(Value = true_val,
-                           Prior = str_glue("{single_prior}(0.01,{x})", x = val2))]
+                           Prior = str_glue("{single_prior}({v1},{v2})",
+                                            v1 = max(0.01, val1), v2 = val2))]
             
             data.table(b = trials, Value = bp$Value) |>
                 fwrite(str_glue("{out_dir}/value-beta.tsv"),
@@ -667,7 +668,7 @@ generate_bici_script <- function(popn, params) {
                                       type == "constant",
                                       str_glue("fix({x})", x = true_val),
                                       type == "uniform",
-                                      str_glue("uniform({v1},{v2})",v1 = val1, v2 = val2),
+                                      str_glue("uniform({v1},{v2})", v1 = val1, v2 = val2),
                                       type == "inverse",
                                       str_glue("inverse({v1},{v2})", v1 = max(1, val1), v2 = val2)
                                   )), .I]
