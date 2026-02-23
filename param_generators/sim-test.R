@@ -18,14 +18,14 @@ dataset <- "sim-test"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit s4, GRM HG_inv"), # 1
-    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit s5, GRM HG_inv"), # 2
-    data.table(d = "FB_2_rpw,  GEV SITTT, FE SIT, Fit s8, GRM HG_inv"), # 3
-    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT, Fit s2, GRM HG_inv"), # 4
+    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit s1"),  # 1
+    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit s2"),  # 2
+    data.table(d = "FB_2_rpw,  GEV SITTT, FE SIT, Fit s6"),  # 3
+    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT, Fit s10"), # 4
     # Misspecified models
-    data.table(d = "FB_1_rpw,  GEV none,  FE SIT, Fit s4, GRM HG_inv"), # 5
-    data.table(d = "FB_1_rpw,  GEV ST,    FE SIT, Fit s4, GRM HG_inv"), # 6
-    data.table(d = "FB_1_rpw,  GEV SILDT, FE SIT, Fit s4, GRM HG_inv"), # 7
+    data.table(d = "FB_1_rpw,  GEV none,  FE SIT, Fit s1"),  # 5
+    data.table(d = "FB_1_rpw,  GEV ST,    FE SIT, Fit s1"),  # 6
+    data.table(d = "FB_1_rpw,  GEV SILDT, FE SIT, Fit s1"),  # 7
 
     fill = TRUE
 )
@@ -65,7 +65,8 @@ source("param_generators/common2.R")
 common <- list(sim_new_data = "bici",
                model_type = "SEIDR",
                setup = "fb_12_rpw",
-               use_grm = "pedigree",
+               use_grm = "posterior",
+               inf_model = 4L,
                traits_source = "none",
                use_weight = "log",
                weight_is_nested = TRUE,
