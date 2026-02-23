@@ -429,10 +429,6 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
            plts$sit, width = 12, height = 5)
 
 
-    # Save data ----
-
-    saveRDS(plts, str_glue("{meta_dir}/{dataset}-{scen}-{rep}-ebvs.rds"))
-
     invisible(plts)
 }
 
