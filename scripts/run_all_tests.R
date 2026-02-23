@@ -8,29 +8,24 @@
     source("scripts/plot_ebvs.R")
     source("scripts/pars_errorbars.R")
     source("plotting/plot_chains.R")
-    source("scripts/correlations.R")
+    source("plotting/plot_correlations.R")
     source("scripts/km_plots.R")
 }
 
 run_all_tests <- function(dataset = "fb-qtest",
-                          include_km_plots = FALSE) {
+                          km = FALSE) {
     if (FALSE) {
         dataset <- "fb-qtest"
     }
 
     message(str_glue("Generating all outputs for '{dataset}'"))
 
-    scens <- list.files(str_glue("datasets/{dataset}/results")) |>
-        str_remove_all("scen-|.rds") |>
+    sr <- list.files(str_glue("datasets/{dataset}/results")) |>
         str_sort(numeric = TRUE) |>
-        str_split_i("-", 1) |>
-        map_int(as.integer)
-
-    reps <- list.files(str_glue("datasets/{dataset}/results")) |>
-        str_remove_all("scen-|.rds") |>
-        str_sort(numeric = TRUE) |>
-        str_split_i("-", 2) |>
-        map_int(as.integer)
+        str_extract_all("(\\d+)") |>
+        map(as.integer)
+    scens <- map_int(sr, 1)
+    reps  <- map_int(sr, 2)
 
     # Check convergence statistics
     out <- check_convergence(dataset)
@@ -39,14 +34,12 @@ run_all_tests <- function(dataset = "fb-qtest",
     # Overall errorbar plot of data
     pars_errorbars(dataset)
 
-    walk2(scens, reps, {
-        possibly(~ plot_chains(dataset, .x, .y))
-        possibly(~ get_posterior(dataset, .x, .y))
-        possibly(~ plot_ebvs(dataset, .x, .y))
-        possibly(~ get_correlations(dataset, .x, .y))
-    })
+    walk2(scens, reps, possibly(~ plot_chains(dataset, .x, .y)))
+    walk2(scens, reps, possibly(~ get_posterior(dataset, .x, .y)))
+    walk2(scens, reps, possibly(~ plot_ebvs(dataset, .x, .y)))
+    walk2(scens, reps, possibly(~ plot_correlations(dataset, .x, .y)))
 
-    if (include_km_plots) {
+    if (km) {
         f <- str_glue("datasets/{dataset}/meta/km_data_ps.rds")
 
         opts = list(n_plots = 50,
