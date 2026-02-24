@@ -19,18 +19,23 @@
 flatten_bici_states <- function(dataset = "fb-test",
                                 name = "scen-1-1",
                                 bici_cmd = "inf") {
-    # dataset <- "testing"; name <- "scen-1-1"; bici_cmd <- "inf"
+    if (FALSE) {
+        dataset <- "testing"
+        name <- "scen-1-1"
+        bici_cmd <- "inf"
+    }
     
     message(str_glue("Flattening BICI state files for '{dataset}/{name}' via '{bici_cmd}'"))
     
-    base_dir <- str_glue("datasets/{dataset}")
-    data_dir <- str_glue("{base_dir}/data")
-    res_dir <- str_glue("{base_dir}/results")
-    out_dir <- str_glue("{data_dir}/{name}-out")
-    src_dir <- str_glue("{out_dir}/output-{bici_cmd}")
+    {
+        base_dir <- c(str_glue("datasets/{dataset}"))
+        data_dir <- c(str_glue("{base_dir}/data"))
+        res_dir  <- c(str_glue("{base_dir}/results"))
+        out_dir  <- c(str_glue("{data_dir}/{name}-out"))
+        src_dir  <- c(str_glue("{out_dir}/output-{bici_cmd}"))
+    }
     
-    rf <- str_glue("{res_dir}/{name}.rds")
-    res <- readRDS(rf)
+    res <- readRDS(str_glue("{res_dir}/{name}.rds"))
     base_popn <- res$popn[, .(id, sire, dam, sdp, trial, group, weight, donor)]
     params <- res$params
     
@@ -174,6 +179,10 @@ flatten_bici_states <- function(dataset = "fb-test",
                            set(transitions, j, c("Tinf", "Tsym", "Tdeath"),
                                list(Tinf = get_event(events, "S->E"),
                                     Tinc = get_event(events, "E->I"),
+                                    Tdeath = get_event(events, "I->R")))
+                       }, "SIR" = {
+                           set(transitions, j, c("Tinf", "Tdeath"),
+                               list(Tinf = get_event(events, "S->I"),
                                     Tdeath = get_event(events, "I->R")))
                        }
                 )
