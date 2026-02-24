@@ -17,7 +17,7 @@ get_ranks <- function(popn, estimated_BVs, params, verbose = FALSE) {
     popn2 <- copy(popn)
 
     # individual effect names (what SIRE 2.1 calls them)
-    
+
     ie_names <- c("sg", "ig", "tg")
 
     setnames(estimated_BVs, ie_names, c("sus", "inf", "tol"), skip_absent = TRUE)
@@ -54,9 +54,15 @@ get_ranks <- function(popn, estimated_BVs, params, verbose = FALSE) {
 
         if (verbose) {
             message("Spearman's rank distance for:")
-            message("- susceptibility = ", signif(cor.test(BVs$sus, BVs$est_sus, method = "spearman")$estimate, 3))
-            message("- infectivity    = ", signif(cor.test(BVs$inf, BVs$est_inf, method = "spearman")$estimate, 3))
-            message("- tolerance      = ", signif(cor.test(BVs$tol, BVs$est_tol, method = "spearman")$estimate, 3))
+
+            cor.test(BVs$sus, BVs$est_sus, method = "spearman") |>
+                _$estimate |> signif(3) |> message("- sus = ", x = _)
+
+            cor.test(BVs$inf, BVs$est_inf, method = "spearman") |>
+                _$estimate |> signif(3) |> message("- inf = ", x = _)
+
+            cor.test(BVs$tol, BVs$est_tol, method = "spearman") |>
+                _$estimate |> signif(3) |> message("- tol = ", x = _)
         }
     }
 
