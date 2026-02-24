@@ -16,13 +16,14 @@ run_all_tests <- function(dataset = "fb-qtest",
                           km = FALSE) {
     if (FALSE) {
         dataset <- "fb-qtest"
+        km <- FALSE
     }
 
     message(str_glue("Generating all outputs for '{dataset}'"))
 
     sr <- list.files(str_glue("datasets/{dataset}/results")) |>
         str_sort(numeric = TRUE) |>
-        str_extract_all("(\\d+)") |>
+        str_extract_all("\\d+") |>
         map(as.integer)
     scens <- map_int(sr, 1)
     reps  <- map_int(sr, 2)
