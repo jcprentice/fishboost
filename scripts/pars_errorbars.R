@@ -194,8 +194,10 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
     if (str_length(alt) > 0) alt <- str_c("-", alt)
     plt_str <- str_glue("{gfx_dir}/{dataset}-all_hpdi{alt}")
 
-    # ggsave(str_glue("{plt_str}.png"), plt, width = 20, height = 25)
-    ggsave(str_glue("{plt_str}.pdf"), plt, width = 20, height = 28.2)
+    ggsave(str_glue("{plt_str}.png"), plt, width = 20, height = 25)
+    ggsave(str_glue("{plt_str}.pdf"), plt, width = 20, height = 25)
+
+    plt
 }
 
 if (FALSE) {
