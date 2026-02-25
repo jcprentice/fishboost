@@ -1,7 +1,12 @@
 # if we want the same data as example.xml (handy for exploring the structure)
 
-# Takes a list and converts it into a BICI string, and wraps strings in "", e.g.
-# comp name="S" x=1 y=2 z="fnoof"
+#' Generate BICI script
+#'
+#' @param popn A population with traits and epidemic times
+#' @param params A list of parameters
+#'
+#' @returns A character vector of lines of BICI script
+
 
 generate_bici_script <- function(popn, params) {
     with(params, {

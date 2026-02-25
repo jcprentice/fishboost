@@ -215,10 +215,10 @@ flatten_bici_states <- function(dataset = "fb-test",
                     str_subset("id|_BV|_EV")
                 cols2 <- cols |>
                     str_replace_all(c("susceptibility" = "sus",
-                                      "infectivity" = "inf",
-                                      "latency" = "lat",
-                                      "detectability" = "det",
-                                      "tolerance" = "tol",
+                                      "infectivity"    = "inf",
+                                      "latency"        = "lat",
+                                      "detectability"  = "det",
+                                      "tolerance"      = "tol",
                                       "BV" = "g", "EV" = "e"))
                 ies <- res$popn[, ..cols] |>
                     setnames(cols, cols2)

@@ -1,11 +1,15 @@
 library(stringr)
 
-# Take BICI parameters and make them consistent with internal parameter names,
-# e.g.
-# - "G_1" -> "Group effect 1"
-# - "\\mu^weight1s" -> "weight1_s"
-# - "\\Omega^gen_sg,sg" -> "cov_G_ss"
-# - "\\omega^gen_sg,ig" -> "r_G_si"
+#' Take BICI parameters and make them consistent with internal parameter names,
+#' e.g.
+#' - "G_1" -> "Group effect 1"
+#' - "\\mu^weight1s" -> "weight1_s"
+#' - "\\Omega^gen_sg,sg" -> "cov_G_ss"
+#' - "\\omega^gen_sg,ig" -> "r_G_si"
+#'
+#' @param pars A character vector of BICI parameter names
+#'
+#' @returns A new character vector of modified parameter names
 
 rename_bici_pars <- function(pars) {
     pars |> str_replace_all(
@@ -22,7 +26,17 @@ rename_bici_pars <- function(pars) {
           "omega_env_(.)e,(.)e" = "r_E_\\1\\2"))
 }
 
-# This turns the short name into something suitable for printing
+#' Rename parameters
+#'
+#' Turns the short name parameters into something suitable for printing, e.g.
+#' - "cov_G_ss" -> "Var G (sus)"
+#' - "latent_period" -> "Latent Period (days)"
+#' - "trial_i" -> "Trial Infectivity"
+#'
+#' @param pars A character vector of parameter names
+#'
+#' @returns A new character vector of modified parameter names
+
 rename_pars <- function(pars) {
     pars |> str_replace_all(
         c("latent_period" = "Latent Period (days)",

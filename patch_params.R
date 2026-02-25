@@ -2,7 +2,7 @@
     library(data.table)
     library(stringr)
     library(purrr)
-    
+
     source("widen_priors.R")
     source("remove_bici_fes.R")
 }
@@ -30,10 +30,10 @@ patch_params <- function(params, trace_row = 0) {
         if (msgs) message("- no patches necessary")
         return(params)
     }
-    
+
     if (msgs) message(str_glue("- using *{patch_type}* posteriors from ",
                                "'{patch_dataset}' scenario {patch_name} ..."))
-    
+
     {
         data_dir    <- str_glue("datasets/{patch_dataset}/data")
         results_dir <- str_glue("datasets/{patch_dataset}/results")
@@ -41,18 +41,18 @@ patch_params <- function(params, trace_row = 0) {
         inf_out_dir <- str_glue("{out_dir}/output-inf")
         sim_out_dir <- str_glue("{out_dir}/output-sim")
     }
-    
+
     # Make changes to a copy of params and later return that
     params2 <- copy(params)
-    
-    
+
+
     # If 'patch_state' is specified, use that, otherwise check if a trace file
     # is present and store the row used.
-    
+
     etc_src <- if (sim_new_data == "etc_sim") "etc_sim" else "etc_inf"
-    
+
     # Select patch ----
-    
+
     # This might be already set, in which case skip
     if (!is.numeric(patch_state) && patch_state == TRUE) {
         f <- str_glue("{out_dir}/{etc_src}.rds")
@@ -68,13 +68,13 @@ patch_params <- function(params, trace_row = 0) {
         }
     }
     params2$patch_state <- patch_state
-    
+
     # Load patch ----
-    
+
     # Use patch_state
     if (is.numeric(patch_state)) {
         if (msgs) message(str_glue("- using state: {patch_state}"))
-        
+
         f <- str_glue("{out_dir}/{etc_src}.rds")
         tmp <- readRDS(f)$parameters[!str_starts(parameter, "^Group")]
         tmp <- if (patch_state == 0) {
@@ -90,7 +90,7 @@ patch_params <- function(params, trace_row = 0) {
                                      "RP" = "removal_period")))
         rm(tmp)
     }
-    
+
     # Use trace file
     # Caution: 0 == FALSE, so instead test if is logical, since we've already
     # handled is TRUE
@@ -106,7 +106,7 @@ patch_params <- function(params, trace_row = 0) {
         if (msgs) message(str_glue("- reading trace file '{f}'"))
         trace_file <- fread(f)
         # trace_file[, str_subset(names(trace_file), "^\\d", negate = TRUE) := NULL]
-        
+
         # Extract list of posterior values from trace file
         patch_vals <- if (patch_type == "mean") {
             map(trace_file, mean)
@@ -122,8 +122,8 @@ patch_params <- function(params, trace_row = 0) {
         }
         rm(trace_file)
     }
-    
-    
+
+
     # Load results file to get any parameters not saved in trace file
     rf <- str_glue("{results_dir}/{patch_name}.rds")
     # Save this for later
@@ -136,18 +136,18 @@ patch_params <- function(params, trace_row = 0) {
         if (msgs) message("- no results file")
         priors <- params$priors
     }
-    
+
     # Correct for old type
     priors[type == "Flat",  type := "uniform"]
     priors[type == "Fixed", type := "constant"]
-    
+
     # Determine what to patch ----
-    
+
     # Copy prior values, using `true_val` from the patch_vals
-    
+
     pp <- intersect(setdiff(names(patch_vals), skip_patches),
                     params2$priors$parameter)
-    
+
     # Now remove anything we don't want to patch
     walk(skip_patches, \(x) {
         pp <<- pp |>
@@ -163,25 +163,25 @@ patch_params <- function(params, trace_row = 0) {
                               x),
                        negate = TRUE)
     })
-    
+
     priors2 <- priors[parameter %in% pp]
-    
+
     # Note: don't overwrite `use` or `type`. We want to patch the parameter
     # values, but the model determines whether they get used or not.
     params2$priors[parameter %in% priors2$parameter,
                    true_val := unlist(patch_vals)[parameter]]
-    
+
     # Ensure val1 <= true_val <= val2
     params2$priors[, `:=`(val1 = pmin(val1, true_val),
                           val2 = pmax(val2, true_val))]
-    
-    
+
+
     # Patch from Trace file
-    
+
     pars_patched <- "priors"
-    
+
     # Covariance Matrices ----
-    
+
     # We overwrite params2's Sigma_G and Sigma_E with new values, remembering
     # that r_*_** are correlations, not covariances, so they need to be
     # transformed first.
@@ -190,31 +190,31 @@ patch_params <- function(params, trace_row = 0) {
             setNames(params2$priors$parameter) |>
             as.list()
         patched_covariances <- FALSE
-        
+
         params2$Sigma_G[] <- 0
         params2$Sigma_E[] <- 0
         params2$cov_G[] <- 0
         params2$cov_E[] <- 0
-        
+
         out <- make_matrices_from_priors(priors1)
-        
+
         # Copy the used values, discarding the rest (even if non-zero)
         used <- model_traits[str_chars(use_traits)]
-        
+
         params2$Sigma_G[used, used] <- out$Sigma_G[used, used]
         params2$Sigma_E[used, used] <- out$Sigma_E[used, used]
         params2$cov_G[used, used] <- out$cov_G[used, used]
         params2$cov_E[used, used] <- out$cov_E[used, used]
-        
+
         pars_patched <- c(pars_patched, "covariances")
     }
-    
+
     params2$vars <- diag(params2$Sigma_G)
     params2$cors <- params2$Sigma_G[lower.tri(params2$Sigma_G)]
 
-    
+
     # Rates and LPs ----
-    
+
     if ("beta" %in% pp) {
         params2$r_beta <- patch_vals$beta
         pars_patched <- c(pars_patched, "beta")
@@ -250,9 +250,9 @@ patch_params <- function(params, trace_row = 0) {
         # params2$group_effect <- patch_vals$sigma
         pars_patched <- c(pars_patched, "group effect")
     }
-    
+
     # Fixed effects ----
-    
+
     # Handle nested Weight FEs
     weight_is_nested <- any(str_detect(names(patch_vals), "weight1"))
     weight <- if (weight_is_nested) c("weight1", "weight2") else "weight"
@@ -261,11 +261,11 @@ patch_params <- function(params, trace_row = 0) {
         if ("fes" %notin% skip_patches) c("trial", "donor", "txd"),
         if ("weight" %notin% skip_patches) weight
     )
-    
+
     if (weight_is_nested) {
         params2$priors[str_starts(parameter, "weight_"), use := FALSE]
     }
-    
+
     for (fe_type in fe_types) {
         for (fe_trait in model_traits) {
             # build name e.g. trial_l
@@ -276,17 +276,17 @@ patch_params <- function(params, trace_row = 0) {
             }
         }
     }
-    
+
     # BICI fixes
-    
+
     if (params$sim_new_data %in% c("bici")) {
         params2 <- remove_bici_fes(params2)
     }
-    
+
     if (resfile_exists) {
         if (FALSE) {
             # FIXME: this seems to be breaking, so just skip it
-            
+
             # Ensure FEs match
             for (fe in fe_types) {
                 fe_type <- str_c(fe, "_fe")
@@ -296,22 +296,22 @@ patch_params <- function(params, trace_row = 0) {
             }
             pars_patched <- c(pars_patched, "fixed effects")
         }
-        
+
         # shape parameters
         # params2$LP_shape <- tmp_params$LP_shape
         # params2$DP_shape <- tmp_params$DP_shape
         # params2$RP_shape <- tmp_params$RP_shape
-        
+
         # I think this is necessary?
         params2$time_step <- tmp_params$time_step
         params2$censor <- tmp_params$censor
         pars_patched <- c(pars_patched, "time_step", "censor")
     }
-    
+
     # Ensure priors are wide enough to include true_vals
     widen_priors(params2$priors)
-    
+
     if (msgs) message("- ", str_flatten_comma(pars_patched))
-    
+
     params2
 }

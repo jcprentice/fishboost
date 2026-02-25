@@ -1,4 +1,8 @@
 cleanup_bici_files <- function(params) {
+    if (params$DEBUG) {
+        return()
+    }
+
     if (file.exists(params$config)) {
         message("Removed old BICI script")
         file.remove(params$config)

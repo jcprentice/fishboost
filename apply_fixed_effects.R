@@ -8,7 +8,7 @@ library(stringr)
 #'   according to the FE values contained in `fe_vals`.
 #'
 #' @param popn A population data.table
-#' @param params A parameters list
+#' @param params A list of parameters
 #'
 #' @returns A new population file with FEs applied to phenotypes
 
@@ -51,6 +51,8 @@ apply_fixed_effects <- function(popn, params) {
                    weight2 = c(rep(0, N1), recentre_f(weight[trial == 2]))
                  )] |>
         as.matrix()
+
+    sildt <- colnames(fe_vals) |> str_1st()
 
     # Zero out all fe_vals that aren't in sim_X_fe
     fe_vals["trial",   sildt %notin% str_chars(sim_trial_fe)]  <- 0

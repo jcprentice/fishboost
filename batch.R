@@ -61,11 +61,8 @@ if (run_from_script) {
         # Skip NAs completely
         if (is.na(value)) return()
 
-        if (is.character(value)) {
-            message(str_glue("- {param} = '{value}'"))
-        } else {
-            message(str_glue("- {param} = {value}"))
-        }
+        message(str_glue("- {param} = {x}{value}{x}",
+                         x = if (is.character(value)) "'" else ""))
 
         # Skip any values already provided to make_pars()
         if (param %in% c("model_type", "dataset", "name", "setup",
