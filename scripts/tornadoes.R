@@ -4,12 +4,25 @@
     source("plotting/plot_tornadoes.R")
 }
 
-tornadoes <- function(dataset = "fb-test", scens = 1:8, combine = TRUE) {
+tornadoes <- function(dataset = "fb-test", scens = 0, combine = TRUE) {
+    if (FALSE) {
+        dataset <- "sim-test-inf"
+        scens <- 0
+        combine <- TRUE
+    }
 
     gfx_dir <- str_glue("datasets/{dataset}/gfx/tornadoes")
     if (!dir.exists(gfx_dir)) {
         message("- mkdir ", gfx_dir)
         dir.create(gfx_dir, recursive = TRUE)
+    }
+
+    if (all(scens == 0)) {
+        scens <- list.files(str_glue("datasets/{dataset}/results")) |>
+            str_sort(numeric = TRUE) |>
+            str_extract("-(\\d+)-", group = 1) |>
+            unique() |>
+            as.integer()
     }
 
     plts <- map(scens, \(scen)
@@ -82,7 +95,7 @@ tornadoes <- function(dataset = "fb-test", scens = 1:8, combine = TRUE) {
 
         plt_str <- str_glue("{gfx_dir}/{dataset}-{scen}-tornadoes")
         ggsave(str_c(plt_str, ".png"), plt, width = 12, height = 12)
-        ggsave(str_c(plt_str, ".pdf"), plt, width = 12, height = 12)
+        # ggsave(str_c(plt_str, ".pdf"), plt, width = 12, height = 12)
         message(str_glue("plotted '{plt_str}'"))
     })
 }
@@ -90,6 +103,6 @@ tornadoes <- function(dataset = "fb-test", scens = 1:8, combine = TRUE) {
 # run tests ----
 if (FALSE) {
     # tornandoes(dataset = "sim-test2", scens = 1:5, combine = TRUE)
-    tornadoes(dataset = "sim-base-inf", scens = 1:10, combine = TRUE)
-    tornadoes(dataset = "sim-test-inf", scens = 1:10, combine = TRUE)
+    tornadoes("sim-base-inf")
+    tornadoes("sim-test-inf")
 }
