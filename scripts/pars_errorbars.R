@@ -12,7 +12,7 @@
 pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "") {
     if (FALSE) {
         dataset <- "fb-test"; scens <- 0; st_str = ""; alt <- ""
-        dataset <- "sim-base-inf"; scens <- 0; st_str <- "Validating BICI - No. of events"; alt <- "events"
+        dataset <- "sim-test-inf"; scens <- 7; st_str <- "Validating BICI - No. of events"; alt <- ""
     }
 
     {
