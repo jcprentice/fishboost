@@ -19,13 +19,13 @@ if (run_from_script) {
     pname <- cmd_args[[1]]
     row_no <- as.integer(cmd_args[[2]])
 } else {
-    pname <- "fb-test"
-    row_no <- 2L
+    pname <- "sim-test-inf"
+    row_no <- 81L
 }
 
 {
     # Grab row_no from protocol file and common options (if they exist) and
-    message(str_glue("Running: '{pname} / s{row_no}'"))
+    message(str_glue("Running: '{pname} / row {row_no}'"))
     protocol <- with(readRDS(str_glue("param_sets/{pname}.rds")),
                      safe_merge(protocol[row_no],
                                 if (exists("common")) common))
@@ -281,7 +281,6 @@ message(str_glue("censor = {x}\nTmax = {y}",
     cleanup_bici_files(params)
     bici_txt <- generate_bici_script(popn, params)
 }
-
 
 ## Run BICI ----
 
