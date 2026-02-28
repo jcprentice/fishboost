@@ -17,7 +17,7 @@ check_convergence <- function(dataset = "fb-test") {
     pes <- files |>
         map(readRDS) |>
         map("parameter_estimates") |>
-        rbindlist(idcol = "file")
+        rbindlist(idcol = "file", fill = TRUE)
 
     nsamples <- files |>
         map(readRDS) |>
