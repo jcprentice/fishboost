@@ -15,8 +15,8 @@
 
 model_fit_rmsd <- function(dataset = "fb-test", scens = 0, alt = "", drop_outliers = FALSE) {
     if (FALSE) {
-        dataset <- "fb-test"; scens <- c(1,3,4); drop_outliers = FALSE; alt = ""
-        dataset <- "sim-base-inf"; scens <- 1:16; drop_outliers = FALSE; alt = ""
+        dataset <- "fb-test"; scens <- 0; drop_outliers = FALSE; alt = ""
+        dataset <- "sim-base-inf"; scens <- 0; drop_outliers = FALSE; alt = ""
     }
 
     message(str_glue("Calculating RMS model fit for '{dataset}'"))
@@ -174,15 +174,17 @@ model_fit_rmsd <- function(dataset = "fb-test", scens = 0, alt = "", drop_outlie
          families_plt = families_plt)
 }
 
-out_fb_final <- model_fit_rmsd("fb-final")
-out_fb_final <- model_fit_rmsd("fb-final2")
-# out_fb_final_drop <- model_fit_rmsd("fb-final", drop_outliers = TRUE)
-out_fb_lp <- model_fit_rmsd("fb-lp")
-out_fb_lp2 <- model_fit_rmsd("fb-lp2")
-# out_fb_lp_drop <- model_fit_rmsd("fb-lp", drop_outliers = TRUE)
-out_fb_simple <- model_fit_rmsd("fb-simple")
-out_fb_donors <- model_fit_rmsd("fb-donors")
-# out_fb_donors_drop <- model_fit_rmsd("fb-donors", drop_outliers = TRUE)
-out_sbi <- model_fit_rmsd("sim-base-inf", 0, "", FALSE)
-out_fb_test <- model_fit_rmsd("fb-test", 0, "")
-out_fb_qtest <- model_fit_rmsd("fb-qtest", 0, "")
+if (FALSE) {
+    out_fb_final <- model_fit_rmsd("fb-final")
+    out_fb_final <- model_fit_rmsd("fb-final2")
+    # out_fb_final_drop <- model_fit_rmsd("fb-final", drop_outliers = TRUE)
+    out_fb_lp <- model_fit_rmsd("fb-lp")
+    out_fb_lp2 <- model_fit_rmsd("fb-lp2")
+    # out_fb_lp_drop <- model_fit_rmsd("fb-lp", drop_outliers = TRUE)
+    out_fb_simple <- model_fit_rmsd("fb-simple")
+    out_fb_donors <- model_fit_rmsd("fb-donors")
+    # out_fb_donors_drop <- model_fit_rmsd("fb-donors", drop_outliers = TRUE)
+    out_sbi <- model_fit_rmsd("sim-base-inf", 0, "", FALSE)
+    out_fb_test <- model_fit_rmsd("fb-test", 0, "")
+    out_fb_qtest <- model_fit_rmsd("fb-qtest", 0, "")
+}
