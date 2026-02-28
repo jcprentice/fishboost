@@ -150,7 +150,7 @@ if (FALSE) {
     scens <- 0
     simulate_new_data <- "bici"
     opts <- list(n_plots = 50, use_means = FALSE)
-    plotopts <- c("drop_small_groups", "drop_donors", "extreme_sires")[1]
+    plotopts <- c("drop_small_groups", "drop_donors", "extreme_sires")[c(1, 3)]
 
     km_plots(dataset, scens, simulate_new_data, opts, plotopts)
 }
