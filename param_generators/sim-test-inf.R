@@ -22,9 +22,9 @@ protocol <- rbind(
     data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit d1"), # 1
     data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d2"), # 2
     # Misspecified models
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d3, (Overfitting SITTT to none)"),     # 3
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d3, (Overfitting SITTT to none)"),   # 3
     data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d4, (Overfitting SITTT to ST)"),     # 4
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d5, (Underfitting SITTT to SILDT)"),   # 5
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d5, (Underfitting SITTT to SILDT)"), # 5
     data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d5, (Underfitting SITTT to SILDT)"), # 6
     data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit d2, (Underfitting none to SILDT)"),  # 7
 
