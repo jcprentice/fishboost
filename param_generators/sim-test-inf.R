@@ -19,17 +19,14 @@ dataset <- "sim-test-inf"
 # Variable parameters ----
 protocol <- rbind(
     # Basic models
-    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d1"), # 1
-    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d2"), # 2
-    data.table(d = "FB_2_rpw,  GEV SITTT, FE SIT, Fit d3"), # 3
-    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT, Fit d4"), # 4
+    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit d1"), # 1
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d2"), # 2
     # Misspecified models
-    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d2, (Fitting SIT to SITTT)"),        # 5
-    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d1, (Fitting SITTT to SIT)"),        # 6
-    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d5, (Overfitting SIT to ST)"),       # 7
-    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d5, (Overfitting SITTT to ST)"),     # 8
-    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit d6, (Underfitting SIT to SILDT)"),   # 9
-    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit d6, (Underfitting SITTT to SILDT)"), # 10
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d3, (Overfitting SITTT to none)"),     # 3
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d4, (Overfitting SITTT to ST)"),     # 4
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d5, (Underfitting SITTT to SILDT)"),   # 5
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d5, (Underfitting SITTT to SILDT)"), # 6
+    data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit d2, (Underfitting none to SILDT)"),  # 7
 
     fill = TRUE
 )
@@ -46,7 +43,7 @@ protocol[, GEV := NULL]
 
 # Handle FEs
 protocol[, weight_fe := {
-    x <- get_part(d, "FE ")
+    x <- get_part(d, "Weight ")
     if (length(x) == 0 || x %in% c("", "none")) "" else str_to_lower(x)
 }, .I]
 
@@ -75,7 +72,7 @@ common <- list(sim_new_data = "etc_sim",
                bici_cmd = "inf",
                fix_donors = "no_Tsym_survivors",
                censor = 0.8,
-               nsample = 1e6,
+               nsample = 2e4,
                nchains = 8,
                sample_states = 100,
                time_step_bici = 1,

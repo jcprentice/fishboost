@@ -18,14 +18,12 @@ dataset <- "sim-test"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(d = "FB_1_rpw,  GEV SIT,   FE SIT, Fit s1"),  # 1
-    data.table(d = "FB_1_rpw,  GEV SITTT, FE SIT, Fit s2"),  # 2
-    data.table(d = "FB_2_rpw,  GEV SITTT, FE SIT, Fit s6"),  # 3
-    data.table(d = "FB_12_rpw, GEV SITTT, FE SIT, Fit s10"), # 4
-    # Misspecified models
-    data.table(d = "FB_1_rpw,  GEV none,  FE SIT, Fit s1"),  # 5
-    data.table(d = "FB_1_rpw,  GEV ST,    FE SIT, Fit s1"),  # 6
-    data.table(d = "FB_1_rpw,  GEV SILDT, FE SIT, Fit s1"),  # 7
+    # Basic models
+    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit s9"),  # 1
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit s11"), # 2
+    data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit s11"), # 3
+    data.table(d = "FB_12_rpw, GEV ST,    Weight SITTT, Fit s11"), # 4
+    data.table(d = "FB_12_rpw, GEV SILDT, Weight SITTT, Fit s11"), # 6
 
     fill = TRUE
 )
@@ -49,13 +47,13 @@ protocol[, use_grm := get_part(d, "GRM"), .I]
 protocol[, traits_source := "posterior"]
 
 
-protocol[, weight_fe := get_part(d, "FE") |> str_to_lower(), .I]
+protocol[, weight_fe := get_part(d, "Weight") |> str_to_lower(), .I]
 
-protocol[use_traits == "sildt", `:=`(vars = 0.5,
-                                     cors = 0.2)]
+protocol[str_detect(d, "GEV SILDT"), `:=`(vars = 0.5,
+                                          cors = 0.2)]
 
 # Skip patches when we want 0 variance
-protocol[use_traits == "st", skip_patches := "cov_G_ii,cov_E_ii"]
+protocol[str_detect(d, "GEV ST"), skip_patches := "cov_G_ii,cov_E_ii"]
 
 
 
