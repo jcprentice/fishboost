@@ -157,6 +157,7 @@ patch_params <- function(params, trace_row = 0) {
                               "RP" = "removal_period",
                               "DP" = "detection_period",
                               "cov" = "cov_|^r_",
+                              "infrat" = "infrat",
                               "fes" = "trial|donor|txd",
                               "weight" = "weight",
                               "all" = ".",
@@ -172,8 +173,8 @@ patch_params <- function(params, trace_row = 0) {
                    true_val := unlist(patch_vals)[parameter]]
 
     # Ensure val1 <= true_val <= val2
-    params2$priors[, `:=`(val1 = pmin(val1, true_val),
-                          val2 = pmax(val2, true_val))]
+    params2$priors[, `:=`(val1 = pmin(val1, true_val, na.rm = TRUE),
+                          val2 = pmax(val2, true_val, na.rm = TRUE))]
 
 
     # Patch from Trace file
@@ -218,6 +219,10 @@ patch_params <- function(params, trace_row = 0) {
     if ("beta" %in% pp) {
         params2$r_beta <- patch_vals$beta
         pars_patched <- c(pars_patched, "beta")
+    }
+    if ("infrat" %in% pp) {
+        params2$inf_ratio <- patch_vals$infrat
+        pars_patched <- c(pars_patched, "infection ratio")
     }
     if ("latent_period" %in% pp) {
         params2$latent_period <- patch_vals$latent_period
