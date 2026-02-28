@@ -54,7 +54,7 @@ rebuild_sire_posteriors <- function(dataset = "fb-final",
     cols <- setdiff(xp$parameter, drop_pars)
 
     tfs <- map(files, ~ mcmc(fread(.x)[, ..cols]), thin = nsample / 1e4)
-    grd <- as.mcmc.list(tfs) |> gelman.diag() |> {\(x) as.data.table(x$psrf)[, 2]}() |> unlist()
+    grd <- as.mcmc.list(tfs) |> gelman.diag() |> _$psrf[, 2]
     ess <- effectiveSize(tfs) |> round()
 
     xp[parameter %in% cols, `:=`(ESS = ess, GR = grd)]
@@ -121,7 +121,7 @@ rebuild_bici_posteriors <- function(dataset = "fb-test",
               "Ω" = "Omega", "ω" = "omega", "μ" = "mu",
               # "^G_" = "Group effect ",
               "cv_G" = "sigma",
-              "mu_weight([0-9]?)([sildt])" = "weight\\1_\\2",
+              "mu_weight(\\d?)([sildt])" = "weight\\1_\\2",
               "_gen" = "", "_env" = "",
               "Omega_(.?)g,(.?)g" = "cov_G_\\1\\2",
               "Omega_(.?)e,(.?)e" = "cov_E_\\1\\2",
@@ -162,7 +162,7 @@ rebuild_bici_posteriors <- function(dataset = "fb-test",
         map(~ .x[, ..cols]) |>
         map(~ mcmc(.x, start = nsample * burnprop, thin = nsample / thinto))
 
-    grd <- as.mcmc.list(tfs) |> gelman.diag() |> {\(x) as.data.table(x$psrf)[, 2]}() |> unlist()
+    grd <- as.mcmc.list(tfs) |> gelman.diag() |> _$psrf[, 2]
     ess <- effectiveSize(tfs) |> round()
 
     xp[parameter %in% cols, `:=`(ESS = ess, GR = grd)]
