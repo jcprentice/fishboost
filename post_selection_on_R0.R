@@ -150,8 +150,8 @@ ggsave(str_glue("r0_results/r0-{scen}-boxplot-alt.png"),
        width = 9, height = 6)
 
 
-x <- fread("fb-final/data/scen-1-1-out/trace_combine.tsv")
-x[, str_subset(names(x), "beta|period|_G_", negate = TRUE) := NULL]
+x <- fread("datasets/fb-final/data/scen-1-1-out/trace_combine.tsv") |>
+    _[, .SD, .SDcols = patterns("beta|period|_G_")]
 
 x[, `:=`(
     cov_G_si = r_G_si * sqrt(cov_G_ss * cov_G_ii),
