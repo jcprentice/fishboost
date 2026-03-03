@@ -124,7 +124,7 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
     # x[, setdiff(names(x), pars) := NULL]
     
     # Ensure everything is double before melting (in case a col is integer)
-    x[, names(x) := map(.SD, as.numeric)]
+    x[, names(.SD) := map(.SD, as.numeric)]
     
     # Calculate heritability
     pars <- add_h2_to_pars(x, pars)
