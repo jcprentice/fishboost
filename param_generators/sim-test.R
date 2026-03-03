@@ -23,7 +23,7 @@ protocol <- rbind(
     data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit s11"), # 2
     data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit s11"), # 3
     data.table(d = "FB_12_rpw, GEV ST,    Weight SITTT, Fit s11"), # 4
-    data.table(d = "FB_12_rpw, GEV SILDT, Weight SITTT, Fit s11"), # 6
+    data.table(d = "FB_12_rpw, GEV SILDT, Weight SITTT, Fit s11"), # 5
 
     fill = TRUE
 )
@@ -70,7 +70,7 @@ common <- list(sim_new_data = "bici",
                weight_is_nested = TRUE,
                # expand_priors = 4,
                group_effect = 0.05,
-               patch_dataset = "fb-qtest",
+               patch_dataset = "fb-test",
                patch_type = "median",
                patch_state = FALSE,
                # skip_patches = "beta", # "cov,base,beta",

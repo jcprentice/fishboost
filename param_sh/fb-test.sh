@@ -21,6 +21,8 @@
 module load R/4.5
 module load openmpi/5.0.7
 
+unset R_HOME
+
 # Run the program
 Rscript batch.R fb-test $SGE_TASK_ID
 
