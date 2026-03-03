@@ -18,7 +18,6 @@ plot_SxxDR <- function(popn, params) {
     events <- make_time_series_seidr(popn, params)
     events[, S := S + E + I]
     events[, c("E", "I", "ID") := NULL]
-    # e2 <- melt(events, id = "time")
 
     if (params$sim_new_data == "no") {
         events <- events[time != max(time)]
@@ -46,7 +45,6 @@ plot_SEIDR <- function(popn, params) {
     tmax <- max(params$tmax)
 
     events <- make_time_series_seidr(popn, params)
-    # e2 <- melt(events, id = "time")
 
     plt <- ggplot(events, aes(x = time)) +
         geom_line(aes(y = S / N,  colour = "Susceptible"),  linewidth = 1.2) +
@@ -78,7 +76,6 @@ plot_SIDR <- function(popn, params) {
     tmax <- params$tmax
 
     events <- make_time_series_sidr(popn, params)
-    # e2 <- melt(events, id = "time")
 
     plt <- ggplot(events, aes(x = time)) +
         geom_line(aes(y = S / N,  colour = "Susceptible"),  linewidth = 1.2) +
@@ -105,7 +102,6 @@ plot_SEIR <- function(popn, params) {
     tmax <- params$tmax
 
     events <- make_time_series_seir(popn, params)
-    # e2 <- melt(events, id = "time")
 
     plt <- ggplot(events, aes(x = time)) +
         geom_line(aes(y = S / N, colour = "Susceptible"), linewidth = 1.2) +
