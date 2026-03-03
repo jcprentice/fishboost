@@ -37,8 +37,8 @@ compare_Tinfs <- function(dataset = "sim-test1", scen = 1, itn = 1) {
     xy2 <- melt(xy, id.vars = c("id", "trial"))
     xy2[, src := fifelse(variable == "Tinf", 2, 1)]
     
-    subtitle_str <- with(params, str_c(dataset, "/", label, ": ",
-                                       str_remove(description, ", convergence")))
+    st <- with(params, str_glue("{dataset}/{label}: {x}",
+                                x = str_remove(description, ", convergence")))
     
     plt <- ggplot(xy) +
         geom_ribbon(aes(id, ymin = `0%`, ymax = `100%`),
@@ -50,7 +50,7 @@ compare_Tinfs <- function(dataset = "sim-test1", scen = 1, itn = 1) {
         labs(x = "Individual",
              y = "Tinf",
              title = "True Tinf (red) vs inferred Tinf (blue)",
-             subtitle = subtitle_str) +
+             subtitle = st) +
         # scale_colour_manual(breaks = c("0%", "25%", "50%", "75%", "100%", "Tinf"),
         #                       values = c("blue", "lightblue", "white", "pink", "red", "black")) +
         facet_wrap(. ~ trial,
