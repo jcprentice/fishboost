@@ -2,7 +2,7 @@ patch_in_traits <- function(popn, params) {
     message("Patching popn with traits ...")
     {
         setup           <- params$setup
-        dataset         <- params$patch_dataset %||% ""
+        patch_dataset   <- params$patch_dataset %||% ""
         name            <- params$patch_name
         model_traits    <- params$model_traits
         patch_state     <- params$patch_state
@@ -10,31 +10,31 @@ patch_in_traits <- function(popn, params) {
         traits_source   <- params$traits_source
         msgs            <- params$msgs
     }
-    
-    if (traits_source != "posterior" || dataset == "") {
+
+    if (traits_source != "posterior" || patch_dataset == "") {
         if (msgs) message("- not requested")
         return(popn)
     }
-    
+
     {
-        base_dir    <- str_glue("datasets/{dataset}")
+        base_dir    <- str_glue("datasets/{patch_dataset}")
         data_dir    <- str_glue("{base_dir}/data")
         results_dir <- str_glue("{base_dir}/results")
         output_dir  <- str_glue("{data_dir}/{name}-out")
         states_dir  <- str_glue("{output_dir}/states")
         inf_out_dir <- str_glue("{output_dir}/output-inf")
     }
-    
-    # If we're not using mean, then need to sample from the files available, so
-    # check if we even have any first
+
+    # If we're not using mean or median, then need to sample from the files
+    # available, so check if we even have any first
     if (patch_type %notin% c("mean", "median")) {
         f <- str_glue("{output_dir}/etc_inf.rds")
 
-        # If we don't find anything, revert to patching with mean
-        message("- no ETC file, reverting to posterior mean")
-        if (!file.exists(f)) patch_type <- "mean"
+        # If we don't find anything, revert to patching with median
+        message("- no ETC file, reverting to posterior median")
+        if (!file.exists(f)) patch_type <- "median"
     }
-    
+
     if (patch_type %in% c("mean", "median")) {
         f <- str_glue("{output_dir}/etc_inf.rds")
         if (file.exists(f)) {
@@ -44,9 +44,9 @@ patch_in_traits <- function(popn, params) {
         } else {
             stop(str_glue("- '{f}' not found!"))
         }
-        
-        if (msgs) message(str_glue("- making popn by copying EBVs from '{dataset}/{name}' ..."))
-        
+
+        if (msgs) message(str_glue("- making popn by copying EBVs from '{patch_dataset}/{name}' ..."))
+
     } else if (is.numeric(patch_state)) {
         f <- str_glue("{output_dir}/etc_inf.rds")
         if (file.exists(f)) {
@@ -54,8 +54,8 @@ patch_in_traits <- function(popn, params) {
         } else {
             stop(str_glue("- '{f}' not found!"))
         }
-        
-        if (msgs) message(str_glue("- making popn by copying EBVs from '{dataset}/{name}'\n",
+
+        if (msgs) message(str_glue("- making popn by copying EBVs from '{patch_dataset}/{name}'\n",
                                    "- using state '{patch_state}' ..."))
     } else if (!is.null(params$trace_row)) {
         trace_row <- params$trace_row
@@ -68,7 +68,7 @@ patch_in_traits <- function(popn, params) {
         }
         if (msgs) message(str_glue("- reading trace file '{f}'"))
         tc <- fread(f)[trace_row]
-        tc <- tc[, .SD, .SDcols = str_subset(names(tc), "^\\d")] |>
+        tc <- tc[, .SD, .SDcols = patterns("^\\d")] |>
             melt(measure.vars = measure(id, ie, ae, sep = "_"))
         ebvs <- tc[, .(id = as.integer(id),
                        ie = str_c(ie, "_", ae),
@@ -78,14 +78,14 @@ patch_in_traits <- function(popn, params) {
     } else {
         stop("No files to work with!")
     }
-    
+
     if (nrow(popn) != nrow(ebvs)) {
         message(str_glue("- inconsistent sizes for EBVs ({x}) and pedigree ({y}), generating new data",
                                x = nrow(popn), y = nrow(ebvs)))
         popn2 <- make_traits_from_pedigree(popn, params)
         return(popn2)
     }
-    
+
     # Add missing traits (set to 0) and calculate phenotype
     walk(model_traits, \(x) {
         tg <- str_glue("{x}_g")
@@ -95,17 +95,17 @@ patch_in_traits <- function(popn, params) {
         }
         ebvs[, (x) := exp(get(tg) + get(te))]
     })
-    
+
     # Reorder GT, EV, PT
     setcolorder(ebvs, c("id",
                         str_c(model_traits, "_g"),
                         str_c(model_traits, "_e"),
                         model_traits))
-    
+
     # Now copy over to ebvs (I'm sure there must be an easier way to do this, but I
     # don't know what it is)
     popn2 <- copy(popn)
     walk(names(ebvs), ~ popn2[, (.x) := ebvs[, get(.x)]])
-    
+
     popn2
 }
