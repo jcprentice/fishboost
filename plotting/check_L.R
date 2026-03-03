@@ -17,7 +17,7 @@ check_L <- function(dataset = "fb-final", scen = 1) {
 
     x <- map(files, fread) |>
         rbindlist(idcol = "chain")
-    x[, str_subset(names(x), "chain|State|^L\\^", negate = TRUE) := NULL]
+    x[, names(.SD) := NULL, .SDcols = !patterns("chain|State|^L\\^")]
     x[, State := State / State[2]]
 
     # Thin down to at most 1e4 samples
