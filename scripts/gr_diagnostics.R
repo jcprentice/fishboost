@@ -138,8 +138,8 @@ xl <- map(out, \(x) {
           file = "xl_tab.tex")
 }
 
-xl_tab[, map(.SD, min, na.rm = TRUE), .SDcols = str_subset(names(xl_tab), "ESS")]
-xl_tab[, map(.SD, max, na.rm = TRUE), .SDcols = str_subset(names(xl_tab), "GR")]
+xl_tab[, map(.SD, min, na.rm = TRUE), .SDcols = patterns("ESS")]
+xl_tab[, map(.SD, max, na.rm = TRUE), .SDcols = patterns("GR")]
 gd
 
 results <- c("dataset", "scens", "out", "gd", "xl", "xl_tab", "xl_ltab") |> keep(exists)
