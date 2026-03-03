@@ -21,11 +21,13 @@ plot_km_sire_trial <- function(data_list, trials = 12, plotopts = NULL) {
     }
 
     description <- params$description |>
-        str_remove_all(", convergence|, coverage|, pedigree|, GRM \\w*") |>
+        str_split_1(", ") |>
+        str_subset("convergence|coverage|pedigree|GRM", negate = TRUE) |>
         str_replace_all(c("inf_model 1" = "inf: I = D",
                           "inf_model 2" = "inf: I = 0.1*D",
                           "inf_model 3" = "inf: Don = 0.1*Rec",
-                          "inf_model 4" = "inf: Don = r*Rec"))
+                          "inf_model 4" = "inf: Don = r*Rec")) |>
+        str_flatten_comma()
 
     # Choose between actual Tinfs and SIRE's inferred values for FB data
     if ("use_sire_Tinfs" %in% plotopts && "Tinf_sire" %in% names(data)) {
