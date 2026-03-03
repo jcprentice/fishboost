@@ -97,6 +97,22 @@ make_matrices <- function(model_traits = c("sus", "inf", "lat", "det", "tol"),
 make_matrices_from_priors <- function(priors) {
     all_traits <- c("sus", "inf", "lat", "det", "tol")
 
+    priors$cov_G_ss <- priors$cov_G_ss %||% 0
+    priors$cov_G_ii <- priors$cov_G_ii %||% 0
+    priors$cov_G_ll <- priors$cov_G_ll %||% 0
+    priors$cov_G_dd <- priors$cov_G_dd %||% 0
+    priors$cov_G_tt <- priors$cov_G_tt %||% 0
+    priors$r_G_si <- priors$r_G_si %||% 0
+    priors$r_G_sl <- priors$r_G_sl %||% 0
+    priors$r_G_sd <- priors$r_G_sd %||% 0
+    priors$r_G_st <- priors$r_G_st %||% 0
+    priors$r_G_il <- priors$r_G_il %||% 0
+    priors$r_G_id <- priors$r_G_id %||% 0
+    priors$r_G_it <- priors$r_G_it %||% 0
+    priors$r_G_ld <- priors$r_G_ld %||% 0
+    priors$r_G_lt <- priors$r_G_lt %||% 0
+    priors$r_G_dt <- priors$r_G_dt %||% 0
+
     Sigma_G <- with(priors,
                     matrix(c(cov_G_ss, r_G_si,   r_G_sl,   r_G_sd,   r_G_st,
                              r_G_si,   cov_G_ii, r_G_il,   r_G_id,   r_G_it,
