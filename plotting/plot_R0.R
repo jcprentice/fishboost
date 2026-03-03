@@ -13,9 +13,8 @@ plot_R0 <- function(dataset = "fb-final",
     # dataset <- "fb-final"; scen <- 1; plot_boxplot = TRUE
 
     x <- fread(str_glue("datasets/{dataset}/data/scen-{scen}-1-out/trace_combine.tsv"))
-
-    x[, str_subset(names(.SD), "beta|period|_[GE]_", negate = TRUE) := NULL]
-        setnames(x, str_replace(names(x), "cov_|r_", "V"))
+    x[, names(.SD) := NULL, .SDcols = !patterns("beta|period|_[GE]_")]
+    setnames(x, str_replace(names(x), "cov_|r_", "V"))
 
     # Convert correlation to covariance
     x[, `:=`(
@@ -78,12 +77,12 @@ plot_R0 <- function(dataset = "fb-final",
               measure.vars = r0cols,
               variable.factor = FALSE)
 
-    y[, selection := ifelse(str_ends(variable, "_sel"),
-                            "one sigma", "none")]
-    y[, variable := as.factor(str_remove(variable, "_sel"))]
+    y[, `:=`(selection = fifelse(str_ends(variable, "_sel"),
+                                 "one sigma", "none"),
+             variable = as.factor(str_remove(variable, "_sel")))]
 
 
-    print(y[, .(mean_R0 = mean(value)), .(variable, selection)])
+    y[, .(mean_R0 = mean(value)), .(variable, selection)] |> print()
 
     # dys <- split(y, by = c("variable", "selection")) |>
     #     map(\(x) density(x$value))
