@@ -42,7 +42,7 @@ apply_links <- function(params) {
 
     # Make explicit copies because data.tables work by reference
     params2 <- copy(params)
-    
+
     # All changes made to priors also happen in params2
     priors  <- params2$priors
 
@@ -70,7 +70,7 @@ apply_links <- function(params) {
         }
         get_LT_pars <- function(x) c(diag(x), t(x)[lower.tri(x)])
         duplicate_GE <- function(x) c(x, str_replace(x, "G", "E"))
-        
+
         pars <- expand.grid("r_G_", sildt, sildt) |>
             apply(1, str_flatten) |>
             matrix(ntraits, ntraits) |>
@@ -128,7 +128,7 @@ apply_links <- function(params) {
         wts <- str_subset(rownames(fe_vals), "weight")
         fe_vals[wts, ] <- fe_vals[wts, get_idxs(sim_link_weight)]
     }
-    
+
     if (weight_fe %notin% c("", "none")) {
         wt <- get_priors("weight")
         if (weight_is_nested) {
