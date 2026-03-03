@@ -2,10 +2,9 @@ library(data.table)
 library(stringr)
 library(ggplot2)
 
-x <- fread("datasets/fb-final/data/scen-1-1-out/trace_combine.tsv")
-
-# Extract just the genetic variances
-x[, str_subset(names(x), "cov_G", negate = TRUE) := NULL]
+# Load and extract just the genetic variances
+x <- fread("datasets/fb-final/data/scen-1-1-out/trace_combine.tsv") |>
+    _[, .SD, .SDcols = patterns("cov_G")
 
 # Get the factor associated with a top 10% / bottom 10%
 factx <- function(x, p = 0.9) exp(2 * qnorm(p, mean = 0, sd = sqrt(x)))
