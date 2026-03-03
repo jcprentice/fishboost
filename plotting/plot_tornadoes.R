@@ -185,7 +185,9 @@ plot_tornadoes <- function(dataset = "sim-test",
 
     label <- params$label %||% scen
     description <- params$description |>
-        str_remove(", (coverage|convergence)")
+        str_split_1(", ") |>
+        str_subset("coverage|convergence", negate = TRUE) |>
+        str_flatten_comma()
 
     title_plt <- ggplot() +
         labs(title = str_glue("{dataset} / {label}: {description}")) +
