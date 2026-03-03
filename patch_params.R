@@ -105,7 +105,6 @@ patch_params <- function(params, trace_row = 0) {
         }
         if (msgs) message(str_glue("- reading trace file '{f}'"))
         trace_file <- fread(f)
-        # trace_file[, str_subset(names(trace_file), "^\\d", negate = TRUE) := NULL]
 
         # Extract list of posterior values from trace file
         patch_vals <- if (patch_type == "mean") {
@@ -200,7 +199,7 @@ patch_params <- function(params, trace_row = 0) {
         out <- make_matrices_from_priors(priors1)
 
         # Copy the used values, discarding the rest (even if non-zero)
-        used <- model_traits[str_chars(use_traits)]
+        used <- str_detect(use_traits, str_1st(model_traits))
 
         params2$Sigma_G[used, used] <- out$Sigma_G[used, used]
         params2$Sigma_E[used, used] <- out$Sigma_E[used, used]
