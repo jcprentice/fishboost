@@ -131,8 +131,8 @@ rebuild_bici_posteriors <- function(dataset = "fb-test",
 
     x <- pfiles |>
         map(fread) |>
-        map(~ .x[, str_subset(names(.SD), "L\\^|N\\^|Prior") := NULL]) |>
-        map(~ set_names(.x, change_names(names(.x))))
+        map(~ .x[, .SD, .SDcols = !patterns("L\\^|N\\^|Prior")]) |>
+        map(~ setnames(.x, change_names))
 
     xs <- map(x, ~ .x[-seq_len(burnprop * .N)]) |> rbindlist()
     xs[, state := .I]
