@@ -49,8 +49,8 @@ dataset <- "fb-final"; nScens <- 8
 tmp <- map(seq_len(nScens), \(i) ind_traces(dataset, i)) |>
     rbindlist(idcol = "scen")
 
-maxes <- tmp[, .SD, .SDcols = str_subset(names(tmp), "scen|max")]
-means <- tmp[, .SD, .SDcols = str_subset(names(tmp), "scen|mean")]
+maxes <- tmp[, .SD, .SDcols = patterns("scen|max")]
+means <- tmp[, .SD, .SDcols = patterns("scen|mean")]
 maxes[, id := seq_len(.N), scen]
 means[, id := seq_len(.N), scen]
 
