@@ -27,6 +27,12 @@ protocol <- rbind(
     data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d5, (Underfitting SITTT to SILDT)"), # 5
     data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d5, (Underfitting SITTT to SILDT)"), # 6
     data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit d2, (Underfitting none to SILDT)"),  # 7
+    #
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d3, Cov uniform (Overfitting SITTT to none)"),   #  8
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d4, Cov uniform (Overfitting SITTT to ST)"),     #  9
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d5, Cov uniform (Underfitting SITTT to SILDT)"), # 10
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d5, Cov uniform (Underfitting SITTT to SILDT)"), # 11
+    data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit d2, Cov uniform (Underfitting none to SILDT)"),  # 12
 
     fill = TRUE
 )
@@ -52,6 +58,9 @@ protocol[, weight_fe := {
 protocol[, patch_name := get_part(d, "Fit ") |>
              str_replace("d(.*)", "scen-\\1-1"), .I]
 
+# Handle prior
+protocol[, cov_prior := fifelse(str_detect(d, "Cov uniform"), "uniform", "jeffreys")]
+
 
 # Common options ----
 source("param_generators/common2.R")
@@ -62,7 +71,7 @@ common <- list(sim_new_data = "etc_sim",
                traits_source = "posterior", # should this be GRM?
                use_weight = "log",
                weight_is_nested = TRUE,
-               cov_prior = "jeffreys",
+               # cov_prior = "jeffreys",
                vars = list(0),
                single_prior = "inverse",
                # expand_priors = 4,
