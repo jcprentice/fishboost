@@ -5,20 +5,27 @@
     library(ggplot2)
 }
 
-plot_km_sire_trial <- function(data_list, trials = 12, plotopts = NULL) {
+plot_km_sire_trial <- function(data_list, plotopts = NULL) {
 
     if (FALSE) {
         i <- 1
-        data <- km_data[[i]]$data
+        data <- copy(km_data[[i]]$data)
         params <- km_data[[i]]$params
         opts <- km_data[[i]]$opts
-        trials <- 12
-        plotopts <- c("drop_small_groups", "drop_donors", "extreme_sires")[1]
+        plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors",
+                      "t1", "t2")[1:2]
     } else {
         data   <- copy(data_list$data)
         params <- data_list$params
         opts   <- data_list$opts
     }
+
+    # Get trials (need as character for indexing donor_sires)
+    # trials <- data[, unique(trial)] |> discard(is.na) |> as.character()
+
+    # Families who have any donors
+    donor_sires <- data[donor == 1, sort(unique(sire)), trial] |>
+        split(by = "trial") |> map("V1")
 
     description <- params$description |>
         str_split_1(", ") |>
@@ -41,10 +48,9 @@ plot_km_sire_trial <- function(data_list, trials = 12, plotopts = NULL) {
                           fb_Tinfs[55:1829])
     }
 
-    # Split by trial
-    if (trials %in% 1:2) {
-        data <- data[trial == trials]
-    }
+    # Filter by trial
+    if ("t1" %in% plotopts) data <- data[trial == 1]
+    if ("t2" %in% plotopts) data <- data[trial == 2]
 
     # If Tsym is missing but Tdeath is not, then let Tsym = Tdeath
     data[, Tsym := fifelse(is.na(Tsym) & !is.na(Tdeath), Tdeath, Tsym)]
@@ -57,7 +63,8 @@ plot_km_sire_trial <- function(data_list, trials = 12, plotopts = NULL) {
     # Make a copy of the data and add in rows representing t=0, sort times, make
     # sure to include NA values last
     data_t0 <- data[!is.na(sire),
-                    .(Tinf = c(0, sort(Tinf, na.last = TRUE)),
+                    .(donor = fifelse(any(donor == 1), 1, 0),
+                      Tinf = c(0, sort(Tinf, na.last = TRUE)),
                       Tsym = c(0, sort(Tsym, na.last = TRUE)),
                       RP   = c(0, sort(RP,   na.last = TRUE)),
                       src = src[c(1, 1:.N)]),
@@ -66,7 +73,7 @@ plot_km_sire_trial <- function(data_list, trials = 12, plotopts = NULL) {
     setorder(data_t0, id, sire, trial)
 
     # Rename src
-    data_t0[, src := str_c(src, trial)]
+    # data_t0[, src := str_c(src, trial)]
 
     # Create a column to group by
     data_t0[, gp := .GRP, .(id, sire, trial)]
@@ -86,8 +93,12 @@ plot_km_sire_trial <- function(data_list, trials = 12, plotopts = NULL) {
        foo <- foo[p > 5]
        foo[is.na(Tsym), Tsym := params$tmax[trial]]
        foo1 <- foo[, .(x = mean(Tsym, na.rm = TRUE)), .(sire, trial)][order(trial, sire, x)]
-       ids <- foo1[, .(sire = sire[c(which.min(x), which.max(x))]), trial]
-       data_t0 <- merge(data_t0, ids, by = c("sire", "trial"))
+       foo1[, donor := fifelse(sire %in% unlist(donor_sires), 1L, 0L)]
+       ids <- foo1[, .(sire = sire[c(which.min(x), which.max(x))],
+                       str = str_c(c("lo", "hi"), "_", fifelse(donor == 1, "d", "r"))),
+                   .(trial, donor)]
+       data_t0 <- merge(data_t0, ids, by = c("sire", "trial", "donor")) |>
+           setcolorder("donor", after = "trial")
     }
 
     # Melt so we can use facet_wrap
@@ -121,7 +132,25 @@ plot_km_sire_trial <- function(data_list, trials = 12, plotopts = NULL) {
         data_t1 <- data_t1[variable != "Tinf"]
     }
 
-    um <- if (opts$use_means) ", mean" else ", samples"
+    if ("extreme_sires" %in% plotopts) {
+        data_t1[, str := str_c(src, "_", str)]
+    } else {
+        data_t1[, str := src]
+    }
+
+    breaks <- c("fb", "fb_lo_d", "fb_hi_d", "fb_lo_r", "fb_hi_r",
+                "sim", "sim_lo_d", "sim_hi_d", "sim_lo_r", "sim_hi_r")
+
+    labels <- c("Data",
+                "Data Donor low", "Data Donor high",
+                "Data Recipient low", "Data Recipient high",
+                "Simulation",
+                "Simulation Donor low", "Simulation Donor high",
+                "Simulation Recipient low", "Simulation Recipient hi")
+
+    #             Regular      Low donor     High donor    Low recip High recip
+    col_vals <- c("blue",      "blue4",      "blue1",      "red4",   "red1",  # Data
+                  "lightblue", "lightblue4", "lightblue1", "pink4",  "pink1") # Simulation
 
     # Plot
     plt <- ggplot(data_t1) +
@@ -129,20 +158,24 @@ plot_km_sire_trial <- function(data_list, trials = 12, plotopts = NULL) {
         geom_line(aes(x = value,
                       y = survival,
                       group = gp,
-                      colour = src),
-                  linewidth = 0.2) +
-        scale_colour_manual(breaks = c("fb1", "fb2", "sim1", "sim2"),
-                            labels = c("Data Trial 1", "Data Trial 2",
-                                       "Simulation Trial 1", "Simulation Trial 2"),
-                            values = c("blue", "red", "lightblue", "pink")) +
+                      colour = str,
+                      linewidth = src)) +
+        scale_colour_manual(breaks = breaks,
+                            labels = labels,
+                            values = col_vals) +
+        scale_linewidth_manual(breaks = c("fb", "sim"),
+                               values = c(0.4, 0.2),
+                               guide = "none") +
         lims(y = 0:1) +
         # coord_cartesian(expand = FALSE) +
-        labs(x = "Time (days)",
+        labs(colour = "Source",
+             #linewidth = "Source",
+             x = "Time (days)",
              y = "Proportion",
              # title = "Kaplan-Meier plot by family (sires)",
-             title = str_glue("KM by family (sires){um}"),
-             subtitle = str_glue("{params$dataset}/{params$label}: {description}"),
-             colour = "Source") +
+             title = str_glue("KM by family (sires){um}",
+                              um = if (opts$use_means) ", mean" else ", samples"),
+             subtitle = str_glue("{params$dataset}/{params$label}: {description}")) +
         facet_grid(cols = vars(variable),
                    rows = vars(trial),
                    scales = "free_x",
