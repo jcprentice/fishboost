@@ -7,13 +7,13 @@
 #  memory limit of 1 Gbyte: -l h_vmem
 #$ -N sim-test-inf
 #$ -pe sharedmem 8
-#$ -t 1-120
+#$ -t 1-240
 #$ -R y
 #$ -P roslin_wilson
 #$ -cwd
 #$ -o out
 #$ -e out
-#$ -l h_rt=100:00:00     # <-- ** make sure this is correct!!! **
+#$ -l h_rt=48:00:00     # <-- ** make sure this is correct!!! **
 
 # Initialise the environment modules
 . /etc/profile.d/modules.sh

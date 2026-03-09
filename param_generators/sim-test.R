@@ -19,17 +19,25 @@ dataset <- "sim-test"
 # Variable parameters ----
 protocol <- rbind(
     # Basic models
-    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit s9"),  # 1
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit s11"), # 2
-    data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit s11"), # 3
-    data.table(d = "FB_12_rpw, GEV ST,    Weight SITTT, Fit s11"), # 4
-    data.table(d = "FB_12_rpw, GEV SILDT, Weight SITTT, Fit s11"), # 5
+    data.table(d = "FB_1_rpw, GEV SIT,   Weight SIT,   Fit s1"), # 1
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit s3"), # 2
+    data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit s3"), # 3
+    data.table(d = "FB_1_rpw, GEV ST,    Weight SITTT, Fit s3"), # 4
+    data.table(d = "FB_1_rpw, GEV SILDT, Weight SITTT, Fit s3"), # 5
+
+    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit s9"),  # 6
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit s11"), # 7
+    data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit s11"), # 8
+    data.table(d = "FB_12_rpw, GEV ST,    Weight SITTT, Fit s11"), # 9
+    data.table(d = "FB_12_rpw, GEV SILDT, Weight SITTT, Fit s11"), # 10
 
     fill = TRUE
 )
 
 # Setup
 protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
+
+
 
 # Handle Genetic & Environmental Variance (GEV)
 protocol[, GEV := get_part(d, "GEV") |> str_to_lower(), .I]
@@ -62,8 +70,8 @@ source("param_generators/common2.R")
 
 common <- list(sim_new_data = "bici",
                model_type = "SEIDR",
-               setup = "fb_12_rpw",
-               use_grm = "posterior",
+               use_grm = "pedigree", # "HG_inv",
+               # setup = "fb_12_rpw",
                inf_model = 4L,
                traits_source = "none",
                use_weight = "log",
