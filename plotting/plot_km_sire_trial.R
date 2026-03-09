@@ -8,7 +8,7 @@
 plot_km_sire_trial <- function(data_list, plotopts = NULL) {
 
     if (FALSE) {
-        i <- 1
+        i <- 9
         data <- copy(km_data[[i]]$data)
         params <- km_data[[i]]$params
         opts <- km_data[[i]]$opts
@@ -53,8 +53,8 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
     if ("t2" %in% plotopts) data <- data[trial == 2]
 
     # If Tsym is missing but Tdeath is not, then let Tsym = Tdeath
-    data[, Tsym := fifelse(is.na(Tsym) & !is.na(Tdeath), Tdeath, Tsym)]
-    data[, RP := Tdeath - Tsym]
+    data[, `:=`(Tsym = fifelse(is.na(Tsym) & !is.na(Tdeath), Tdeath, Tsym),
+                RP   = Tdeath - Tsym)]
 
     if ("drop_donors" %in% plotopts) {
         data <- data[donor == 0]
@@ -68,9 +68,8 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
                       Tsym = c(0, sort(Tsym, na.last = TRUE)),
                       RP   = c(0, sort(RP,   na.last = TRUE)),
                       src = src[c(1, 1:.N)]),
-                    .(id, sire, trial)]
-
-    setorder(data_t0, id, sire, trial)
+                    .(id, sire, trial)] |>
+        setorder(id, sire, trial)
 
     # Rename src
     # data_t0[, src := str_c(src, trial)]
@@ -91,7 +90,7 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
        # Filter out any sires with fewer than 5 non-NA values
        foo[, p := .N - sum(is.na(Tsym)), .(sire, trial)]
        foo <- foo[p > 5]
-       foo[is.na(Tsym), Tsym := params$tmax[trial]]
+       foo[is.na(Tsym), Tsym := tmax[trial]]
        foo1 <- foo[, .(x = mean(Tsym, na.rm = TRUE)), .(sire, trial)][order(trial, sire, x)]
        foo1[, donor := fifelse(sire %in% unlist(donor_sires), 1L, 0L)]
        ids <- foo1[, .(sire = sire[c(which.min(x), which.max(x))],
@@ -138,19 +137,19 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
         data_t1[, str := src]
     }
 
-    breaks <- c("fb", "fb_lo_d", "fb_hi_d", "fb_lo_r", "fb_hi_r",
+    breaks <- c("fb",  "fb_lo_d",  "fb_hi_d",  "fb_lo_r",  "fb_hi_r",
                 "sim", "sim_lo_d", "sim_hi_d", "sim_lo_r", "sim_hi_r")
 
     labels <- c("Data",
-                "Data Donor low", "Data Donor high",
-                "Data Recipient low", "Data Recipient high",
+                "Data Seeder low",  "Data Seeder high",
+                "Data Contact low", "Data Contact high",
                 "Simulation",
-                "Simulation Donor low", "Simulation Donor high",
-                "Simulation Recipient low", "Simulation Recipient hi")
+                "Simulation Seeder low",  "Simulation Seeder high",
+                "Simulation Contact low", "Simulation Contact high")
 
-    #             Regular      Low donor     High donor    Low recip High recip
-    col_vals <- c("blue",      "blue4",      "blue1",      "red4",   "red1",  # Data
-                  "lightblue", "lightblue4", "lightblue1", "pink4",  "pink1") # Simulation
+    #             Regular    Low donor  High donor Low recip  High recip
+    col_vals <- c("#1F78B4", "#FF7F00", "#1F78B4", "#E31A1C", "#33A02C",  # Data
+                  "#A6CEE3", "#FDBF6F", "#A6CEE3", "#FB9A99", "#B2DF8A") # Simulation
 
     # Plot
     plt <- ggplot(data_t1) +
@@ -164,7 +163,7 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
                             labels = labels,
                             values = col_vals) +
         scale_linewidth_manual(breaks = c("fb", "sim"),
-                               values = c(0.4, 0.2),
+                               values = c(0.5, 0.2),
                                guide = "none") +
         lims(y = 0:1) +
         # coord_cartesian(expand = FALSE) +
@@ -173,8 +172,8 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
              x = "Time (days)",
              y = "Proportion",
              # title = "Kaplan-Meier plot by family (sires)",
-             title = str_glue("KM by family (sires){um}",
-                              um = if (opts$use_means) ", mean" else ", samples"),
+             title = str_glue("KM by family (sires), {um}",
+                              um = if (opts$use_means) "mean" else "samples"),
              subtitle = str_glue("{params$dataset}/{params$label}: {description}")) +
         facet_grid(cols = vars(variable),
                    rows = vars(trial),
@@ -183,7 +182,8 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
                        variable = c(Tinf = "Proportion of family uninfected vs time",
                                     Tsym = "Proportion of family with no symptoms vs time",
                                     RP   = "Proportion of family surviving vs time"),
-                       trial = c("1" = "Trial 1", "2" = "Trial 2"))) +
+                       trial = c("1" = "Trial 1",
+                                 "2" = "Trial 2"))) +
         theme_bw() +
         theme(panel.background = element_blank(),
               panel.grid.major = element_blank(),
