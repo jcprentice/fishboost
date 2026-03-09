@@ -81,8 +81,6 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
     maxvals <- c(104, 160)
     data_t1[, value := fifelse(value >= maxvals[trial], maxvals[trial], value)]
 
-    um <- if (opts$use_means) ", mean" else ", samples"
-
     # Plot
     plt <- ggplot(data_t1) +
         # geom_step
@@ -101,7 +99,8 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
         labs(x = "Time (days)",
              y = "Proportion",
              # title = "Kaplan-Meier plot by seeders / contact fish",
-             title = str_glue("KM by seeder / contact{um}"),
+             title = str_glue("KM by seeder / contact, {um}",
+                              um = if (opts$use_means) "mean" else "samples"),
              subtitle = str_glue("{params$dataset}/{params$label}: {description}"),
              colour = "Source") +
         theme_bw() +
@@ -116,7 +115,8 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
                        variable = c(Tinf = "Proportion of family uninfected vs time",
                                     Tsym = "Proportion of family with no symptoms vs time",
                                     RP   = "Proportion of family surviving vs time"),
-                       trial = c("1" = "Trial 1", "2" = "Trial 2")))
+                       trial = c("1" = "Trial 1",
+                                 "2" = "Trial 2")))
     plt
 
     # gfx_dir <- str_glue("{dataset}/gfx")
