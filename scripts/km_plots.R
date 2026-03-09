@@ -134,11 +134,11 @@ km_plots <- function(dataset = "fb-test",
 }
 
 if (FALSE) {
-    dataset <- "sim-base-inf"
+    dataset <- "sim-test-inf"
     scens <- 0
     simulate_new_data <- "no"
     opts <- list(n_plots = 50, use_means = FALSE)
-    plotopts <- c("drop_small_groups", "extreme_sires")[2]
+    plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors")[1]
 
     km_plots(dataset = dataset,
              scens = scens,
@@ -152,7 +152,7 @@ if (FALSE) {
     scens <- 0
     simulate_new_data <- "no"
     opts <- list(n_plots = 50, use_means = FALSE)
-    plotopts <- c("drop_small_groups", "drop_donors", "extreme_sires")[c(1, 3)]
+    plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors")[1:2]
 
     km_plots(dataset, scens, simulate_new_data, opts, plotopts)
 }
