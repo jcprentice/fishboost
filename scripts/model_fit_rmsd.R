@@ -45,7 +45,9 @@ model_fit_rmsd <- function(dataset = "fb-test", scens = 0, alt = "", drop_outlie
 
     # Extract RMS deviance for each id, sire, trial / Tsym, RP
     fit <- map(km_data, \(x) {
-        # i <- 1; x <- km_data[[i]]
+        if (FALSE) {
+            i <- 1; x <- km_data[[i]]
+        }
         x1 <- x$data[, .(id, sire, trial, Tsym, RP, src)] |>
             setorder(id, sire, trial)
 
