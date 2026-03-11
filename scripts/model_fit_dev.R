@@ -15,9 +15,9 @@
 #     hcl(h = hues, l = 65, c = 100)[1:n]
 # }
 
-model_fit_rmsd <- function(dataset = "fb-test", scens = 0, alt = "", drop_outliers = FALSE) {
+model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "", drop_outliers = FALSE) {
     if (FALSE) {
-        dataset <- "fb-test"; scens <- 0; drop_outliers = FALSE; alt = ""
+        dataset <- "fb-test";      scens <- 0; drop_outliers = FALSE; alt = ""
         dataset <- "sim-base-inf"; scens <- 0; drop_outliers = FALSE; alt = ""
     }
 
@@ -51,6 +51,10 @@ model_fit_rmsd <- function(dataset = "fb-test", scens = 0, alt = "", drop_outlie
         if (FALSE) {
             i <- 1; x <- km_data[[i]]
         }
+
+        # If Tsym is missing, try setting = to Tdeath
+        x$data[is.na(Tsym), Tsym := Tdeath]
+
         x1 <- x$data[, .(id, sire, trial, Tsym, RP, src)] |>
             setorder(id, sire, trial)
 
@@ -169,34 +173,35 @@ model_fit_rmsd <- function(dataset = "fb-test", scens = 0, alt = "", drop_outlie
         message("- mkdir ", mf_dir)
         dir.create(mf_dir)
     }
-    mf_base <- str_glue("{mf_dir}/{dataset}-model_fit-rmv_dev")
 
-    plt_str <- str_glue("{mf_base}{outliers}{alt}.png")
-    ggsave(plt_str, fit_plt, width = 8, height = 5)
+    # ggsave(str_glue("{mf_dir}/{dataset}-model_fit-rms_dev{outliers}{alt}.png"),
+    #        fit_plt_rms, width = 8, height = 5)
+    ggsave(str_glue("{mf_dir}/{dataset}-model_fit-mad_dev{outliers}{alt}.png"),
+           fit_plt_mad, width = 8, height = 5)
 
-    families_plt <- ggplot(fit, aes(x = sire, y = value, colour = variable)) +
-        stat_summary(geom = "errorbar", fun.data = mean_se,
-                     position = position_dodge(0.1),
-                     width = 0.2) +
-        stat_summary(geom = "point", fun = mean,
-                     position = position_dodge(0.1)) +
-        # geom_point(show.legend = FALSE,
-        #            position = position_dodge(0.25)) +
-        scale_colour_discrete("Values",
-                            breaks = c("all", "Tsym", "RP"),
-                            # values = gg_colour_hue(3),
-                            labels = c("Combined", "Tsym", "RP")) +
-        labs(x = "Family",
-             y = "RMS of deviation",
-             title = "RMS of deviation between data and model output, per family",
-             subtitle = str_glue("Dataset: '{dataset}'")) +
-        facet_wrap(~ scen, ncol = 4) +
-        theme_bw() +
-        theme(legend.position = "bottom")
-    families_plt
-
-    plt_str <- str_glue("{mf_base}_by_family{outliers}{alt}.png")
-    ggsave(plt_str, families_plt, width = 12, height = 8)
+    # families_plt <- ggplot(fit, aes(x = sire, y = value, colour = variable)) +
+    #     stat_summary(geom = "errorbar", fun.data = mean_se,
+    #                  position = position_dodge(0.1),
+    #                  width = 0.2) +
+    #     stat_summary(geom = "point", fun = mean,
+    #                  position = position_dodge(0.1)) +
+    #     # geom_point(show.legend = FALSE,
+    #     #            position = position_dodge(0.25)) +
+    #     scale_colour_discrete("Values",
+    #                         breaks = c("all", "Tsym", "RP"),
+    #                         # values = gg_colour_hue(3),
+    #                         labels = c("Combined", "Tsym", "RP")) +
+    #     labs(x = "Family",
+    #          y = "RMS of deviation",
+    #          title = "RMS of deviation between data and model output, per family",
+    #          subtitle = str_glue("Dataset: '{dataset}'")) +
+    #     facet_wrap(~ scen, ncol = 4) +
+    #     theme_bw() +
+    #     theme(legend.position = "bottom")
+    # families_plt
+    #
+    # plt_str <- str_glue("{mf_base}_by_family{outliers}{alt}.png")
+    # ggsave(plt_str, families_plt, width = 12, height = 8)
 
     list(fit = fit_wide,
          fit_plt = fit_plt,
@@ -204,16 +209,16 @@ model_fit_rmsd <- function(dataset = "fb-test", scens = 0, alt = "", drop_outlie
 }
 
 if (FALSE) {
-    out_fb_final <- model_fit_rmsd("fb-final")
-    out_fb_final <- model_fit_rmsd("fb-final2")
-    # out_fb_final_drop <- model_fit_rmsd("fb-final", drop_outliers = TRUE)
-    out_fb_lp <- model_fit_rmsd("fb-lp")
-    out_fb_lp2 <- model_fit_rmsd("fb-lp2")
-    # out_fb_lp_drop <- model_fit_rmsd("fb-lp", drop_outliers = TRUE)
-    out_fb_simple <- model_fit_rmsd("fb-simple")
-    out_fb_donors <- model_fit_rmsd("fb-donors")
-    # out_fb_donors_drop <- model_fit_rmsd("fb-donors", drop_outliers = TRUE)
-    out_sbi <- model_fit_rmsd("sim-base-inf", 0, "", FALSE)
-    out_fb_test <- model_fit_rmsd("fb-test", 0, "")
-    out_fb_qtest <- model_fit_rmsd("fb-qtest", 0, "")
+    out_fb_final <- model_fit_dev("fb-final")
+    out_fb_final <- model_fit_dev("fb-final2")
+    # out_fb_final_drop <- model_fit_dev("fb-final", drop_outliers = TRUE)
+    out_fb_lp <- model_fit_dev("fb-lp")
+    out_fb_lp2 <- model_fit_dev("fb-lp2")
+    # out_fb_lp_drop <- model_fit_dev("fb-lp", drop_outliers = TRUE)
+    out_fb_simple <- model_fit_dev("fb-simple")
+    out_fb_donors <- model_fit_dev("fb-donors")
+    # out_fb_donors_drop <- model_fit_dev("fb-donors", drop_outliers = TRUE)
+    out_sbi <- model_fit_dev("sim-base-inf", 0, "", FALSE)
+    out_fb_test <- model_fit_dev("fb-test", 0, "")
+    out_fb_qtest <- model_fit_dev("fb-qtest", 0, "")
 }

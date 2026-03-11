@@ -12,7 +12,7 @@
     source("plotting/plot_correlations.R")
     source("scripts/tornadoes.R")
     source("scripts/km_plots.R")
-    source("scripts/model_fit_rmsd.R")
+    source("scripts/model_fit_dev.R")
 }
 
 run_all_tests <- function(dataset = "fb-qtest",
@@ -62,7 +62,7 @@ run_all_tests <- function(dataset = "fb-qtest",
 
         km_plots(dataset, scens,
                  simulate_new_data = "bici", opts, plotopts)
-        fit <- model_fit_rmsd(dataset)
+        fit <- model_fit_dev(dataset)
     } else {
         fit <- NULL
     }
