@@ -71,6 +71,8 @@ km_plots <- function(dataset = "fb-test",
             map(scens, ~ generate_km_data_bici(dataset, .x, opts))
         }
 
+        km_data <- setNames(km_data, str_c("s", scens))
+
         # Save the data we just created
         md <- str_glue("datasets/{dataset}/meta")
         if (!dir.exists(md)) {

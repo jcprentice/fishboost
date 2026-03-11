@@ -8,12 +8,12 @@
 plot_km_sire_trial <- function(data_list, plotopts = NULL) {
 
     if (FALSE) {
-        i <- 9
+        i <- 1
         data <- copy(km_data[[i]]$data)
         params <- km_data[[i]]$params
         opts <- km_data[[i]]$opts
         plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors",
-                      "t1", "t2")[1:2]
+                      "t1", "t2")[1]
     } else {
         data   <- copy(data_list$data)
         params <- data_list$params
