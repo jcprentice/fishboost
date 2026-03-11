@@ -25,30 +25,26 @@ protocol <- rbind(
     data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d3, (Overfitting SITTT to none)"),   # 3
     data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d4, (Overfitting SITTT to ST)"),     # 4
     data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d5, (Underfitting SITTT to SILDT)"), # 5
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d5, (Underfitting SITTT to SILDT)"), # 6
-    data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit d2, (Underfitting none to SILDT)"),  # 7
+    data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit d2, (Underfitting none to SILDT)"),  # 6
     #
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d3, Cov uniform (Overfitting SITTT to none)"),   #  8
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d4, Cov uniform (Overfitting SITTT to ST)"),     #  9
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d5, Cov uniform (Underfitting SITTT to SILDT)"), # 10
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d5, Cov uniform (Underfitting SITTT to SILDT)"), # 11
-    data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit d2, Cov uniform (Underfitting none to SILDT)"),  # 12
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d3, Cov uniform (Overfitting SITTT to none)"),   #  7
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d4, Cov uniform (Overfitting SITTT to ST)"),     #  8
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d5, Cov uniform (Underfitting SITTT to SILDT)"), #  9
+    data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit d2, Cov uniform (Underfitting none to SILDT)"),  # 10
 
     # Basic models
-    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit d6"), # 13
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d7"), # 14
+    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit d6"), # 11
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d7"), # 12
     # Misspecified models
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d8,  (Overfitting SITTT to none)"),   # 15
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d9,  (Overfitting SITTT to ST)"),     # 16
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d10, (Underfitting SITTT to SILDT)"), # 17
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d10, (Underfitting SITTT to SILDT)"), # 18
-    data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit d7,  (Underfitting none to SILDT)"),  # 19
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d8,  (Overfitting SITTT to none)"),   # 13
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d9,  (Overfitting SITTT to ST)"),     # 14
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d10, (Underfitting SITTT to SILDT)"), # 15
+    data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit d7,  (Underfitting none to SILDT)"),  # 16
     #
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d8,  Cov uniform (Overfitting SITTT to none)"),   # 20
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d9,  Cov uniform (Overfitting SITTT to ST)"),     # 21
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d10, Cov uniform (Underfitting SITTT to SILDT)"), # 22
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d10, Cov uniform (Underfitting SITTT to SILDT)"), # 23
-    data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit d7,  Cov uniform (Underfitting none to SILDT)"),  # 24
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d8,  Cov uniform (Overfitting SITTT to none)"),   # 17
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d9,  Cov uniform (Overfitting SITTT to ST)"),     # 18
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d10, Cov uniform (Underfitting SITTT to SILDT)"), # 19
+    data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit d7,  Cov uniform (Underfitting none to SILDT)"),  # 20
 
     fill = TRUE
 )
@@ -97,7 +93,7 @@ common <- list(sim_new_data = "etc_sim",
                bici_cmd = "inf",
                fix_donors = "no_Tsym_survivors",
                censor = 0.8,
-               nsample = 2e5,
+               nsample = 1e6,
                nchains = 8,
                sample_states = 100,
                time_step_bici = 1,
