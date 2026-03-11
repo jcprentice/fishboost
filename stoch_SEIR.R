@@ -67,7 +67,7 @@ stoch_seir <- function(X0, times, pars) {
     
     # Meta variables
     x <- unlist(X0)
-    t <- times[[1]]
+    t <- first(times)
     t_end <- last(times)
     
     X[1L, compartments] <- x
