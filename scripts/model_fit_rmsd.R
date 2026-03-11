@@ -1,6 +1,8 @@
 {
     library(data.table)
-    library(tidyverse)
+    library(stringr)
+    library(purrr)
+    # library(tidyverse)
     library(ggplot2)
     library(ggtext)
     library(cowplot)
@@ -29,7 +31,8 @@ model_fit_rmsd <- function(dataset = "fb-test", scens = 0, alt = "", drop_outlie
     km_data <- readRDS(str_glue("datasets/{dataset}/meta/km_data_ps.rds"))
 
     if (all(scens != 0)) {
-        # km_data <- km_data[scens]
+        scens1 <- km_data |> names() |> str_remove("s") |> as.integer() |> intersect(scens)
+        km_data <- km_data[scens1]
     }
 
     params <- map(km_data, "params")
@@ -90,14 +93,15 @@ model_fit_rmsd <- function(dataset = "fb-test", scens = 0, alt = "", drop_outlie
 
         x4 <- x3[, dev := survival - survival[[.N]], time][id != id[[.N]]]
 
-        x4[, .(all  = sqrt(mean(dev^2)),
-               Tsym = sqrt(mean(dev[variable == "Tsym"]^2)),
-               RP   = sqrt(mean(dev[variable == "RP"]^2))),
-               # mad_all   = mean(abs(dev)),
-               # mad_Tsym  = mean(abs(dev[variable == "Tsym"])),
-               # mad_RP    = mean(abs(dev[variable == "RP"]))),
+        x4[, .(mad_all  = mean(abs(dev)),
+               mad_Tsym = mean(abs(dev[variable == "Tsym"])),
+               mad_RP   = mean(abs(dev[variable == "RP"])),
+               rms_all  = sqrt(mean(dev^2)),
+               rms_Tsym = sqrt(mean(dev[variable == "Tsym"]^2)),
+               rms_RP   = sqrt(mean(dev[variable == "RP"]^2))),
            .(id, sire, trial)] |>
-            melt(measure.vars = c("all", "Tsym", "RP"))
+            melt(measure.vars = measure(type, variable,
+                                        pattern = "(mad|rms)_(.*)"))
     }) |>
         rbindlist(idcol = "scen")
 
@@ -109,12 +113,12 @@ model_fit_rmsd <- function(dataset = "fb-test", scens = 0, alt = "", drop_outlie
     #            trial = format(trial))]
     setorder(fit, scen, id, sire, trial, variable)
 
-    fit_wide <- fit[, .(value = mean(value)), .(scen, variable)] |>
+    fit_wide <- fit[type == "mad", .(value = mean(value)), .(scen, variable)] |>
         dcast(scen ~ variable)
     fit_wide
 
 
-    fit_plt <- ggplot(fit,
+    fit_plt_rms <- ggplot(fit[type == "rms"],
                       aes(x = scen, y = value, colour = variable)) +
         stat_summary(geom = "errorbar", fun.data = mean_se,
                      position = position_dodge(0.1),
@@ -135,7 +139,30 @@ model_fit_rmsd <- function(dataset = "fb-test", scens = 0, alt = "", drop_outlie
         theme_classic() +
         theme(plot.title = element_text(size = 16),
               plot.background = element_rect(fill = "white"))
-    fit_plt
+    fit_plt_rms
+
+    fit_plt_mad <- ggplot(fit[type == "mad"],
+                      aes(x = scen, y = value, colour = variable)) +
+        stat_summary(geom = "errorbar", fun.data = mean_se,
+                     position = position_dodge(0.1),
+                     width = 0.2) +
+        stat_summary(geom = "point", fun = mean,
+                     position = position_dodge(0.1)) +
+        # geom_point(show.legend = FALSE,
+        #            position = position_dodge(0.25)) +
+        scale_y_continuous(limits = ~ range(.x, 0)) +
+        scale_colour_discrete("Measurements",
+                            breaks = c("all", "Tsym", "RP"),
+                            # values = gg_colour_hue(3),
+                            labels = c("Combined", "Tsym", "RP")) +
+        labs(x = "Scenario",
+             y = "Mean area",
+             title = "Mean Absolute Deviation between data and model output",
+             subtitle = str_glue("Dataset: '{dataset}'")) +
+        theme_classic() +
+        theme(plot.title = element_text(size = 16),
+              plot.background = element_rect(fill = "white"))
+    fit_plt_mad
 
     mf_dir <- str_glue("datasets/{dataset}/gfx/model_fit")
     if (!dir.exists(mf_dir)) {
