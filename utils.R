@@ -91,17 +91,26 @@ in_range <- function(x, a, b, inc = "ab") {
 
 # Message with parameters
 msg_pars <- function(x) {
-    x[!str_starts(parameter, "Group effect"),
-      .(pars = rename_pars(parameter),
-        mean = signif(mean, 3L),
-        hdi95_min = signif(hdi95min, 2L),
-        hdi95_max = signif(hdi95max, 2L),
-        ESS,
-        GR = round(GR, 2))] |>
+    if ("convergence" %notin% names(x)) {
+        x[, convergence := ""]
+    }
+
+    x[!str_starts(parameter, "Group effect|G_"),
+            .(pars = rename_bici_pars(parameter),
+              median = signif(median, 3L),
+              hdi95_min = signif(hdi95min, 2L),
+              hdi95_max = signif(hdi95max, 2L),
+              ESS,
+              GR = round(GR, 2),
+              convergence)] |>
         as.data.frame() |>
         capture.output() |>
         str_flatten("\n") |>
         message()
+
+    message(str_glue("min ESS = {ess}, max GR = {gr}",
+                     ess = x$ESS |> min(),
+                     gr  = x$GR  |> max() |> round(2)))
 }
 
 # Recentering weights
