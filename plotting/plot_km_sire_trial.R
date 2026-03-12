@@ -91,9 +91,10 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
        foo[, p := .N - sum(is.na(Tsym)), .(sire, trial)]
        foo <- foo[p > 5]
        foo[is.na(Tsym), Tsym := tmax[trial]]
-       foo1 <- foo[, .(x = mean(Tsym, na.rm = TRUE)), .(sire, trial)][order(trial, sire, x)]
+       foo1 <- foo[, .(mu = mean(Tsym, na.rm = TRUE)), .(sire, trial)] |>
+           setorder(trial, sire, mu)
        foo1[, donor := fifelse(sire %in% unlist(donor_sires), 1L, 0L)]
-       ids <- foo1[, .(sire = sire[c(which.min(x), which.max(x))],
+       ids <- foo1[, .(sire = sire[c(which.min(mu), which.max(mu))],
                        str = str_c(c("lo", "hi"), "_", fifelse(donor == 1, "d", "r"))),
                    .(trial, donor)]
        data_t0 <- merge(data_t0, ids, by = c("sire", "trial", "donor")) |>
@@ -148,7 +149,7 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
                 "Simulation Contact low", "Simulation Contact high")
 
     #             Regular    Low donor  High donor Low recip  High recip
-    col_vals <- c("#1F78B4", "#FF7F00", "#1F78B4", "#E31A1C", "#33A02C",  # Data
+    col_vals <- c("#1F78B4", "#FF7F00", "#1F78B4", "#E31A1C", "#33A02C", # Data
                   "#A6CEE3", "#FDBF6F", "#A6CEE3", "#FB9A99", "#B2DF8A") # Simulation
 
     # Plot
