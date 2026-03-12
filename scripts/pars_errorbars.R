@@ -12,7 +12,7 @@
 pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "") {
     if (FALSE) {
         dataset <- "fb-test"; scens <- 0; st_str = ""; alt <- ""
-        dataset <- "sim-test-inf"; scens <- 7; st_str <- "Validating BICI - No. of events"; alt <- ""
+        dataset <- "sim-test-inf"; scens <- 0; st_str <- "Validating BICI"; alt <- ""
     }
 
     {
@@ -100,8 +100,11 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
 
         priors2 <- priors[parameter == par, .(scen = as.integer(scen), true_val)]
 
+        # Colour = type vs colour = convergence
+
         ggplot(x1[parameter == par],
-                    aes(x = scen, y = median, colour = type)) +
+                    # aes(x = scen, y = median, colour = type)) +
+                    aes(x = scen, y = median, colour = convergence)) +
             # geom_boxplot() +
             geom_errorbar(aes(ymin = hdi95min, ymax = hdi95max),
                           position = position_dodge2(),
@@ -117,8 +120,10 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
                        size = 1) +
             geom_hline(yintercept = y_rng[[2]],
                        colour = "grey", linewidth = 0.5, linetype = "dashed") +
-            scale_colour_manual(breaks = c("uniform", "inverse", "constant"),
-                                values = c("red", "red", "grey40")) +
+            # scale_colour_manual(breaks = c("uniform", "inverse", "constant"),
+            #                     values = c("red", "red", "grey40")) +
+            scale_colour_manual(breaks = c("", "*", "**", "***"),
+                                values = c("blue3", "green4", "yellow3", "red2")) +
             scale_x_discrete(drop = FALSE) +
             # scale_y_discrete(limits = ~ range(.x, y_rng)) +
             expand_limits(y = 0) +
@@ -219,4 +224,6 @@ if (FALSE) {
     pars_errorbars("sim-base-inf", 1:12, "Validating BICI - Misspecifying model", "misspecify")
     # pars_errorbars("sim-base-inf", c(1:2, 13:20), "Validating BICI - convergence", "conv")
     pars_errorbars("sim-test-inf", 0, "Validating BICI on FB data")
+    pars_errorbars("sim-test-inf", 1:10, "Validating BICI on FB data", "tr1")
+    pars_errorbars("sim-test-inf", 11:20, "Validating BICI on FB data", "tr12")
 }
