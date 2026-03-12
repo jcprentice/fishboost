@@ -46,8 +46,8 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
 
     popn[, sdp := levels(sdp)[as.integer(sdp)]]
 
-    x1 <- popn[, c(sire = first(sire),
-                   sdp = first(sdp),
+    x1 <- popn[, c(sire = sire[[1]],
+                   sdp = sdp[[1]],
                    map(.SD, quantile, 0.025) |> setNames(str_c(traits, "__lo")),
                    map(.SD, quantile, 0.5)   |> setNames(str_c(traits, "__med")),
                    map(.SD, quantile, 0.975) |> setNames(str_c(traits, "__hi"))),
