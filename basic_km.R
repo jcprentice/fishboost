@@ -36,10 +36,11 @@ basic_km <- function(popn, params) {
     x[, RP := Tdeath - Tsym]
     x[is.na(Tsym), Tsym := Tdeath]
 
+    sv_curve <- function(x) c(0, sort(x, na.last = TRUE))
 
     x1 <- x[, .(donor = fifelse(any(donor == 1), "donor", "recip"),
-                Tsym = c(0, sort(Tsym, na.last = TRUE)),
-                RP   = c(0, sort(RP,   na.last = TRUE))),
+                Tsym  = sv_curve(Tsym),
+                RP    = sv_curve(RP)),
             .(sire, trial)]
     x1[, grp := .GRP, .(sire, trial)]
     x1[, survival := seq(1, 0, length.out = .N), grp]
