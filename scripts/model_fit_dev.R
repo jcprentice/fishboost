@@ -15,16 +15,21 @@
 #     hcl(h = hues, l = 65, c = 100)[1:n]
 # }
 
-model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "", drop_outliers = FALSE) {
+model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
+                          opts = c("drop_outliers", "extreme_sires")[0]) {
     if (FALSE) {
-        dataset <- "fb-test";      scens <- 0; drop_outliers = FALSE; alt = ""
-        dataset <- "sim-base-inf"; scens <- 0; drop_outliers = FALSE; alt = ""
+        dataset <- "fb-test"
+        dataset <- "sim-base-inf"
+        scens <- 0; opts = "extreme_sires"; alt = ""
     }
 
-    message(str_glue("Calculating RMS model fit for '{dataset}'"))
+    message(str_glue("Calculating model fit deviation for '{dataset}'"))
 
-    if (drop_outliers) message("- Dropping outliers")
-    outliers <- if (drop_outliers) "-drop" else ""
+    if ("drop_outliers" %in% opts) message("- Dropping outliers")
+    suffix <- str_c("",
+                    if ("drop_outliers" %in% opts) "drop",
+                    if ("extreme_sires" %in% opts) "es",
+                    sep = "-")
 
     if (str_1st(alt) %notin% c("", "-")) alt <- str_c("-", alt)
 
@@ -52,13 +57,10 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "", drop_outlier
             i <- 1; x <- km_data[[i]]
         }
 
-        # If Tsym is missing, try setting = to Tdeath
-        x$data[is.na(Tsym), Tsym := Tdeath]
-
-        x1 <- x$data[, .(id, sire, trial, Tsym, RP, src)] |>
+        x1 <- x$data[, .(id, sire, trial, donor, Tsym, RP, src)] |>
             setorder(id, sire, trial)
 
-        if (drop_outliers) {
+        if ("drop_outliers" %in% opts) {
             drop_ids <- if (km_data[[1]]$data[, max(sire)] == 28) {
                 c(3, 8, 22, 25)
             } else {
@@ -67,35 +69,61 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "", drop_outlier
             x1 <- x1[sire %notin% drop_ids]
         }
 
-        x1[, `:=`(Tsym = as.integer(fifelse(Tsym > tmax[trial], tmax[trial], ceiling(Tsym), tmax[trial])),
-                  RP   = as.integer(fifelse(RP   > tmax[trial], tmax[trial], ceiling(RP),   tmax[trial])))]
+        if ("extreme_sires" %in% opts) {
+            foo <- x1[id == last(id), .(sire, trial, donor, Tsym)]
+            # Filter out any sires with fewer than 5 non-NA values
+            foo[, p := .N - sum(is.na(Tsym)), .(sire, trial)]
+            foo <- foo[p > 5]
+            foo[is.na(Tsym), Tsym := tmax[trial]]
+            foo1 <- foo[, .(mu = mean(Tsym, na.rm = TRUE)), .(sire, trial)] |>
+                setorder(trial, sire, mu)
+            donor_sires <- foo[donor == 1, sort(unique(sire)), trial] |>
+                split(by = "trial") |> map("V1")
+            foo1[, donor := fifelse(sire %in% unlist(donor_sires), 1L, 0L)]
+            ids <- foo1[, .(sire = sire[c(which.min(mu), which.max(mu))],
+                            str = str_c(c("lo", "hi"), "_", fifelse(donor == 1, "d", "r"))),
+                        .(trial, donor)]
+            x1 <- merge(x1, ids, by = c("sire", "trial", "donor")) |>
+                setcolorder("donor", after = "trial")
+        }
+
+        # This only affects simulations
+        x1[, `:=`(Tsym = ceiling(Tsym), RP = ceiling(RP))]
+
+        # x1[, `:=`(Tsym = as.integer(fifelse(Tsym > tmax[trial], tmax[trial], ceiling(Tsym), tmax[trial])),
+        #           RP   = as.integer(fifelse(RP   > tmax[trial], tmax[trial], ceiling(RP),   tmax[trial])))]
 
         # x1[, `:=`(Tsym = fifelse(Tsym > tmax[trial], tmax[trial], Tsym, tmax[trial]),
         #           RP   = fifelse(RP   > tmax[trial], tmax[trial], RP,   tmax[trial]))]
 
-        x2 <- x1[, .(Tsym = c(0, sort(Tsym, na.last = TRUE)),
-                     RP = c(0, sort(RP, na.last = TRUE)),
+        sv_curve <- function(x) c(0, sort(x, na.last = TRUE))
+
+        x2 <- x1[, .(Tsym = sv_curve(Tsym),
+                     RP   = sv_curve(RP),
                      survival = seq(1, 0, length = .N + 1),
-                     src = src[[1]]),
+                     src = first(src)),
                  .(id, sire, trial)] |>
             melt(measure.vars = c("Tsym", "RP"))
 
+
         x3 <- x2[, {
-            # message(str_glue("id == {id[[1]]} & sire == {sire[[1]]} & trial == {trial[[1]]} & variable == \"{variable[[1]]}\""))
             times <- seq(0, tmax[trial])
-            if (last(value) < tmax[trial]) {
+            lv <- last(value)
+            if (is.na(lv) || lv < tmax[trial]) {
                 value <- c(value, tmax[trial])
-                survival <- c(survival, last(survival))
+                survival <- c(survival, survival[[.N]])
             }
             f <- approxfun(value, survival,
                            method = "constant",
                            ties = list("ordered", max))
             s1 <- f(times)
             s1[is.na(s1)] <- 0
-            list(time = times, survival = s1, src = src[[1]])
-        }, .(id, sire, trial, variable)]
 
-        x4 <- x3[, dev := survival - survival[[.N]], time][id != id[[.N]]]
+            list(time = times, survival = s1, src = first(src))
+        },
+        .(id, sire, trial, variable)]
+
+        x4 <- x3[, dev := survival - last(survival), time][id != last(id)]
 
         x4[, .(mad_all  = mean(abs(dev)),
                mad_Tsym = mean(abs(dev[variable == "Tsym"])),
@@ -174,9 +202,9 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "", drop_outlier
         dir.create(mf_dir)
     }
 
-    # ggsave(str_glue("{mf_dir}/{dataset}-model_fit-rms_dev{outliers}{alt}.png"),
-    #        fit_plt_rms, width = 8, height = 5)
-    ggsave(str_glue("{mf_dir}/{dataset}-model_fit-mad_dev{outliers}{alt}.png"),
+    ggsave(str_glue("{mf_dir}/{dataset}-model_fit-rms_dev{suffix}{alt}.png"),
+           fit_plt_rms, width = 8, height = 5)
+    ggsave(str_glue("{mf_dir}/{dataset}-model_fit-mad_dev{suffix}{alt}.png"),
            fit_plt_mad, width = 8, height = 5)
 
     # families_plt <- ggplot(fit, aes(x = sire, y = value, colour = variable)) +
@@ -204,21 +232,21 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "", drop_outlier
     # ggsave(plt_str, families_plt, width = 12, height = 8)
 
     list(fit = fit_wide,
-         fit_plt = fit_plt,
-         families_plt = families_plt)
+         fit_plt_mad = fit_plt_mad,
+         fit_plt_rms = fit_plt_rms)
 }
 
 if (FALSE) {
     out_fb_final <- model_fit_dev("fb-final")
     out_fb_final <- model_fit_dev("fb-final2")
-    # out_fb_final_drop <- model_fit_dev("fb-final", drop_outliers = TRUE)
+    # out_fb_final_drop <- model_fit_dev("fb-final")
     out_fb_lp <- model_fit_dev("fb-lp")
     out_fb_lp2 <- model_fit_dev("fb-lp2")
-    # out_fb_lp_drop <- model_fit_dev("fb-lp", drop_outliers = TRUE)
+    # out_fb_lp_drop <- model_fit_dev("fb-lp")
     out_fb_simple <- model_fit_dev("fb-simple")
     out_fb_donors <- model_fit_dev("fb-donors")
-    # out_fb_donors_drop <- model_fit_dev("fb-donors", drop_outliers = TRUE)
-    out_sbi <- model_fit_dev("sim-base-inf", 0, "", FALSE)
+    # out_fb_donors_drop <- model_fit_dev("fb-donors")
+    out_sbi <- model_fit_dev("sim-base-inf", 0, "")
     out_fb_test <- model_fit_dev("fb-test", 0, "")
     out_fb_qtest <- model_fit_dev("fb-qtest", 0, "")
 }
