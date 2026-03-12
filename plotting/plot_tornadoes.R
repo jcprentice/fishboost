@@ -130,7 +130,7 @@ plot_tornadoes <- function(dataset = "sim-test",
 
     Xtab <- data.table(parameter = parameters, xmin = NA_real_, xmax = NA_real_,
                        true_val = NA_real_, est_val = NA_real_,
-                       hdi1 = NA_real_, hdi2 = NA_real_, id = last(X$id) + 1L)
+                       hdi1 = NA_real_, hdi2 = NA_real_, id = X[.N, id + 1L])
 
     iwalk(parameters, \(par, i) {
         # par2 <- str_remove_all(par, "_Tr.*")
