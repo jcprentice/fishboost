@@ -24,20 +24,20 @@ protocol <- rbind(
     data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit s3"), # 3
     data.table(d = "FB_1_rpw, GEV ST,    Weight SITTT, Fit s3"), # 4
     data.table(d = "FB_1_rpw, GEV SILDT, Weight SITTT, Fit s3"), # 5
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit s3, Cors 0"), # 6
 
-    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit s9"),  # 6
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit s11"), # 7
-    data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit s11"), # 8
-    data.table(d = "FB_12_rpw, GEV ST,    Weight SITTT, Fit s11"), # 9
-    data.table(d = "FB_12_rpw, GEV SILDT, Weight SITTT, Fit s11"), # 10
+    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit s9"),  # 7
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit s11"), # 8
+    data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit s11"), # 9
+    data.table(d = "FB_12_rpw, GEV ST,    Weight SITTT, Fit s11"), # 10
+    data.table(d = "FB_12_rpw, GEV SILDT, Weight SITTT, Fit s11"), # 11
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit s11, Cors 0"), # 12
 
     fill = TRUE
 )
 
 # Setup
 protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
-
-
 
 # Handle Genetic & Environmental Variance (GEV)
 protocol[, GEV := get_part(d, "GEV") |> str_to_lower(), .I]
@@ -57,11 +57,17 @@ protocol[, traits_source := "posterior"]
 
 protocol[, weight_fe := get_part(d, "Weight") |> str_to_lower(), .I]
 
-protocol[str_detect(d, "GEV SILDT"), `:=`(vars = 0.5,
-                                          cors = 0.2)]
+# Vars and Cors
+protocol[, `:=`(vars = list(list(default = 0)),
+                cors = list(list(default = 0)))]
+protocol[str_detect(d, "Cors 0"), `:=`(cors = list(list(0)),
+                                       skip_patches = "cor")]
+protocol[str_detect(d, "GEV SILDT"), `:=`(vars = list(list(default = 0.5)),
+                                          cors = list(list(default = 0.2)))]
 
 # Skip patches when we want 0 variance
-protocol[str_detect(d, "GEV ST"), skip_patches := "cov_G_ii,cov_E_ii"]
+protocol[str_detect(d, "GEV ST"), skip_patches := "_[GE]_.?i.?"]
+protocol[str_detect(d, "GEV none"), skip_patches := "cov,cor"]
 
 
 

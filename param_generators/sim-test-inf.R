@@ -18,33 +18,33 @@ dataset <- "sim-test-inf"
 
 # Variable parameters ----
 protocol <- rbind(
-    # Basic models
+    # Basic models with Jeffreys priors
     data.table(d = "FB_1_rpw, GEV SIT,   Weight SIT,   Fit d1"), # 1
     data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d2"), # 2
-    # Misspecified models
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d3, (Overfitting SITTT to none)"),   # 3
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d4, (Overfitting SITTT to ST)"),     # 4
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d5, (Underfitting SITTT to SILDT)"), # 5
-    data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit d2, (Underfitting none to SILDT)"),  # 6
-    #
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d3, Cov uniform (Overfitting SITTT to none)"),   #  7
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d4, Cov uniform (Overfitting SITTT to ST)"),     #  8
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d5, Cov uniform (Underfitting SITTT to SILDT)"), #  9
-    data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit d2, Cov uniform (Underfitting none to SILDT)"),  # 10
+    # Misspecified models with Jeffreys priors
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d3, (Overfitting SITTT to none)"),    # 3
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d4, (Overfitting SITTT to ST)"),      # 4
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d5, (Underfitting SITTT to SILDT)"),  # 5
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d6, (Underfitting SITTT to Cors=0)"), # 6
+    data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit d2, (Underfitting none to SIT)"),     # 7
+    # Misspecified with uniform priors
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d3, Cov uniform (Overfitting SITTT to none)"),   # 8
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d4, Cov uniform (Overfitting SITTT to ST)"),     # 9
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d5, Cov uniform (Underfitting SITTT to SILDT)"), # 10
 
     # Basic models
-    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit d6"), # 11
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d7"), # 12
-    # Misspecified models
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d8,  (Overfitting SITTT to none)"),   # 13
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d9,  (Overfitting SITTT to ST)"),     # 14
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d10, (Underfitting SITTT to SILDT)"), # 15
-    data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit d7,  (Underfitting none to SILDT)"),  # 16
-    #
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d8,  Cov uniform (Overfitting SITTT to none)"),   # 17
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d9,  Cov uniform (Overfitting SITTT to ST)"),     # 18
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d10, Cov uniform (Underfitting SITTT to SILDT)"), # 19
-    data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit d7,  Cov uniform (Underfitting none to SILDT)"),  # 20
+    # data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit d7"), # 11
+    # data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d8"), # 12
+    # # Misspecified models
+    # data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d9,  (Overfitting SITTT to none)"),   # 13
+    # data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d10, (Overfitting SITTT to ST)"),     # 14
+    # data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d11, (Underfitting SITTT to SILDT)"), # 15
+    # data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit d8,  (Underfitting none to SILDT)"),  # 16
+    # #
+    # data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d9,  Cov uniform (Overfitting SITTT to none)"),   # 17
+    # data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d10, Cov uniform (Overfitting SITTT to ST)"),     # 18
+    # data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d11, Cov uniform (Underfitting SITTT to SILDT)"), # 19
+    # data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit d8,  Cov uniform (Underfitting none to SILDT)"),  # 20
 
     fill = TRUE
 )
@@ -71,7 +71,10 @@ protocol[, patch_name := get_part(d, "Fit ") |>
              str_replace("d(.*)", "scen-\\1-1"), .I]
 
 # Handle prior
-protocol[, cov_prior := fifelse(str_detect(d, "Cov uniform"), "uniform", "jeffreys")]
+protocol[, cov_prior := fifelse(str_detect(d, "Cov uniform"),
+                                list(list(type = "uniform-lkj", vals = c(0, 4, 1.2))),
+                                list(list(type = "default", vals = c())))]
+# protocol[, cov_prior := fifelse(str_detect(d, "Cov uniform"), "uniform-lkj", "default")]
 
 
 # Common options ----
@@ -83,8 +86,7 @@ common <- list(sim_new_data = "etc_sim",
                traits_source = "posterior", # should this be GRM?
                use_weight = "log",
                weight_is_nested = TRUE,
-               # cov_prior = "jeffreys",
-               vars = list(0),
+               cov_prior = list(type = "uniform", vals = c()),
                single_prior = "inverse",
                # expand_priors = 4,
                group_effect = 0.05,
@@ -93,7 +95,7 @@ common <- list(sim_new_data = "etc_sim",
                bici_cmd = "inf",
                fix_donors = "no_Tsym_survivors",
                censor = 0.8,
-               nsample = 1e6,
+               nsample = 1e5,
                nchains = 8,
                sample_states = 100,
                time_step_bici = 1,
