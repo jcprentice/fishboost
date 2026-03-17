@@ -1,34 +1,3 @@
-# Find the no. of individuals capable of infecting susceptibles at some point
-# (so includes those currently exposed and not yet infectious).
-get_seir_res_infectives <- function(X) {
-    X[, sum(status %in% c("E", "I"))]
-}
-
-
-# A Susceptible individual's future disease trajectory is fixed at the point of
-# exposure.
-generate_seir_res_path <- function(epi_time, X, id, params) {
-    with(params, {
-        Tinf   <- epi_time
-        Tsym   <- Tinf + rgamma(1L, LP_shape, scale = LP_scale * X$lat[[id]])
-        Tdeath <- Tsym + rgamma(1L, DP_shape, scale = RP_scale * X$tol[[id]])
-
-        # return
-        list("E", Tinf, Tsym, Tdeath)
-    })
-}
-
-
-# Find the time of the next non-infection event, and the id of the individual
-next_seir_res_ni_event <- function(X, epi_time) {
-    as.list(X[, .(.I,
-                  Tsym2   = fifelse(Tsym > epi_time, Tsym, Inf),
-                  Tdeath2 = fifelse(Tdeath > epi_time, Tdeath, Inf))]
-            [, .(I, Tmin = pmin(Tsym2, Tdeath2))]
-            [, list(t_next_event = min(Tmin, na.rm = TRUE), id_next_event = which.min(Tmin))])
-}
-
-
 # Main model ----
 model_SEIR_res <- function(popn, params) {
     message("Simulating an SEIR_res epidemic ...")
@@ -137,3 +106,34 @@ model_SEIR_res <- function(popn, params) {
 
     popn2
 }
+
+# Find the no. of individuals capable of infecting susceptibles at some point
+# (so includes those currently exposed and not yet infectious).
+get_seir_res_infectives <- function(X) {
+    X[, sum(status %in% c("E", "I"))]
+}
+
+
+# A Susceptible individual's future disease trajectory is fixed at the point of
+# exposure.
+generate_seir_res_path <- function(epi_time, X, id, params) {
+    with(params, {
+        Tinf   <- epi_time
+        Tsym   <- Tinf + rgamma(1L, LP_shape, scale = LP_scale * X$lat[[id]])
+        Tdeath <- Tsym + rgamma(1L, DP_shape, scale = RP_scale * X$tol[[id]])
+
+        # return
+        list("E", Tinf, Tsym, Tdeath)
+    })
+}
+
+
+# Find the time of the next non-infection event, and the id of the individual
+next_seir_res_ni_event <- function(X, epi_time) {
+    as.list(X[, .(.I,
+                  Tsym2   = fifelse(Tsym > epi_time, Tsym, Inf),
+                  Tdeath2 = fifelse(Tdeath > epi_time, Tdeath, Inf))]
+            [, .(I, Tmin = pmin(Tsym2, Tdeath2))]
+            [, list(t_next_event = min(Tmin, na.rm = TRUE), id_next_event = which.min(Tmin))])
+}
+

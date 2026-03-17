@@ -1,39 +1,11 @@
-# Find the no. of individuals capable of infecting susceptibles at some point
-# (so includes those currently exposed and not yet infectious).
-get_sis_infectives <- function(X) {
-    X[, sum(status == "I")]
-}
-
-
-# A Susceptible individual's future disease trajectory is fixed at the point of
-# exposure.
-generate_sis_path <- function(epi_time, X, id, params) {
-    with(params, {
-        Tinf   <- epi_time
-        Tdeath <- Tinf + rgamma(1L, RP_shape, scale = RP_scale * X$tol[[id]])
-
-        list("I", Tinf, Tdeath)
-    })
-}
-
-
-# Find the time of the next non-infection event, and the id of the individual
-next_sis_ni_event <- function(X, epi_time) {
-    as.list(X[, .(.I,
-                  Tmin = fifelse(Tdeath > epi_time, Tdeath, Inf))]
-            [, list(t_next_event = min(Tmin, na.rm = TRUE), id_next_event = which.min(Tmin))])
-}
-
-
 # Main model ----
 model_SIS <- function(popn, params) {
     message("Simulating an SIS epidemic ...")
 
+    # copy necessary parameters
     r_beta <- params$r_beta
     tmax   <- params$tmax
     DEBUG  <- params$DEBUG
-
-    X <- copy(popn)
 
     # initialise population ----
     X <- init_popn(popn, params)
@@ -129,3 +101,30 @@ model_SIS <- function(popn, params) {
 
     return(popn2)
 }
+
+# Find the no. of individuals capable of infecting susceptibles at some point
+# (so includes those currently exposed and not yet infectious).
+get_sis_infectives <- function(X) {
+    X[, sum(status == "I")]
+}
+
+
+# A Susceptible individual's future disease trajectory is fixed at the point of
+# exposure.
+generate_sis_path <- function(epi_time, X, id, params) {
+    with(params, {
+        Tinf   <- epi_time
+        Tdeath <- Tinf + rgamma(1L, RP_shape, scale = RP_scale * X$tol[[id]])
+
+        list("I", Tinf, Tdeath)
+    })
+}
+
+
+# Find the time of the next non-infection event, and the id of the individual
+next_sis_ni_event <- function(X, epi_time) {
+    as.list(X[, .(.I,
+                  Tmin = fifelse(Tdeath > epi_time, Tdeath, Inf))]
+            [, list(t_next_event = min(Tmin, na.rm = TRUE), id_next_event = which.min(Tmin))])
+}
+

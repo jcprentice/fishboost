@@ -1,70 +1,11 @@
-# Find the no. of individuals capable of infecting susceptibles at some point
-# (so includes those currently exposed and not yet infectious).
-get_infectives <- function(X, params) {
-    X[, sum(status %in% params$infectious_subset)]
-}
-
-
-# A Susceptible individual's future disease trajectory is fixed at the point of
-# exposure.
-generate_path <- function(epi_time, X, id, params) {
-    with(params, {
-        Tinf <- epi_time
-
-        if (model_type %in% c("SEIDR", "SEIDR_res")) {
-            Tinc   <- Tinf + rgamma(1L, LP_shape, scale = LP_scale * X$lat[[id]])
-            Tsym   <- Tinc + rgamma(1L, DP_shape, scale = DP_scale * X$det[[id]])
-            Tdeath <- Tsym + rgamma(1L, RP_shape, scale = RP_scale * X$tol[[id]])
-            list("E", Tinf, Tinc, Tsym, Tdeath)
-        } else if (model_type %in% c("SEIR", "SEIR_res")) {
-            Tsym   <- Tinf + rgamma(1L, LP_shape, scale = LP_scale * X$lat[[id]])
-            Tdeath <- Tsym + rgamma(1L, RP_shape, scale = RP_scale * X$tol[[id]])
-            list("E", Tinf, Tsym, Tdeath)
-        } else if (model_type %in% c("SIDR", "SIDR_res")) {
-            Tsym   <- Tinf + rgamma(1L, DP_shape, scale = DP_scale * X$det[[id]])
-            Tdeath <- Tsym + rgamma(1L, RP_shape, scale = RP_scale * X$tol[[id]])
-            list("I", Tinf, Tsym, Tdeath)
-        } else if (model_type %in% c("SIS", "SIR", "SIS_res", "SIR_res")) {
-            Tdeath <- Tinf + rgamma(1L, RP_shape, scale = RP_scale * X$tol[[id]])
-            list("I", Tinf, Tdeath)
-        }
-    })
-}
-
-
-# Find the time of the next non-infection event, and the id of the individual
-next_ni_event <- function(X, epi_time) {
-    as.list(X[, .(.I,
-                  Tsym2   = fifelse(Tsym   > epi_time, Tsym,   Inf),
-                  Tdeath2 = fifelse(Tdeath > epi_time, Tdeath, Inf))]
-            [, .(I, Tmin = pmin(Tsym2, Tdeath2))]
-            [, list(t_next_event = min(Tmin, na.rm = TRUE), id_next_event = which.min(Tmin))])
-}
-
-
-get_infection_rates <- function(X, dt, params) {
-    r_beta <- params$r_beta
-
-    X[, group_inf := r_beta * GE * mean(fifelse(status == "I", inf, 0.0)), by = group]
-
-    if (params$reservoir) {
-        X[, group_res := group_res * exp(- params$r_lambda * dt) +
-                100 * GE * mean(fifelse(status == "I", inf, 0.0)) * r_beta * dt,
-            by = group]
-    }
-}
-
-
 # Main model ----
 model_generic <- function(popn, params) {
+    message("Simulating an ", model_type, " epidemic ...")
 
     # copy necessary parameters
     model_type <- params$model_type
     r_beta     <- params$r_beta
     DEBUG      <- params$DEBUG
-
-
-    message("Simulating an ", model_type, " epidemic ...")
 
     # initialise populations ----
     X <- init_popn(popn, params)
@@ -170,3 +111,60 @@ model_generic <- function(popn, params) {
 
     return(popn2)
 }
+
+# Find the no. of individuals capable of infecting susceptibles at some point
+# (so includes those currently exposed and not yet infectious).
+get_infectives <- function(X, params) {
+    X[, sum(status %in% params$infectious_subset)]
+}
+
+
+# A Susceptible individual's future disease trajectory is fixed at the point of
+# exposure.
+generate_path <- function(epi_time, X, id, params) {
+    with(params, {
+        Tinf <- epi_time
+
+        if (model_type %in% c("SEIDR", "SEIDR_res")) {
+            Tinc   <- Tinf + rgamma(1L, LP_shape, scale = LP_scale * X$lat[[id]])
+            Tsym   <- Tinc + rgamma(1L, DP_shape, scale = DP_scale * X$det[[id]])
+            Tdeath <- Tsym + rgamma(1L, RP_shape, scale = RP_scale * X$tol[[id]])
+            list("E", Tinf, Tinc, Tsym, Tdeath)
+        } else if (model_type %in% c("SEIR", "SEIR_res")) {
+            Tsym   <- Tinf + rgamma(1L, LP_shape, scale = LP_scale * X$lat[[id]])
+            Tdeath <- Tsym + rgamma(1L, RP_shape, scale = RP_scale * X$tol[[id]])
+            list("E", Tinf, Tsym, Tdeath)
+        } else if (model_type %in% c("SIDR", "SIDR_res")) {
+            Tsym   <- Tinf + rgamma(1L, DP_shape, scale = DP_scale * X$det[[id]])
+            Tdeath <- Tsym + rgamma(1L, RP_shape, scale = RP_scale * X$tol[[id]])
+            list("I", Tinf, Tsym, Tdeath)
+        } else if (model_type %in% c("SIS", "SIR", "SIS_res", "SIR_res")) {
+            Tdeath <- Tinf + rgamma(1L, RP_shape, scale = RP_scale * X$tol[[id]])
+            list("I", Tinf, Tdeath)
+        }
+    })
+}
+
+
+# Find the time of the next non-infection event, and the id of the individual
+next_ni_event <- function(X, epi_time) {
+    as.list(X[, .(.I,
+                  Tsym2   = fifelse(Tsym   > epi_time, Tsym,   Inf),
+                  Tdeath2 = fifelse(Tdeath > epi_time, Tdeath, Inf))]
+            [, .(I, Tmin = pmin(Tsym2, Tdeath2))]
+            [, list(t_next_event = min(Tmin, na.rm = TRUE), id_next_event = which.min(Tmin))])
+}
+
+
+get_infection_rates <- function(X, dt, params) {
+    r_beta <- params$r_beta
+
+    X[, group_inf := r_beta * GE * mean(fifelse(status == "I", inf, 0.0)), by = group]
+
+    if (params$reservoir) {
+        X[, group_res := group_res * exp(- params$r_lambda * dt) +
+                100 * GE * mean(fifelse(status == "I", inf, 0.0)) * r_beta * dt,
+            by = group]
+    }
+}
+
