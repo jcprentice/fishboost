@@ -22,11 +22,11 @@ run_from_script <- length(cmd_args) > 0
 
 {
     params <- make_parameters(
-        model_type = "SIDR", # "SIR", "SEIR", "SIDR", or "SEIDR"
+        model_type = "SIR", # "SIR", "SEIR", "SIDR", or "SEIDR"
         dataset = "testing",
         name = "scen-1-1",
         setup = "fb_12_rpw", # chris, small, fb_12, fb_1, fb_2, single
-        use_traits = "sit", # "all", "none", "sit", "si" etc.
+        use_traits = "all", # "all", "none", "sit", "si" etc.
         vars = 0.5, # c(0.5, 1.5, 0, 0, 0.5)
         cors = 0.2, # c(0.2, ..., 0.2)
         group_layout = "fishboost", # "random", "family", "striped", "fishboost"
