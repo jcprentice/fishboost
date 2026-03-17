@@ -107,7 +107,7 @@ generate_bici_script <- function(popn, params) {
             list(algorithm = "MFA")
         }
 
-        x$inference <- c(x$inference, alg)
+        x$inference <- c(x$inference, alg, compress = "never")
 
 
         ## Simulation ----
@@ -121,7 +121,8 @@ generate_bici_script <- function(popn, params) {
                              end = tmax10,
                              number = nreps,
                              timestep = timestep,
-                             seed = seed)
+                             seed = seed,
+                             compress = "never")
 
         ## Post-Sim ----
 
@@ -131,7 +132,8 @@ generate_bici_script <- function(popn, params) {
                           start = 0,
                           end = tmax10,
                           number = nreps,
-                          seed = seed)
+                          seed = seed,
+                          compress = "never")
 
 
         # Model details ----
@@ -693,19 +695,22 @@ generate_bici_script <- function(popn, params) {
         lp_types <- with(priors[str_ends(parameter, "period"), .(parameter, type)],
                          setNames(type, parameter)) |> as.list()
 
-        if (use_traits %notin% c("", "none")) {
-            val1 <- params$priors[str_detect(parameter, "cov_"), min(val1)] |>
-                max(if (cov_prior == "uniform") 0.01 else 0.5)
+        if (use_traits %notin% c("", "none", NA)) {
+           if (!exists("cov_prior")) {
+                cov_prior <- list(type = "default", vals = c())
+            }
 
-            val2 <- params$priors[str_detect(parameter, "cov_"), max(val2)]
-
-            if (!exists("cov_prior")) cov_prior <- "uniform"
+            cov_prior_str <- str_glue("covar-{x}({y})",
+                                      x = cov_prior$type,
+                                      y = cov_prior$vals |>
+                                          map_chr(format, scientific = FALSE) |>
+                                          str_flatten(","))
 
             x$prior_cov_G <- list(
                 node = "param",
                 name = "\\Omega^gen_z,z'",
                 value = "value-cov-gen.tsv",
-                prior = str_glue("mvn-{cov_prior}({val1},{val2})")
+                prior = cov_prior_str
             )
 
             # Possibly already defined, maybe not
@@ -724,7 +729,7 @@ generate_bici_script <- function(popn, params) {
                 node = "param",
                 name = "\\Omega^env_z,z'",
                 value = "value-cov-env.tsv",
-                prior = str_glue("mvn-{cov_prior}({val1},{val2})")
+                prior = cov_prior_str
             )
 
             XE <- Sigma_E[traits_to_fit, traits_to_fit] |> round(5)
