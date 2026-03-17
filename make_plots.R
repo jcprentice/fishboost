@@ -3,9 +3,14 @@ library(ggplot2)
 library(viridisLite)
 
 plot_model <- function(popn, params) {
-    pm <- get(str_c("plot_", str_remove(params$model_type, "_res")))
+    pm <- get(str_glue("plot_{model}",
+                       model = str_remove(params$model_type, "_res")))
+    plt <- pm(popn, params)
 
-    pm(popn, params)
+    if (params$show_plots) {
+        print(plt)
+    }
+    plt
 }
 
 
@@ -22,7 +27,7 @@ plot_SxxDR <- function(popn, params) {
     if (params$sim_new_data == "no") {
         events <- events[time != max(time)]
     }
-    
+
     plt <- ggplot(events, aes(x = time)) +
         geom_line(aes(y = S / N, colour = "Susceptible?"), linewidth = 1.2) +
         geom_line(aes(y = D / N, colour = "Detectable"),   linewidth = 0.6) +
@@ -91,7 +96,7 @@ plot_SIDR <- function(popn, params) {
         theme_bw() +
         theme(legend.position = "bottom")
 
-    print(plt)
+    plt
 }
 
 
@@ -116,7 +121,7 @@ plot_SEIR <- function(popn, params) {
         theme_bw() +
         theme(legend.position = "bottom")
 
-    print(plt)
+    plt
 }
 
 
@@ -141,7 +146,7 @@ plot_SIR <- function(popn, params) {
         theme_bw() +
         theme(legend.position = "bottom")
 
-    print(plt)
+    plt
 }
 
 
@@ -165,5 +170,5 @@ plot_SIS <- function(popn, params) {
         theme_bw() +
         theme(legend.position = "bottom")
 
-    print(plt)
+    plt
 }
