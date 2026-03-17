@@ -1,93 +1,61 @@
 # Construct cov_mat and Sigma matrices using var and cor components
 make_matrices <- function(model_traits = c("sus", "inf", "lat", "det", "tol"),
-                          use_traits = "sildt",
-                          vars = 1, cors = 0.2) {
+                          vars = 1,
+                          cors = 0.2) {
     if (FALSE) {
-        model_traits <- params$model_traits
-        vars <- params$vars
-        cors <- params$cors
+        model_traits <- c("sus", "inf", "lat", "det", "tol")
+        vars <- params$vars; cors <- params$cors
+        vars <- 1; cors <- 0.2
+        vars <- list(sus = 1, inf = 1.5, tol = 0.5, default = 0.2)
+        cors <- list(si = -0.3, st = -0.3, it =  0.3, default = 0.15)
     }
-    all_traits <-  c("sus", "inf", "lat", "det", "tol")
-    sildt <- c("s", "i", "l", "d", "t")
-    idxs <- match(model_traits, all_traits)
+
+    traits1 <- names(model_traits)
+    N <- length(model_traits)
 
     vars <- unlist(vars)
     cors <- unlist(cors)
 
-    if (FALSE) {
-        vars <- c(sus = 1, inf = 1.5, tol = 0.5, default = 0.1)
-        cors <- c(si = -0.3, st = -0.3, it =  0.3, default = 0.1)
-    }
-    if (FALSE) {
-        vars <- 1; cors <- 0.2
-    }
+    Sigma <- matrix(0, N, N, dimnames = list(model_traits, model_traits))
 
-    # Get the matrix idxs to assign cors to
-    mat <- matrix(1:25, 5, 5, dimnames = list(all_traits, all_traits))
-    mat_idxs <- mat[idxs, idxs][lower.tri(mat[idxs, idxs])]
-    cor_names <- expand.grid(sildt, sildt) |> rev() |> apply(1, str_flatten) |> _[mat_idxs]
-
-    mat_names <- expand.grid(sildt, sildt) |> apply(1, str_flatten) |> matrix(5, 5)
-    # mat_names[lower.tri(mat_names)] <- t(mat_names)[lower.tri(mat_names)]
-
-    # Create Sigma and the correlation matrix with `cors`
-    D <- cor_mat <- matrix(0, 5L, 5L, dimnames = list(all_traits, all_traits))
-
+    # First set all values to whatever the default cors is
     if (is.null(names(cors))) {
-        # If we just receive an unnamed vector of length 1 or N(N-1)/2
-        if (length(cors) %notin% c(1, length(mat_idxs))) {
-            capture_message(cors)
-            stop(str_glue("length(cors) = {lc}, expecting 1, {lmi}, or named vector",
-                          lc = length(cors),
-                          lmi = length(mat_idxs)))
-        }
-        cor_mat[mat_idxs] <- cors
-    } else {
-        # We have a named vector, possibly with a default
-        if ("default" %in% names(cors)) {
-            cor_mat[upper.tri(cor_mat)] <- cors[["default"]]
-        }
-        iwalk(cors, \(x, i) {cor_mat[mat_names == i] <<- x})
+        Sigma[] <- cors[[1]]
+    } else if ("default" %in% names(cors)) {
+        Sigma[] <- cors[["default"]]
     }
-    cor_mat <- cor_mat + t(cor_mat)
-    diag(cor_mat) <- 1
 
-    # Sigma starts off as cor_mat, but overwrite with the variances
-    Sigma <- cor_mat
-    diag(Sigma) <- 0
+    # Next set the default vars along the diagonal
     if (is.null(names(vars))) {
-        # If we receive an unnamed vector of length 1 or N
-        if (length(vars) %notin% c(1, length(idxs))) {
-            capture_message(vars)
-            stop(str_glue("length(vars) = {lv}, expecting 1, {li}, or named vector",
-                          lv = length(vars), li = length(idxs)))
-        }
-        diag(Sigma)[idxs] <- vars
-    } else {
-        # We have a named vector, possibly with a default
-        if ("default" %in% names(vars)) {
-            diag(Sigma) <- vars[["default"]]
-        }
-        walk(setdiff(names(vars), "default"), ~ {Sigma[.x, .x] <<- vars[[.x]]})
+        diag(Sigma) <- vars[[1]]
+    } else if ("default" %in% names(vars)) {
+        diag(Sigma) <- vars[["default"]]
     }
 
-    # D is the std dev, or the sqrt of the diag of Sigma
+    # Now fill in named values for vars
+    for (i in model_traits) {
+        if (i %in% names(vars)) {
+            Sigma[i, i] <- vars[[i]]
+        }
+    }
+
+    # Finally fill in named values for cors
+    mat <- expand.grid(traits1, traits1) |> rev() |> apply(1, str_flatten) |> matrix(N, N)
+    ij <- matrix(1:N^2, N, N)[lower.tri(mat)]
+    cor_names <- mat[ij]
+
+    for (i in ij) {
+        if (mat[i] %in% names(cors)) {
+            Sigma[i] <- cors[[mat[i]]]
+        }
+    }
+
+    # Convert Sigma into a covariance matrix
+    D <- 0 * Sigma
     diag(D) <- sqrt(diag(Sigma))
-
-    # Use `vars` to make the covariance matrix
-    cov_mat <- D %*% cor_mat %*% D
-
-    # Remove unused traits
-    idxs0 <- str_which(use_traits, str_1st(all_traits), negate = TRUE) |>
-        union(which(diag(Sigma) == 0))
-    Sigma[idxs0, ] <- 0
-    Sigma[, idxs0] <- 0
-    cov_mat[idxs0, ] <- 0
-    cov_mat[, idxs0] <- 0
-
-    # Discard rows and columns not in model_traits
-    Sigma <- Sigma[idxs, idxs]
-    cov_mat <- cov_mat[idxs, idxs]
+    R <- Sigma
+    diag(R) <- 1
+    cov_mat <- D %*% R %*% D
 
     list(Sigma = Sigma, cov = cov_mat, cor_names = cor_names)
 }
@@ -97,21 +65,11 @@ make_matrices <- function(model_traits = c("sus", "inf", "lat", "det", "tol"),
 make_matrices_from_priors <- function(priors) {
     all_traits <- c("sus", "inf", "lat", "det", "tol")
 
-    priors$cov_G_ss <- priors$cov_G_ss %||% 0
-    priors$cov_G_ii <- priors$cov_G_ii %||% 0
-    priors$cov_G_ll <- priors$cov_G_ll %||% 0
-    priors$cov_G_dd <- priors$cov_G_dd %||% 0
-    priors$cov_G_tt <- priors$cov_G_tt %||% 0
-    priors$r_G_si <- priors$r_G_si %||% 0
-    priors$r_G_sl <- priors$r_G_sl %||% 0
-    priors$r_G_sd <- priors$r_G_sd %||% 0
-    priors$r_G_st <- priors$r_G_st %||% 0
-    priors$r_G_il <- priors$r_G_il %||% 0
-    priors$r_G_id <- priors$r_G_id %||% 0
-    priors$r_G_it <- priors$r_G_it %||% 0
-    priors$r_G_ld <- priors$r_G_ld %||% 0
-    priors$r_G_lt <- priors$r_G_lt %||% 0
-    priors$r_G_dt <- priors$r_G_dt %||% 0
+    xx <- c("ss", "ii", "ll", "dd", "tt")
+    xy <- c("si", "sl", "sd", "st", "il", "id", "it", "ld", "lt", "dt")
+    covs <- c(str_c("cov_G_", xx), str_c("r_G_", xy),
+              str_c("cov_E_", xx), str_c("r_E_", xy))
+    walk(covs, \(i) priors[[i]] <<- priors[[i]] %||% 0)
 
     Sigma_G <- with(priors,
                     matrix(c(cov_G_ss, r_G_si,   r_G_sl,   r_G_sd,   r_G_st,
@@ -131,17 +89,17 @@ make_matrices_from_priors <- function(priors) {
                            5, 5,
                            dimnames = list(all_traits, all_traits)))
 
-    D <- diag(sqrt(diag(Sigma_G)))
+    D <- 0 * Sigma_G
+    diag(D) <- sqrt(diag(Sigma_G))
     R <- Sigma_G
     diag(R) <- 1
     cov_G <- D %*% R %*% D
-    dimnames(cov_G) <- list(all_traits, all_traits)
 
-    D <- diag(sqrt(diag(Sigma_E)))
+    D <- 0 * Sigma_E
+    diag(D) <- sqrt(diag(Sigma_E))
     R <- Sigma_E
     diag(R) <- 1
     cov_E <- D %*% R %*% D
-    dimnames(cov_E) <- list(all_traits, all_traits)
 
     list(Sigma_G = Sigma_G,
          Sigma_E = Sigma_E,
