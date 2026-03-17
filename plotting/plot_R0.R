@@ -161,10 +161,10 @@ plot_R0 <- function(dataset = "fb-final",
     plt
 }
 
-plt1 = plot_R0(dataset = "fb-final",
-               scen = 1,
-               plot_boxplot = FALSE)
-print(plt1)
+# plt1 = plot_R0(dataset = "fb-final",
+#                scen = 1,
+#                plot_boxplot = FALSE)
+# print(plt1)
 # plt2 = plot_R0(dataset = "fb-fes3", scen = 4)
 # plt3 = plot_R0(dataset = "fb-fes3", scen = 12)
 
