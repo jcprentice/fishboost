@@ -1,6 +1,7 @@
 # Script for generating data and/or running inference in BICI on a server
 
 ## Load libraries and source files ----
+
 suppressPackageStartupMessages({
     source("libraries.R")
     source("source_files.R")
@@ -19,8 +20,8 @@ if (run_from_script) {
     pname <- cmd_args[[1]]
     row_no <- as.integer(cmd_args[[2]])
 } else {
-    pname <- "sim-test"
-    row_no <- 1L
+    pname <- "sim-test-inf"
+    row_no <- 80L
 }
 
 {
@@ -33,20 +34,7 @@ if (run_from_script) {
     # protocol$patch_dataset <- "fb-test"
 
     # Create params with protocol
-    params <- with(protocol, make_parameters(
-        model_type = model_type,
-        dataset = dataset,
-        name = name,
-        use_traits = use_traits,
-        vars = vars,
-        cors = cors,
-        setup = setup,
-        group_effect = group_effect,
-        trial_fe = trial_fe,
-        donor_fe = donor_fe,
-        txd_fe = txd_fe,
-        weight_fe = weight_fe
-    ))
+    params <- make_parameters(protocol = protocol)
 
     message("Copying parameters ...")
 
@@ -58,16 +46,15 @@ if (run_from_script) {
     walk(names(protocol), \(param) {
         value <- protocol[[param]]
 
-        # Skip NAs completely
-        if (is.na(value)) return()
-
         message(str_glue("- {param} = {x}{value}{x}",
-                         x = if (is.character(value)) "'" else ""))
+                         x = if (is.character(value)) '"' else "",
+                         v = if (is.list(value)) capture.output(dput(value[[1]])) else value))
 
         # Skip any values already provided to make_pars()
-        if (param %in% c("model_type", "dataset", "name", "setup",
-                         "use_traits", "vars", "cors", "group_effect",
-                         "trial_fe", "donor_fe", "txd_fe", "weight_fe")) {
+        if (param %in% c("model_type", "dataset", "name", "setup", "group_effect",
+                         "use_traits", "vars", "cors",
+                         "trial_fe", "donor_fe", "txd_fe", "weight_fe") ||
+            is.na(value)) {
             return()
         }
 
@@ -145,6 +132,9 @@ if (run_from_script) {
             params$cov_E <<- params$cov_E * (1 - value)
             # FIXME: do something about Sigma_X
 
+        } else if (param == "cov_prior") {
+            params$cov_prior <<- value[[1]]
+
         } else {
             # Any other parameter that doesn't require special treatment
             params[param] <<- value
@@ -187,6 +177,7 @@ if (run_from_script) {
     params$seed <- if (tmp_seed >= 0) tmp_seed else protocol$replicate
     set.seed(params$seed)
 
+    params_bak <- params
     params2 <- params |>
         patch_params() |>  # Patch params with posteriors from dataset / scenario
         # set_ge_opts() |>   # Genetic covariance options
