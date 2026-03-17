@@ -1,7 +1,9 @@
 {
     library(data.table)
     library(stringr)
+    library(purrr)
 
+    source("make_matrices.R")
     source("widen_priors.R")
     source("utils.R")
 }
@@ -52,11 +54,12 @@
 #' @returns A list containing all the parameters
 
 make_parameters <- function(
-        model_type = "SEIDR", name = "scen-1-1", dataset = "testing",
+        model_type = "SEIDR", dataset = "testing", name = "scen-1-1",
         scenario = 1L, replicate = 1L, setup = "fb_12_rpw", use_traits = "sit",
-        vars = 1.0, cors = 0.2, group_layout = "fishboost", group_effect = -1,
+        vars = 1, cors = 0.2, group_layout = "fishboost", group_effect = -1,
         trial_fe = "none", donor_fe = "none", txd_fe = "none",
-        weight_fe = "none", weight_is_nested = TRUE, sim_new_data = "bici"
+        weight_fe = "none", weight_is_nested = TRUE, sim_new_data = "bici",
+        protocol = NULL
 ) {
     message("Setting parameters ...")
 
@@ -64,7 +67,7 @@ make_parameters <- function(
 
     # Handy in case of debugging
     if (FALSE) {
-        model_type <- "SEIDR"; name <- "scen-1-1"; dataset <- "testing";
+        model_type <- "SEIDR"; dataset <- "testing"; name <- "scen-1-1";
         scenario <- 1L; replicate = 1L; setup <- "fb_12_rpw"; use_traits <- "sit";
         vars <- 1; cors <- 0.2; group_layout <- "fishboost"; group_effect <- -1;
         trial_fe <- "ildt"; donor_fe <- "ildt"; txd_fe <- "ildt";
@@ -72,15 +75,19 @@ make_parameters <- function(
     }
 
     # For importing from a protocol file
-    if (FALSE) {
-        model_type <- protocol$model_type; dataset <- protocol$dataset; name <- protocol$name;
-        scenario <- protocol$scenario; replicate = protocol$scenario; use_traits <- protocol$use_traits;
-        vars <- protocol$vars; cors <- protocol$cors; setup <- protocol$setup;
-        group_layout <- protocol$group_layout; group_effect <- protocol$group_effect;
-        trial_fe <- protocol$trial_fe; donor_fe <- protocol$donor_fe; txd_fe <- protocol$txd_fe;
-        weight_fe <- protocol$weight_fe; weight_is_nested <- protocol$weight_is_nested;
-        sim_new_data <- protocol$sim_new_data;
+    if (!is.null(protocol)) {
+        message("- using Protocol for args")
+        for (v in c("model_type", "dataset", "name", "scenario", "replicate",
+                    "setup", "use_traits", "vars", "cors", "group_layout",
+                    "group_effect", "trial_fe", "donor_fe", "txd_fe",
+                    "weight_fe", "weight_is_nested", "sim_new_data,")) {
+            if (v %in% names(protocol)) {
+                assign(v, protocol[[v]])
+            }
+        }
     }
+
+    if (!exists("dataset")) message("warning, no dataset defined!")
 
     # Fix any parameters incorrectly assigned as NULL
     {
@@ -91,8 +98,8 @@ make_parameters <- function(
         replicate     <- replicate %||% 1L
         setup         <- setup %||% "fb_12_rpw"
         use_traits    <- use_traits %||% "sit"
-        vars          <- vars %||% 1
-        cors          <- cors %||% 0.2
+        vars          <- vars %||% 0
+        cors          <- cors %||% 0
         group_layout  <- group_layout %||% "fishboost"
         trial_fe      <- trial_fe %||% "none"
         donor_fe      <- donor_fe %||% "none"
@@ -178,7 +185,9 @@ make_parameters <- function(
     # Compartments are just the letters in model_type (ignore repeated S)
     compartments <- uniq_chars(model_type)
 
-    all_traits <- c(s = "sus", i = "inf", l = "lat", d = "det", t = "tol")
+    sildt <- str_chars("sildt")
+    all_traits <- c("sus", "inf", "lat", "det", "tol") |>
+        setNames(sildt)
 
     # Set up which traits a model will use, if traits are +vely or -vely
     # correlated, what the event times are called, and which parameters we need
@@ -211,6 +220,8 @@ make_parameters <- function(
     # Likely using only a subset of traits
     use_traits <- if (use_traits %in% c("", "none", NA)) {
         ""
+    } else if (use_traits == "all") {
+        model_traits |> str_1st() |> str_flatten()
     } else {
         str_to_lower(use_traits)
     }
@@ -227,7 +238,7 @@ make_parameters <- function(
 
     ## Covariance matrices ----
 
-    out <- make_matrices(all_traits, use_traits, vars, cors)
+    out <- make_matrices(all_traits, vars, cors)
     Sigma_G <- Sigma_E <- out$Sigma
     cov_G <- cov_E <- out$cov
 
@@ -377,108 +388,73 @@ make_parameters <- function(
 
     ge <- max(group_effect, 0)
 
-    # Do we use a Jeffreys or a uniform prior for covariance
-    cov_prior <- c("jeffreys", "uniform")[[1]]
+    # What kind of prior do we want?
+    cov_prior <- list(type = c("default", "normal", "uniform-lkj", "inv-wishart")[[1]],
+                      vals = c())
+
     single_prior <- c("inverse", "uniform")[[1]]
 
+    base_priors <- rowwiseDT(
+        parameter=,         true_val=,        type=,        val1=, val2=,
 
-    priors <- rowwiseDT(
-        parameter=,         type=,        val1=, val2=, true_val=,
+        "beta",             r_beta,           single_prior, 0,     2.0,
+        "latent_period",    latent_period,    single_prior, 0,     40,
+        "detection_period", detection_period, single_prior, 0,     160,
+        "removal_period",   removal_period,   single_prior, 0,     20,
+        "LP_shape",         LP_shape,         "uniform",    0.5,   5,
+        "DP_shape",         DP_shape,         "uniform",    0.5,   5,
+        "RP_shape",         RP_shape,         "uniform",    0.5,   5,
+        "infrat",           inf_ratio,        "uniform",    0,     2,
+        "sigma",            ge,               single_prior, 0,     2 * ge,
 
-        "beta",             single_prior, 0,     2.0,   r_beta,
-        "latent_period",    single_prior, 0,     40,    latent_period,
-        "detection_period", single_prior, 0,     160,   detection_period,
-        "removal_period",   single_prior, 0,     20,    removal_period,
-        "LP_shape",         "uniform",    0.5,   5,     LP_shape,
-        "DP_shape",         "uniform",    0.5,   5,     DP_shape,
-        "RP_shape",         "uniform",    0.5,   5,     RP_shape,
+        # parameter                 true_val          type          val1 val2
+        "beta_Tr1",                 r_beta,           single_prior, 0,   2,
+        "beta_Tr2",                 r_beta,           single_prior, 0,   2,
+        "latent_period_Tr1,Don",    latent_period,    single_prior, 0,   50,
+        "latent_period_Tr1,Rec",    latent_period,    single_prior, 0,   50,
+        "latent_period_Tr2,Don",    latent_period,    single_prior, 0,   120,
+        "latent_period_Tr2,Rec",    latent_period,    single_prior, 0,   50,
+        "detection_period_Tr1,Don", detection_period, single_prior, 0,   50,
+        "detection_period_Tr1,Rec", detection_period, single_prior, 0,   50,
+        "detection_period_Tr2,Don", detection_period, single_prior, 0,   160,
+        "detection_period_Tr2,Rec", detection_period, single_prior, 0,   50,
+        "removal_period_Tr1,Don",   removal_period,   single_prior, 0,   30,
+        "removal_period_Tr1,Rec",   removal_period,   single_prior, 0,   30,
+        "removal_period_Tr2,Don",   removal_period,   single_prior, 0,   30,
+        "removal_period_Tr2,Rec",   removal_period,   single_prior, 0,   30)
 
-        # parameter                 type          val1 val2 true_val
-        "beta_Tr1",                 single_prior, 0,   2,   r_beta,
-        "beta_Tr2",                 single_prior, 0,   2,   r_beta,
-        "latent_period_Tr1,Don",    single_prior, 0,   50,  latent_period,
-        "latent_period_Tr1,Rec",    single_prior, 0,   50,  latent_period,
-        "latent_period_Tr2,Don",    single_prior, 0,   120, latent_period,
-        "latent_period_Tr2,Rec",    single_prior, 0,   50,  latent_period,
-        "detection_period_Tr1,Don", single_prior, 0,   50,  detection_period,
-        "detection_period_Tr1,Rec", single_prior, 0,   50,  detection_period,
-        "detection_period_Tr2,Don", single_prior, 0,   160, detection_period,
-        "detection_period_Tr2,Rec", single_prior, 0,   50,  detection_period,
-        "removal_period_Tr1,Don",   single_prior, 0,   30,  removal_period,
-        "removal_period_Tr1,Rec",   single_prior, 0,   30,  removal_period,
-        "removal_period_Tr2,Don",   single_prior, 0,   30,  removal_period,
-        "removal_period_Tr2,Rec",   single_prior, 0,   30,  removal_period,
-        "infrat",                   "uniform",    0,    2,  inf_ratio,
+    xx <- c("ss", "ii", "ll", "dd", "tt")
+    xy <- c("si", "sl", "sd", "st", "il", "id", "it", "ld", "lt", "dt")
+    cov_p <- c(str_c("cov_G_", xx), str_c("r_G_", xy),
+               str_c("cov_E_", xx), str_c("r_E_", xy))
 
-        # parameter type       val1 val2    true_val
-        "sigma",    "inverse", 0,   2 * ge, ge,
+    cov_priors <- data.table(parameter = cov_p,
+                             true_val = 0, type = "default", val1 = 0, val2 = 4)
+    cov_priors[str_starts(parameter, "r_"), `:=`(val1 = -0.9, val2 = 0.9)]
 
-        # parameter type       val1  val2 true_val
-        "cov_G_ss", "uniform",    0,   4, Sigma_G["sus", "sus"],
-        "cov_G_ii", "uniform",    0,   4, Sigma_G["inf", "inf"],
-        "cov_G_ll", "uniform",    0,   2, Sigma_G["lat", "lat"],
-        "cov_G_dd", "uniform",    0,   2, Sigma_G["det", "det"],
-        "cov_G_tt", "uniform",    0, 1.5, Sigma_G["tol", "tol"],
-        "r_G_si",   "uniform", -0.9, 0.9, Sigma_G["sus", "inf"],
-        "r_G_sl",   "uniform", -0.9, 0.9, Sigma_G["sus", "lat"],
-        "r_G_sd",   "uniform", -0.9, 0.9, Sigma_G["sus", "det"],
-        "r_G_st",   "uniform", -0.9, 0.9, Sigma_G["sus", "tol"],
-        "r_G_il",   "uniform", -0.9, 0.9, Sigma_G["inf", "lat"],
-        "r_G_id",   "uniform", -0.9, 0.9, Sigma_G["inf", "det"],
-        "r_G_it",   "uniform", -0.9, 0.9, Sigma_G["inf", "tol"],
-        "r_G_ld",   "uniform", -0.9, 0.9, Sigma_G["lat", "tol"],
-        "r_G_lt",   "uniform", -0.9, 0.9, Sigma_G["lat", "tol"],
-        "r_G_dt",   "uniform", -0.9, 0.9, Sigma_G["det", "tol"],
-        "cov_E_ss", "uniform",    0,   4, Sigma_E["sus", "sus"],
-        "cov_E_ii", "uniform",    0,   4, Sigma_E["inf", "inf"],
-        "cov_E_ll", "uniform",    0,   4, Sigma_E["lat", "lat"],
-        "cov_E_dd", "uniform",    0,   4, Sigma_E["det", "det"],
-        "cov_E_tt", "uniform",    0,   1, Sigma_E["tol", "tol"],
-        "r_E_si",   "uniform", -0.9, 0.9, Sigma_E["sus", "inf"],
-        "r_E_sl",   "uniform", -0.9, 0.9, Sigma_E["sus", "lat"],
-        "r_E_sd",   "uniform", -0.9, 0.9, Sigma_E["sus", "det"],
-        "r_E_st",   "uniform", -0.9, 0.9, Sigma_E["sus", "tol"],
-        "r_E_il",   "uniform", -0.9, 0.9, Sigma_E["inf", "lat"],
-        "r_E_id",   "uniform", -0.9, 0.9, Sigma_E["inf", "det"],
-        "r_E_it",   "uniform", -0.9, 0.9, Sigma_E["inf", "tol"],
-        "r_E_ld",   "uniform", -0.9, 0.9, Sigma_E["lat", "tol"],
-        "r_E_lt",   "uniform", -0.9, 0.9, Sigma_E["lat", "tol"],
-        "r_E_dt",   "uniform", -0.9, 0.9, Sigma_E["det", "tol"],
+    for (i in seq_along(sildt)) {
+        ni1 <- names(all_traits)[[i]]
+        nix <- all_traits[[i]]
 
-        # parameter  type       val1 val2 true_val
-        "trial_i",   "uniform", -5, 3, fe_vals["trial", "inf"],
-        "trial_l",   "uniform", -5, 3, fe_vals["trial", "lat"],
-        "trial_d",   "uniform", -4, 4, fe_vals["trial", "det"],
-        "trial_t",   "uniform", -4, 4, fe_vals["trial", "tol"],
+        cov_priors[parameter == str_glue("cov_G_{i}{i}"), true_val := Sigma_G[nix, nix]]
+        cov_priors[parameter == str_glue("cov_E_{i}{i}"), true_val := Sigma_E[nix, nix]]
+        for (j in seq_along(sildt)) {
+            if (i >= j) next()
+            nj1 <- names(all_traits)[[j]]
+            njx <- all_traits[[j]]
+            cov_priors[parameter == str_glue("r_G_{i}{j}"), true_val := Sigma_G[nix, njx]]
+            cov_priors[parameter == str_glue("r_E_{i}{j}"), true_val := Sigma_E[nix, njx]]
+        }
+    }
 
-        "donor_i",   "uniform", -7, 1, fe_vals["donor", "inf"],
-        "donor_l",   "uniform", -5, 3, fe_vals["donor", "lat"],
-        "donor_d",   "uniform", -4, 4, fe_vals["donor", "det"],
-        "donor_t",   "uniform", -5, 3, fe_vals["donor", "tol"],
+    fes <- c("trial", "donor", "txd", "weight", "weight1", "weight2")
+    fe_p <- expand.grid(sildt, fes) |> rev() |> apply(1, str_flatten, "_")
+    fe_priors <- data.table(parameter = fe_p,
+                            true_val = 0, type = "uniform",  val1 = -4, val2 = -4)
 
-        "txd_i",     "uniform", -5, 3, fe_vals["txd", "inf"],
-        "txd_l",     "uniform", -1, 7, fe_vals["txd", "lat"],
-        "txd_d",     "uniform", -2, 6, fe_vals["txd", "det"],
-        "txd_t",     "uniform", -2, 6, fe_vals["txd", "tol"],
-
-        "weight_s",  "uniform", -4, 4, fe_vals["weight", "sus"],
-        "weight_i",  "uniform", -4, 4, fe_vals["weight", "inf"],
-        "weight_l",  "uniform", -4, 4, fe_vals["weight", "lat"],
-        "weight_d",  "uniform", -4, 4, fe_vals["weight", "det"],
-        "weight_t",  "uniform", -4, 4, fe_vals["weight", "tol"],
-
-        "weight1_s", "uniform", -3, 3, fe_vals["weight1", "sus"],
-        "weight1_i", "uniform", -3, 3, fe_vals["weight1", "inf"],
-        "weight1_l", "uniform", -3, 3, fe_vals["weight1", "lat"],
-        "weight1_d", "uniform", -3, 3, fe_vals["weight1", "det"],
-        "weight1_t", "uniform", -3, 3, fe_vals["weight1", "tol"],
-
-        "weight2_s", "uniform", -3, 3, fe_vals["weight2", "sus"],
-        "weight2_i", "uniform", -1, 7, fe_vals["weight2", "inf"],
-        "weight2_l", "uniform",  0, 8, fe_vals["weight2", "lat"],
-        "weight2_d", "uniform", -3, 3, fe_vals["weight2", "det"],
-        "weight2_t", "uniform", -3, 3, fe_vals["weight2", "tol"]
-    )
+    priors <- rbind(base_priors,
+                    cov_priors,
+                    fe_priors)
 
     # Roughly fix some priors
     widen_priors(priors)
