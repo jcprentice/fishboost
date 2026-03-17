@@ -10,10 +10,16 @@ check_L <- function(dataset = "fb-final", scen = 1) {
         dataset <- "fb-test"; scen <- 3
     }
 
-    files <- list.files(str_glue("datasets/{dataset}/data/scen-{scen}-1-out/output-inf"),
+    files <- list.files(str_glue("datasets/{dataset}/data/",
+                                 "scen-{scen}-1-out/output-inf"),
                         pattern = "param_", full.names = TRUE) |>
         str_subset("combine", negate = TRUE) |>
         str_sort(numeric = TRUE)
+
+    if (length(files) == 0) {
+        message("- No param_ files found!")
+        return(NULL)
+    }
 
     x <- map(files, fread) |>
         rbindlist(idcol = "chain")
