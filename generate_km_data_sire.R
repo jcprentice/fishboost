@@ -89,7 +89,6 @@ generate_km_data_sire <- function(dataset = "fb-final",
             # This updates params with a different row from the trace file each time
             params <- params_base |>
                 patch_params() |>
-                # set_ge_opts() |>
                 apply_links()
 
 

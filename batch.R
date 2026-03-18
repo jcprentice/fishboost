@@ -112,9 +112,6 @@ if (run_from_script) {
                 str_split_1(value, ",")
             }
 
-        } else if (param == "ge_opts") {
-            params$ge_opts <<- str_split_1(value, ",")
-
         } else if (param == "fix_donors") {
             params$fix_donors <<- str_split_1(value, ",")
 
@@ -180,7 +177,6 @@ if (run_from_script) {
     params_bak <- params
     params2 <- params |>
         patch_params() |>  # Patch params with posteriors from dataset / scenario
-        # set_ge_opts() |>   # Genetic covariance options
         set_use_flags() |> # Ensure priors are correctly enabled
         apply_links()      # Fix any traits that need to be linked
     params <- params2

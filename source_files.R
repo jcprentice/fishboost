@@ -12,7 +12,6 @@
     source("patch_in_traits.R")
     source("set_weights.R")
     source("tidy_up_periods.R")
-    source("set_ge_opts.R")
     source("set_use_flags.R")
     source("make_pedigree.R")
     source("make_grm.R")

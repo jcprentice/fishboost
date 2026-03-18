@@ -70,11 +70,8 @@ run_from_script <- length(cmd_args) > 0
     params$patch_state <- TRUE
     params$skip_patches <- c("") #, "covariance")
 
-    # params$ge_opts <- "e1" # Optional genetic effects
-
     params <- params |>
         patch_params() |>  # Patch params with posteriors from dataset / scenario
-        # set_ge_opts() |>   # Genetic covariance options
         set_use_flags() |> # Ensure priors are correctly enabled
         apply_links()      # Fix any traits that need to be linked
 
