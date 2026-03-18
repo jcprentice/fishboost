@@ -1,12 +1,3 @@
-# Spearman's rank correlation
-spearmans_rc <- function(x, y) {
-    rx <- rank(x)
-    ry <- rank(y)
-    n <- length(x)
-    1 - 6 * sum((rx - ry)^2) / (n * (n^2 - 1))
-}
-
-
 # Return EBVs ranked, show rank distance vs true ranks
 get_ranks <- function(popn, estimated_BVs, params, verbose = FALSE) {
     {
