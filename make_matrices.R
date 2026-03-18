@@ -71,23 +71,25 @@ make_matrices_from_priors <- function(priors) {
               str_c("cov_E_", xx), str_c("r_E_", xy))
     walk(covs, \(i) priors[[i]] <<- priors[[i]] %||% 0)
 
-    Sigma_G <- with(priors,
-                    matrix(c(cov_G_ss, r_G_si,   r_G_sl,   r_G_sd,   r_G_st,
-                             r_G_si,   cov_G_ii, r_G_il,   r_G_id,   r_G_it,
-                             r_G_sl,   r_G_il,   cov_G_ll, r_G_ld,   r_G_lt,
-                             r_G_sd,   r_G_id,   r_G_ld,   cov_G_dd, r_G_dt,
-                             r_G_st,   r_G_it,   r_G_lt,   r_G_dt,   cov_G_tt),
-                           5, 5,
-                           dimnames = list(all_traits, all_traits)))
+    Sigma_G <- with(priors, matrix(
+        c(cov_G_ss, r_G_si,   r_G_sl,   r_G_sd,   r_G_st,
+          r_G_si,   cov_G_ii, r_G_il,   r_G_id,   r_G_it,
+          r_G_sl,   r_G_il,   cov_G_ll, r_G_ld,   r_G_lt,
+          r_G_sd,   r_G_id,   r_G_ld,   cov_G_dd, r_G_dt,
+          r_G_st,   r_G_it,   r_G_lt,   r_G_dt,   cov_G_tt),
+        5, 5,
+        dimnames = list(all_traits, all_traits)
+    ))
 
-    Sigma_E <- with(priors,
-                    matrix(c(cov_G_ss, r_G_si,   r_G_sl,   r_G_sd,   r_G_st,
-                             r_G_si,   cov_G_ii, r_G_il,   r_G_id,   r_G_it,
-                             r_G_sl,   r_G_il,   cov_G_ll, r_G_ld,   r_G_lt,
-                             r_G_sd,   r_G_id,   r_G_ld,   cov_G_dd, r_G_dt,
-                             r_G_st,   r_G_it,   r_G_lt,   r_G_dt,   cov_G_tt),
-                           5, 5,
-                           dimnames = list(all_traits, all_traits)))
+    Sigma_E <- with(priors, matrix(
+        c(cov_G_ss, r_G_si,   r_G_sl,   r_G_sd,   r_G_st,
+          r_G_si,   cov_G_ii, r_G_il,   r_G_id,   r_G_it,
+          r_G_sl,   r_G_il,   cov_G_ll, r_G_ld,   r_G_lt,
+          r_G_sd,   r_G_id,   r_G_ld,   cov_G_dd, r_G_dt,
+          r_G_st,   r_G_it,   r_G_lt,   r_G_dt,   cov_G_tt),
+        5, 5,
+        dimnames = list(all_traits, all_traits)
+    ))
 
     D <- 0 * Sigma_G
     diag(D) <- sqrt(diag(Sigma_G))
