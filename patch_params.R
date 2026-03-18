@@ -82,7 +82,7 @@ patch_params <- function(params, trace_row = 0) {
         } else {
             tmp[state == patch_state]
         }
-        # This is to under renaming the parameters in BICI
+        # This is for renaming the parameters in BICI
         patch_vals <- setNames(as.list(tmp$value),
                                tmp$parameter |> str_replace_all(
                                    c("LP" = "latent_period",
