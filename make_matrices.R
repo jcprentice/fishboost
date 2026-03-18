@@ -1,9 +1,11 @@
 # Construct cov_mat and Sigma matrices using var and cor components
-make_matrices <- function(model_traits = c("sus", "inf", "lat", "det", "tol"),
+make_matrices <- function(model_traits,
+                          use_traits = "sit",
                           vars = 1,
                           cors = 0.2) {
     if (FALSE) {
-        model_traits <- c("sus", "inf", "lat", "det", "tol")
+        model_traits <- c(s = "sus", i = "inf", l = "lat", d = "det", t = "tol")
+        use_traits <- "sit"
         vars <- params$vars; cors <- params$cors
         vars <- 1; cors <- 0.2
         vars <- list(sus = 1, inf = 1.5, tol = 0.5, default = 0.2)
@@ -33,10 +35,8 @@ make_matrices <- function(model_traits = c("sus", "inf", "lat", "det", "tol"),
     }
 
     # Now fill in named values for vars
-    for (i in model_traits) {
-        if (i %in% names(vars)) {
-            Sigma[i, i] <- vars[[i]]
-        }
+    for (i in intersect(model_traits, names(vars))) {
+        Sigma[[i, i]] <- vars[[i]]
     }
 
     # Finally fill in named values for cors
@@ -45,9 +45,16 @@ make_matrices <- function(model_traits = c("sus", "inf", "lat", "det", "tol"),
     cor_names <- mat[ij]
 
     for (i in ij) {
-        if (mat[i] %in% names(cors)) {
-            Sigma[i] <- cors[[mat[i]]]
+        if (mat[[i]] %in% names(cors)) {
+            Sigma[[i]] <- cors[[mat[[i]]]]
         }
+    }
+
+    # Apply use_traits (zero out unused traits)
+    unused_traits <- model_traits[setdiff(traits1, str_chars(use_traits))]
+    for (i in unused_traits) {
+        Sigma[i, ] <- 0
+        Sigma[, i] <- 0
     }
 
     # Convert Sigma into a covariance matrix
@@ -57,7 +64,9 @@ make_matrices <- function(model_traits = c("sus", "inf", "lat", "det", "tol"),
     diag(R) <- 1
     cov_mat <- D %*% R %*% D
 
-    list(Sigma = Sigma, cov = cov_mat, cor_names = cor_names)
+    list(Sigma = Sigma,
+         cov = cov_mat,
+         cor_names = cor_names)
 }
 
 
