@@ -26,14 +26,16 @@ protocol <- rbind(
     data.table(d = "FB_1_rpw, GEV SI,   Cors 0"), # 5
     data.table(d = "FB_1_rpw, GEV ST,   Cors 0"), # 6
     data.table(d = "FB_1_rpw, GEV IT,   Cors 0"), # 7
+    data.table(d = "FB_1_rpw, GEV SIT,  Cors 0"), # 8
 
-    data.table(d = "FB_1_rpw, GEV none, Cors 0.3"), # 8
-    data.table(d = "FB_1_rpw, GEV S,    Cors 0.3"), # 9
-    data.table(d = "FB_1_rpw, GEV I,    Cors 0.3"), # 10
-    data.table(d = "FB_1_rpw, GEV T,    Cors 0.3"), # 11
-    data.table(d = "FB_1_rpw, GEV SI,   Cors 0.3"), # 12
-    data.table(d = "FB_1_rpw, GEV ST,   Cors 0.3"), # 13
-    data.table(d = "FB_1_rpw, GEV IT,   Cors 0.3"), # 14
+    data.table(d = "FB_1_rpw, GEV none, Cors 0.3"), # 9
+    data.table(d = "FB_1_rpw, GEV S,    Cors 0.3"), # 10
+    data.table(d = "FB_1_rpw, GEV I,    Cors 0.3"), # 11
+    data.table(d = "FB_1_rpw, GEV T,    Cors 0.3"), # 12
+    data.table(d = "FB_1_rpw, GEV SI,   Cors 0.3"), # 13
+    data.table(d = "FB_1_rpw, GEV ST,   Cors 0.3"), # 14
+    data.table(d = "FB_1_rpw, GEV IT,   Cors 0.3"), # 15
+    data.table(d = "FB_1_rpw, GEV SIT,  Cors 0.3"), # 16
 
     fill = TRUE
 )
