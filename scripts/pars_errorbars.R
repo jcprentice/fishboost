@@ -223,7 +223,7 @@ if (FALSE) {
     pars_errorbars("sim-base-inf", 1:2, "Validating BICI - Base models", "base")
     pars_errorbars("sim-base-inf", 1:12, "Validating BICI - Misspecifying model", "misspecify")
     # pars_errorbars("sim-base-inf", c(1:2, 13:20), "Validating BICI - convergence", "conv")
-    pars_errorbars("sim-test-inf", 0, "Validating BICI on FB data")
-    pars_errorbars("sim-test-inf", 1:10, "Validating BICI on FB data", "tr1")
-    pars_errorbars("sim-test-inf", 11:20, "Validating BICI on FB data", "tr12")
+    pars_errorbars("sim-test-inf", 0, "Validating BICI on Simulated data")
+    pars_errorbars("sim-test-inf", 1:10, "Validating BICI on Simulated data", "tr1")
+    pars_errorbars("sim-test-inf", 11:20, "Validating BICI on Simulated data", "tr12")
 }
