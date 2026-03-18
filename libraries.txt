@@ -1,2 +1,2 @@
-FME HDInterval MASS Matrix RColorBrewer coda codetools corpcor cowplot data.table extrafont fitdistrplus furrr gganimate ggplot2 ggtext ggthemes glue gridExtra gtools here janitor lubridate magrittr pROC purrr readxl reshape2 stringr tictoc tidyverse viridis xml2 xtable
+FME HDInterval MASS Matrix RColorBrewer coda codetools corpcor cowplot data.table extrafont fitdistrplus furrr gganimate ggplot2 ggtext ggthemes glue gridExtra gtools here janitor lubridate magrittr pipebind pROC purrr readxl reshape2 stringr tictoc tidyverse viridis xml2 xtable
 
