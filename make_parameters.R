@@ -2,6 +2,7 @@
     library(data.table)
     library(stringr)
     library(purrr)
+    library(pipebind)
 
     source("make_matrices.R")
     source("widen_priors.R")
@@ -185,9 +186,7 @@ make_parameters <- function(
     # Compartments are just the letters in model_type (ignore repeated S)
     compartments <- uniq_chars(model_type)
 
-    sildt <- str_chars("sildt")
-    all_traits <- c("sus", "inf", "lat", "det", "tol") |>
-        setNames(sildt)
+    all_traits <- c(s = "sus", i = "inf", l = "lat", d = "det", t = "tol")
 
     # Set up which traits a model will use, if traits are +vely or -vely
     # correlated, what the event times are called, and which parameters we need
@@ -226,19 +225,18 @@ make_parameters <- function(
         str_to_lower(use_traits)
     }
 
-    n_traits <- length(model_traits)
     n_traits_used <- str_length(use_traits)
     traits_used <- model_traits[str_chars(use_traits)]
 
     if (n_traits_used > 0) {
-        message("- ", n_traits_used, " GE traits: ", str_flatten_comma(traits_used))
+        message("- ", n_traits_used, " genetic traits: ", str_flatten_comma(traits_used))
     } else {
-        message("- 0 GE traits used")
+        message("- 0 genetic traits used")
     }
 
     ## Covariance matrices ----
 
-    out <- make_matrices(all_traits, vars, cors)
+    out <- make_matrices(model_traits, vars, cors)
     Sigma_G <- Sigma_E <- out$Sigma
     cov_G <- cov_E <- out$cov
 
@@ -246,8 +244,6 @@ make_parameters <- function(
     # with replicates
     vars <- Sigma_G |> diag()
     cors <- Sigma_G[lower.tri(Sigma_G)] |> setNames(out$cor_names)
-
-    ge_opts <- "" # c("gt_only", "pt_only", "e1", "no_ev_xyz")
 
 
     # Epidemic parameters ----
@@ -362,9 +358,8 @@ make_parameters <- function(
 
     bici_cmd <- "inf"
 
-    nchains <- 16L
-
     ## Samples ----
+    nchains <- 16L
     nsample  <- 1e4 # total no. of samples SIRE should take
     burnprop <- 0.2 # burn-in proportion of chain
     thinto   <- 1e4 # no. of samples to output
@@ -423,38 +418,24 @@ make_parameters <- function(
         "removal_period_Tr2,Don",   removal_period,   single_prior, 0,   30,
         "removal_period_Tr2,Rec",   removal_period,   single_prior, 0,   30)
 
-    xx <- c("ss", "ii", "ll", "dd", "tt")
-    xy <- c("si", "sl", "sd", "st", "il", "id", "it", "ld", "lt", "dt")
+    t1 <- model_traits |> names()
+    xx <- strrep(t1, 2)
+    xy <- expand.grid(t1, t1) |> rev() |> apply(1, str_flatten) |>
+        matrix(nrow = length(t1)) |> bind(x, x[lower.tri(x)])
     cov_p <- c(str_c("cov_G_", xx), str_c("r_G_", xy),
                str_c("cov_E_", xx), str_c("r_E_", xy))
 
-    cov_priors <- data.table(parameter = cov_p,
-                             true_val = 0, type = "default", val1 = 0, val2 = 4)
-    cov_priors[str_starts(parameter, "r_"), `:=`(val1 = -0.9, val2 = 0.9)]
-
-    for (i in seq_along(sildt)) {
-        ni1 <- names(all_traits)[[i]]
-        nix <- all_traits[[i]]
-
-        cov_priors[parameter == str_glue("cov_G_{i}{i}"), true_val := Sigma_G[nix, nix]]
-        cov_priors[parameter == str_glue("cov_E_{i}{i}"), true_val := Sigma_E[nix, nix]]
-        for (j in seq_along(sildt)) {
-            if (i >= j) next()
-            nj1 <- names(all_traits)[[j]]
-            njx <- all_traits[[j]]
-            cov_priors[parameter == str_glue("r_G_{i}{j}"), true_val := Sigma_G[nix, njx]]
-            cov_priors[parameter == str_glue("r_E_{i}{j}"), true_val := Sigma_E[nix, njx]]
-        }
-    }
+    cov_priors <- data.table(parameter = cov_p, true_val = 0,
+                             type = "default", val1 = 0, val2 = 4)
+    cov_priors[str_starts(parameter, "r_"),
+               `:=`(val1 = -0.9, val2 = 0.9)]
 
     fes <- c("trial", "donor", "txd", "weight", "weight1", "weight2")
-    fe_p <- expand.grid(sildt, fes) |> rev() |> apply(1, str_flatten, "_")
-    fe_priors <- data.table(parameter = fe_p,
-                            true_val = 0, type = "uniform",  val1 = -4, val2 = -4)
+    fe_p <- expand.grid(t1, fes) |> rev() |> apply(1, str_flatten, "_")
+    fe_priors <- data.table(parameter = fe_p, true_val = 0,
+                            type = "uniform", val1 = -4, val2 = 4)
 
-    priors <- rbind(base_priors,
-                    cov_priors,
-                    fe_priors)
+    priors <- rbind(base_priors, cov_priors, fe_priors)
 
     # Roughly fix some priors
     widen_priors(priors)
@@ -462,28 +443,25 @@ make_parameters <- function(
     priors[, use := FALSE]
 
     # This will be all be redone with set_use_flags(), but make_parameters()
-    # should give as correct a result as possible.
-
-
-    used <- str_1st(model_traits)
+    # should give as correct a result as possible to start off with.
 
     use_parameters <- c(
         "beta",
-        if ("l" %in% used) "latent_period",
-        if ("d" %in% used) "detection_period",
-        if ("t" %in% used) "removal_period",
-        if ("l" %in% used && LP_dist == "gamma") "LP_shape",
-        if ("d" %in% used && DP_dist == "gamma") "DP_shape",
-        if ("p" %in% used && RP_dist == "gamma") "RP_shape",
+        if ("l" %in% t1) "latent_period",
+        if ("d" %in% t1) "detection_period",
+        if ("t" %in% t1) "removal_period",
+        if ("l" %in% t1 && LP_dist == "gamma") "LP_shape",
+        if ("d" %in% t1 && DP_dist == "gamma") "DP_shape",
+        if ("p" %in% t1 && RP_dist == "gamma") "RP_shape",
         if (group_effect > 0) "sigma"
     )
     priors[parameter %in% use_parameters, use := TRUE]
 
-    GE_traits <- used |>
+    GE_traits <- t1 |>
         intersect(str_chars(use_traits)) |>
         intersect(str_chars(link_traits))
 
-    pwalk(expand.grid(x = used, y = used), \(x, y) {
+    pwalk(expand.grid(x = t1, y = t1), \(x, y) {
         priors[str_ends(parameter, str_glue("_[GE]_{x}{y}")),
                use := all(c(x, y) %in% GE_traits)]
     })
@@ -497,7 +475,7 @@ make_parameters <- function(
 
         if (base_str %in% c("", "none")) return("XYZ")
 
-        used |>
+        t1 |>
             intersect(str_chars(base_str)) |>
             intersect(str_chars(link_str)) |>
             str_flatten() |>
@@ -521,13 +499,6 @@ make_parameters <- function(
 
     # Number of times to simulate in BICI
     nreps <- 50
-
-    # What we pass to SIRE 2.0, choice of
-    # "Tinf": actual infection time
-    # "Tsym": time of symptoms
-    # "estimated_Tinf_from_donors": Tsym - mean incubation period of donors
-    # "estimated_Tinf_per_individual": Tsym with all gaps covered
-    pass_Tsym <- "Tsym"
 
     # pass event times, pass the last N of timings (Tinf, Tinc, Tsym, Tdeath)
     pass_events <- c("Tsym", "Tdeath") # pass time Tsym and Tdeath
@@ -589,7 +560,7 @@ make_parameters <- function(
           "dpsire", "ppdam", "group_size", "I0",
           # Model traits
           "compartments", "timings", "all_traits", "model_traits",
-          "n_traits", "Sigma_E", "Sigma_G", "cov_G", "cov_E", "ge_opts",
+          "Sigma_E", "Sigma_G", "cov_G", "cov_E", "ge_opts",
           "sim_link_traits", "sim_link_trial", "sim_link_donor", "sim_link_txd",
           "sim_link_weight", "sim_link_shapes",
           "link_traits", "link_trial", "link_donor", "link_txd", "link_weight", "link_shapes",
