@@ -31,12 +31,24 @@ setcolorder(fb_rpw, c("id", "fb_id", "pp_id", "H_id"))
 
 if (FALSE) {
     fbx <- fb_rpw[, .SD, .SDcols = !c("fb_id", "pp_id", "H_id")]
-    fbx |>
-        saveRDS("fb_data/fb_12_rpw.rds")
-    fbx[trial %in% c(NA, 1)][id %in% c(sire, dam) | sdp == "progeny"][, id := .I] |>
-        saveRDS("fb_data/fb_1_rpw.rds")
-    fbx[trial %in% c(NA, 2)][id %in% c(sire, dam) | sdp == "progeny"][, id := .I] |>
-        saveRDS("fb_data/fb_2_rpw.rds")
+    saveRDS(fbx, "fb_data/fb_12_rpw.rds")
+
+    fb1 <- fbx[trial %in% c(NA, 1)][id %in% c(sire, dam) | sdp == "progeny"]
+    sire_ids <- fb1[sdp == "sire", id]
+    dam_ids  <- fb1[sdp == "dam",  id]
+    fb1[sdp == "progeny", `:=`(sire = match(sire, sire_ids),
+                               dam  = match(dam,  dam_ids) + length(sire_ids))]
+    fb1[, id := .I]
+    saveRDS(fb1, "fb_data/fb_1_rpw.rds")
+
+    fb2 <- fbx[trial %in% c(NA, 2)][id %in% c(sire, dam) | sdp == "progeny"]
+    sire_ids <- fb2[sdp == "sire", id]
+    dam_ids  <- fb2[sdp == "dam",  id]
+    fb2[sdp == "progeny", `:=`(sire = match(sire, sire_ids),
+                               dam  = match(dam,  dam_ids) + length(sire_ids))]
+    fb2[, id := .I]
+    saveRDS(fb2, "fb_data/fb_2_rpw.rds")
+
     rm(fbx)
 }
 
