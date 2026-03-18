@@ -190,7 +190,7 @@ make_parameters <- function(
 
     # Set up which traits a model will use, if traits are +vely or -vely
     # correlated, what the event times are called, and which parameters we need
-    # to make SIRE aware of.
+    # to make BICI aware of.
     switch(model_type,
            "SEIDR" = {
                model_traits <- all_traits
@@ -329,7 +329,7 @@ make_parameters <- function(
 
     # "xxxxx" will be copied onto "sildt", so "sittt" means that lat, det, tol
     # will all use the same tol value. sim_ is for simulating new data in R,
-    # otherwise it's what SIRE or BICI is passed
+    # otherwise it's what BICI is passed
     {
         sim_link_traits <- "sildt"
         sim_link_trial  <- "sildt"
@@ -360,7 +360,7 @@ make_parameters <- function(
 
     ## Samples ----
     nchains <- 16L
-    nsample  <- 1e4 # total no. of samples SIRE should take
+    nsample  <- 1e4 # total no. of samples BICI should take
     burnprop <- 0.2 # burn-in proportion of chain
     thinto   <- 1e4 # no. of samples to output
     burnin   <- nsample * burnprop
@@ -372,10 +372,8 @@ make_parameters <- function(
     sample_states <- 0L # how many states (per chain) to sample
     ie_output <- "true" # if ss > 0, include IE samples in extended_trace_combine.tsv
 
-    # Should SIRE use the PAS method (N chains for a single call) or regular MCMC?
+    # Should BICI use the PAS method (N chains for a single call) or regular MCMC?
     algorithm    <- "pas" # "mcmc"
-    anneal       <- "on"  # not used in "pas"
-    anneal_power <- 4     # not used in "pas"
 
     phi <- 1.0
 
@@ -560,7 +558,7 @@ make_parameters <- function(
           "dpsire", "ppdam", "group_size", "I0",
           # Model traits
           "compartments", "timings", "all_traits", "model_traits",
-          "Sigma_E", "Sigma_G", "cov_G", "cov_E", "ge_opts",
+          "Sigma_E", "Sigma_G", "cov_G", "cov_E",
           "sim_link_traits", "sim_link_trial", "sim_link_donor", "sim_link_txd",
           "sim_link_weight", "sim_link_shapes",
           "link_traits", "link_trial", "link_donor", "link_txd", "link_weight", "link_shapes",
@@ -574,7 +572,7 @@ make_parameters <- function(
           "weight_fe", "sim_weight_fe", "weight_is_nested",
           # MCMC & extra
           "priors", "cov_prior", "single_prior",
-          "popn_format", "bici_cmd", "algorithm", "anneal", "anneal_power",
+          "popn_format", "bici_cmd", "algorithm",
           "nchains", "nsample", "burnprop", "thinto", "nchains",
           "phi", "nsample_per_gen", "sample_states",
           "ie_output", "time_step", "time_step_bici", "censor", "nreps",

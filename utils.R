@@ -9,10 +9,10 @@ str_last <- function(x) str_sub(x, -1L)
 # split a string into individual characters
 str_chars <- function(x) str_split_1(x, "")
 
-# Write sparse matrix so that SIRE can read it
+# Write sparse matrix
 write_sparse_matrix <- function(M, file) {
     dt <- as.data.table(summary(M))
-    # Matrix is symmetric, but SIRE needs both halves specified
+    # Matrix is symmetric, but both halves specified
     dt <- rbind(dt, dt[i != j, .(i = j, j = i, x)])
     setorder(dt, i, j)
     fwrite(dt, file = file,
@@ -21,7 +21,7 @@ write_sparse_matrix <- function(M, file) {
 }
 
 
-# Write sparse matrix so that SIRE can read it
+# Write sparse matrix
 write_dt_as_sparse <- function(dt, file) {
     dt <- rbind(dt, dt[i != j, .(i = j, j = i, x)])
     setorder(dt, i, j)

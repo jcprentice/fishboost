@@ -76,20 +76,14 @@ fes <- expand.grid(sildt1,
 
 # Preferred parameter order
 param_order <- c(
-    # BICI parameters
-    "beta_Tr1", "beta_Tr2", "LP_Tr1,Don", "LP_Tr1,Rec", "LP_Tr2,Don",
-    "LP_Tr2,Rec", "DP_Tr1,Don", "DP_Tr1,Rec", "DP_Tr2,Don", "DP_Tr2,Rec",
-    "RP_Tr1,Don", "RP_Tr1,Rec", "RP_Tr2,Don", "RP_Tr2,Rec", "gamma_shape_Tr1,Don",
-    "gamma_shape_Tr1,Rec", "gamma_shape_Tr2,Don", "gamma_shape_Tr2,Rec",
-
-    # SIRE parameters
-    "beta", "latent_period", "LP_shape", "detection_period", "DP_shape",
-    "removal_period", "RP_shape", "sigma",
     "cov_G_ss", "cov_G_ii",  "cov_G_tt", "r_G_si", "r_G_st", "r_G_it",
     "cov_E_ss", "cov_E_ii",  "cov_E_tt", "r_E_si", "r_E_st", "r_E_it",
     "cov_P_ss", "cov_P_ii",  "cov_P_tt", "h2_ss", "h2_ii", "h2_tt",
-    fes,
-    "MVPSF")
+    "beta_Tr1", "beta_Tr2", "sigma",
+    "LP_Tr1,Don", "LP_Tr1,Rec", "LP_Tr2,Don", "LP_Tr2,Rec",
+    "DP_Tr1,Don", "DP_Tr1,Rec", "DP_Tr2,Don", "DP_Tr2,Rec",
+    "RP_Tr1,Don", "RP_Tr1,Rec", "RP_Tr2,Don", "RP_Tr2,Rec",
+    fes, "MVPSF")
 
 full_param_order <- rename_pars(param_order)
 

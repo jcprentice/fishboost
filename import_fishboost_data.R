@@ -6,7 +6,7 @@
 # For simulations purposes, we need "id" and "group" for the epidemic, and
 # "sire" and "dam" for generating pedigree and trait values.
 #
-# If just using directly with SIRE 2.0, we need the "Tinf" and "Tdeath" values.
+# If just using directly with BICI, we need the "Tinf" and "Tdeath" values.
 # There should be two ways of obtaining these, so we get both to check
 # consistency.
 #
