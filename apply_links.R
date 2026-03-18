@@ -9,6 +9,7 @@
 apply_links <- function(params) {
     {
         use_traits       <- params$use_traits
+        model_traits     <- params$model_traits
         sim_trial_fe     <- params$sim_trial_fe
         sim_donor_fe     <- params$sim_donor_fe
         sim_txd_fe       <- params$sim_txd_fe
@@ -43,17 +44,17 @@ apply_links <- function(params) {
     # Make explicit copies because data.tables work by reference
     params2 <- copy(params)
 
-    # All changes made to priors also happen in params2
+    # All changes made to priors also happen in params2 (because DT)
     priors  <- params2$priors
 
     # Get the first letter of each model traitname for convenience
-    sildt <- c("s", "i", "l", "d", "t")
-    ntraits <- 5L
+    t1 <- names(model_traits)
+    ntraits <- length(model_traits)
 
-    get_idxs <- function(s) match(str_chars(s), sildt)
+    get_idxs <- function(s) match(str_chars(s), t1)
 
     # Individual Effects ----
-    if (use_traits %notin% c("", "none")) {
+    if (use_traits %notin% c("", "none", NA)) {
         # Turn sim_link_traits into string vector
         new_idxs <- get_idxs(sim_link_traits)
 
@@ -71,7 +72,7 @@ apply_links <- function(params) {
         get_LT_pars <- function(x) c(diag(x), t(x)[lower.tri(x)])
         duplicate_GE <- function(x) c(x, str_replace(x, "G", "E"))
 
-        pars <- expand.grid("r_G_", sildt, sildt) |>
+        pars <- expand.grid("r_G_", t1, t1) |>
             apply(1, str_flatten) |>
             matrix(ntraits, ntraits) |>
             set_diag_to_cov() |>
