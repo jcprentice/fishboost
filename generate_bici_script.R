@@ -122,6 +122,7 @@ generate_bici_script <- function(popn, params) {
                              number = nreps,
                              timestep = timestep,
                              seed = seed,
+
                              compress = "never")
 
         ## Post-Sim ----
@@ -140,7 +141,10 @@ generate_bici_script <- function(popn, params) {
 
         x$section_model_species <- "Model species"
 
-        x$species <- list(node = "species", name = "Fish", type = "individual")
+        x$species <- list(node = "species",
+                          name = "Fish",
+                          type = "individual",
+                          "trans-tree" = "on")
 
 
         ## Compartments ----
@@ -152,9 +156,9 @@ generate_bici_script <- function(popn, params) {
         x$class_ds <- list(node = "class", name = "DS", index = "a")
 
         x$comp_ds_S <- list(node = "comp", name = "S")
-        x$comp_ds_E <- list(node = "comp", name = "E")
-        x$comp_ds_I <- list(node = "comp", name = "I")
-        x$comp_ds_D <- list(node = "comp", name = "D")
+        x$comp_ds_E <- list(node = "comp", name = "E", infected = "true")
+        x$comp_ds_I <- list(node = "comp", name = "I", infected = "true")
+        x$comp_ds_D <- list(node = "comp", name = "D", infected = "true")
         x$comp_ds_R <- list(node = "comp", name = "R")
 
         # Remove nodes for models we don't need
