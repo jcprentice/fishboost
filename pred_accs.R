@@ -11,6 +11,11 @@ pred_accs_plot <- function(dataset = "sim-test-inf", name = "scen-1-1", parents_
         dataset <- "sim-test-inf"; name <- "scen-1-1"; parents_only <- TRUE
     }
 
+    pa_dir <- str_glue("datasets/{dataset}/gfx/pred_accs")
+    if (!dir.exists(pa_dir)) {
+        dir.create(pa_dir)
+    }
+
     res <- readRDS(str_glue("datasets/{dataset}/results/{name}.rds"))
     params <- res$params
 
@@ -81,7 +86,7 @@ pred_accs_plot <- function(dataset = "sim-test-inf", name = "scen-1-1", parents_
              subtitle = params$description |>
                  str_split_1(", ") |>
                  str_subset("coverage|convergence", negate = TRUE) |>
-                 str_collapse_comma()) +
+                 str_flatten_comma()) +
              theme_classic() +
              theme(plot.title = element_text(size = 22),
               plot.subtitle = element_text(size = 16))
@@ -89,7 +94,7 @@ pred_accs_plot <- function(dataset = "sim-test-inf", name = "scen-1-1", parents_
     plt <- plot_grid(title_plt, p,
                      ncol = 1, rel_heights = c(0.2, 1))
 
-    ggsave(str_glue("datasets/{dataset}/gfx/pred_accs/{name}-pa{parents}.pdf",
+    ggsave(str_glue("{pa_dir}/{name}-pa{parents}.pdf",
                     parents = if (parents_only) "_parents" else ""),
            plt, width = 15, height = 5)
     plt
@@ -158,11 +163,13 @@ pred_accs <- function(dataset = "sim-base-inf", name = "scen-5-1", parents_only 
 }
 
 if (FALSE) {
-    scens <- 1:13
+    dataset <- "sim-test-inf"
+    scens <- 1:10
+
     PAs <- map(scens, \(scen) {
-        reps <- 1:20
-        out <- map(reps, ~ pred_accs("sim-base-inf", str_glue("scen-{scen}-{.x}"),
-                                     parents_only = TRUE, method = "kendall"))
+        reps <- 1:10
+        out <- map(reps, possibly(~ pred_accs(dataset, str_glue("scen-{scen}-{.x}"),
+                                     parents_only = TRUE, method = "kendall")))
         out1 <- map(out, as.list) |> rbindlist(idcol = "rep")
         # out1[, map(.SD, mean)]
     }) |>
