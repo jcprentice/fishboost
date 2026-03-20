@@ -88,8 +88,6 @@ make_parameters <- function(
         }
     }
 
-    if (!exists("dataset")) message("warning, no dataset defined!")
-
     # Fix any parameters incorrectly assigned as NULL
     {
         model_type    <- model_type %||% "SEIDR"
@@ -217,7 +215,7 @@ make_parameters <- function(
     ## Genetic and Environmental covariances ----
 
     # Likely using only a subset of traits
-    use_traits <- if (use_traits %in% c("none", NA)) {
+    use_traits <- if (use_traits %in% c("", "none", NA)) {
         ""
     } else if (use_traits == "all") {
         model_traits |> names() |> str_flatten()
@@ -382,8 +380,10 @@ make_parameters <- function(
     ge <- max(group_effect, 0)
 
     # What kind of prior do we want?
-    cov_prior <- list(type = c("default", "normal", "uniform-lkj", "inv-wishart")[[1]],
-                      vals = c())
+    cov_prior <- list(type = "default")
+    # cov_prior <- list(type = "normal-lkj", vals = (2, 1.2))
+    # cov_prior <- list(type = "uniform-lkj", vals = (1e-4, 4, 1.2))
+    # cov_prior <- list(type = "inv-wishart", vals = c(S, nu))
 
     single_prior <- c("inverse", "uniform")[[1]]
 
