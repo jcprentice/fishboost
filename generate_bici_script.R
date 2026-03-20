@@ -143,8 +143,9 @@ generate_bici_script <- function(popn, params) {
 
         x$species <- list(node = "species",
                           name = "Fish",
-                          type = "individual",
-                          "trans-tree" = "on")
+                          type = "individual")
+
+        if (FALSE) x$species[["tree-span"]] <- "on"
 
 
         ## Compartments ----
@@ -615,6 +616,7 @@ generate_bici_script <- function(popn, params) {
 
         x$section_priors <- "Model priors"
 
+        ## TP priors ----
         period_to_pp <- function(period = "latent") {
             period |> str_1st() |> str_to_upper() |> str_c("P")
         }
@@ -699,15 +701,22 @@ generate_bici_script <- function(popn, params) {
         lp_types <- with(priors[str_ends(parameter, "period"), .(parameter, type)],
                          setNames(type, parameter)) |> as.list()
 
+        ## Cov priors ----
+
         if (use_traits %notin% c("", "none", NA)) {
            if (!exists("cov_prior")) {
                 cov_prior <- list(type = "default", vals = c())
+           }
+
+            if (cov_prior$type == "uniform-lkj") {
+                cov_prior$vals[[1]] <- max(cov_prior$vals[[1]], 1e-4)
             }
 
             cov_prior_str <- str_glue("covar-{x}({y})",
                                       x = cov_prior$type,
                                       y = cov_prior$vals |>
-                                          map_chr(format, scientific = FALSE) |>
+                                          format(scientific = FALSE) |>
+                                          str_remove("NULL") |>
                                           str_flatten(","))
 
             x$prior_cov_G <- list(
