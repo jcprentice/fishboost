@@ -1,3 +1,11 @@
+{
+    library(data.table)
+    library(stringr)
+    library(purrr)
+    library(ggplot2)
+    library(ggh4x)
+}
+
 plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
     if (FALSE) {
         dataset <- "sim-test-inf"; scen <- 1; rep <- 1
