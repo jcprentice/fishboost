@@ -21,7 +21,7 @@ if (run_from_script) {
     row_no <- as.integer(cmd_args[[2]])
 } else {
     pname <- "sim-test-inf"
-    row_no <- 71L
+    row_no <- 1L
 }
 
 {
@@ -46,15 +46,24 @@ if (run_from_script) {
     walk(names(protocol), \(param) {
         value <- protocol[[param]]
 
-        message(str_glue("- {param} = {x}{value}{x}",
-                         x = if (is.character(value)) '"' else "",
-                         v = if (is.list(value)) capture.output(dput(value[[1]])) else value))
+        # This parameter is provided as either a list or list within a list
+        if (param == "cov_prior" && typeof(value[[1]]) == "list") {
+            value <- value[[1]]
+        }
+
+        message(str_glue("- {param} = {q}{v}{q}",
+                         q = if (is.character(value)) '"' else "",
+                         v = if (is.list(value)) {
+                             capture.output(dput(value))
+                         } else {
+                             value
+                         }))
 
         # Skip any values already provided to make_pars()
         if (param %in% c("model_type", "dataset", "name", "setup", "group_effect",
                          "use_traits", "vars", "cors",
                          "trial_fe", "donor_fe", "txd_fe", "weight_fe") ||
-            is.na(value)) {
+            (length(value) == 1 && is.na(value))) {
             return()
         }
 
@@ -129,12 +138,9 @@ if (run_from_script) {
             params$cov_E <<- params$cov_E * (1 - value)
             # FIXME: do something about Sigma_X
 
-        } else if (param == "cov_prior") {
-            params$cov_prior <<- value[[1]]
-
         } else {
             # Any other parameter that doesn't require special treatment
-            params[param] <<- value
+            params[[param]] <<- value
         }
     })
 
