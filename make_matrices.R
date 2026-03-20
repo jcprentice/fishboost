@@ -35,8 +35,10 @@ make_matrices <- function(model_traits,
     }
 
     # Now fill in named values for vars
-    for (i in intersect(model_traits, names(vars))) {
-        Sigma[[i, i]] <- vars[[i]]
+    for (i in model_traits) {
+        if (i %in% names(vars)) {
+            Sigma[i, i] <- vars[[i]]
+        }
     }
 
     # Finally fill in named values for cors
