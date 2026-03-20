@@ -7,13 +7,13 @@
 #  memory limit of 1 Gbyte: -l h_vmem
 #$ -N fb-test
 #$ -pe sharedmem 16
-#$ -t 1-12
+#$ -t 1-9
 #$ -R y
 #$ -P roslin_wilson
 #$ -cwd
 #$ -o out
 #$ -e out
-#$ -l h_rt=600:00:00     # <-- ** make sure this is correct!!! **
+#$ -l h_rt=200:00:00     # <-- ** make sure this is correct!!! **
 
 # Initialise the environment modules
 . /etc/profile.d/modules.sh
