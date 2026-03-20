@@ -58,11 +58,20 @@ tornadoes <- function(dataset = "fb-test", scens = 0, combine = TRUE) {
                       str_c("cov_P_", sildt2))
 
         model_pars <- c(
-            "sigma", "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
-            "empty", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
-            "empty", "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
-            "empty", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec"
+            "sigma",  "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
+            "infrat", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
+            "sigma",  "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
+            "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec"
         )
+
+        # Remove repeated sigma and infrat
+        beta_in <- str_subset(pars, "beta")
+        if (beta_in[[1]] == "beta_Tr2") {
+            model_pars[c(1, 6)] <- "empty"
+        } else {
+            model_pars[c(11, 16)] <- "empty"
+        }
+
 
         fes <- expand.grid(sildt1,
                            c("trial", "donor", "txd", "weight", "weight1", "weight2")) |>
