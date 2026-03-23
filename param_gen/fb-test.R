@@ -37,12 +37,14 @@ protocol[, setup := d |> str_split_i(", ", 1) |> str_to_lower(), .I]
 
 protocol[, use_traits := get_lpart(d, "GEV"), .I]
 protocol[str_detect(d, "GEV SITTT"), `:=`(
-    use_traits = "sildt", link_traits = "sittt"
+    use_traits = "sildt",
+    link_traits = "sittt"
 )]
 
 protocol[, weight_fe := get_lpart(d, "Weight"), .I]
 protocol[str_detect(d, "Weight SITTT"), `:=`(
-    weight_fe = "sildt", link_weight = "sittt"
+    weight_fe = "sildt",
+    link_weight = "sittt"
 )]
 
 
