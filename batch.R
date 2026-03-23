@@ -28,7 +28,7 @@ if (run_from_script) {
     # Grab row_no from protocol file and common options (if they exist) and
     message(str_glue("Running: '{pname} / row {row_no}'"))
     protocol <- with(readRDS(str_glue("param_sets/{pname}.rds")),
-                     safe_merge(protocol[row_no],
+                     safe_merge(dt_row_to_list(protocol[row_no]),
                                 if (exists("common")) common))
 
     # protocol$patch_dataset <- "fb-test"
@@ -46,12 +46,7 @@ if (run_from_script) {
     walk(names(protocol), \(param) {
         value <- protocol[[param]]
 
-        # This parameter is provided as either a list or list within a list
-        if (param == "cov_prior" && typeof(value[[1]]) == "list") {
-            value <- value[[1]]
-        }
-
-        message(str_glue("- {param} = {q}{v}{q}",
+       message(str_glue("- {param} = {q}{v}{q}",
                          q = if (is.character(value)) '"' else "",
                          v = if (is.list(value)) {
                              capture.output(dput(value))
