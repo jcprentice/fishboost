@@ -20,7 +20,7 @@ if (run_from_script) {
     pname <- cmd_args[[1]]
     row_no <- as.integer(cmd_args[[2]])
 } else {
-    pname <- "sim-test-inf"
+    pname <- "fb-test"
     row_no <- 1L
 }
 
@@ -180,7 +180,6 @@ if (run_from_script) {
     params$seed <- if (tmp_seed >= 0) tmp_seed else protocol$replicate
     set.seed(params$seed)
 
-    params_bak <- params
     params2 <- params |>
         patch_params() |>  # Patch params with posteriors from dataset / scenario
         set_use_flags() |> # Ensure priors are correctly enabled

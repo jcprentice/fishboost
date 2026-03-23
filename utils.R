@@ -59,6 +59,13 @@ safe_sample <- function(x, ...) {
     }
 }
 
+# This function handles list columns, preventing lists of lists
+dt_row_to_list <- function(x) {
+    map(x, ~ {
+        if (typeof(.x[[1]]) == "list") .x[[1]] else .x
+    })
+}
+
 # Merge lists A and B, being careful to not overwrite anything in A from B
 safe_merge <- function(A, B) {
     c(A, B[setdiff(names(B), names(A))])
