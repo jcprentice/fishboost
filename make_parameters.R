@@ -21,7 +21,7 @@
 #' @param scenario Integer for scenario
 #' @param replicate Integer for replicate
 #' @param setup Population layout
-#' @param use_traits Which traits to use (this is going to be "clever") use
+#' @param use_traits Which traits have individual genetic effects applied. Use
 #' * "all" or "none", or a subset using the first letter of each trait
 #' * "sildt" = "sus", "inf", "lat", "det", "tol"
 #' @param vars Variances: diagonal of covariance matrix, either
