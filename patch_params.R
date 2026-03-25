@@ -155,7 +155,7 @@ patch_params <- function(params, trace_row = 0) {
                               "LP" = "latent_period",
                               "RP" = "removal_period",
                               "DP" = "detection_period",
-                              "cov" = "^(cov|r)_[GE]_",
+                              "ies" = "^(cov|r)_[GE]_",
                               "var" = "^cov_[GE]_",
                               "cor" = "^r_[GE]_",
                               "infrat" = "infrat",
@@ -187,7 +187,7 @@ patch_params <- function(params, trace_row = 0) {
     # We overwrite params2's Sigma_G and Sigma_E with new values, remembering
     # that r_*_** are correlations, not covariances, so they need to be
     # transformed first.
-    if ("cov" %notin% skip_patches) {
+    if ("ies" %notin% skip_patches) {
         priors1 <- params2$priors$true_val |>
             setNames(params2$priors$parameter) |>
             as.list()
