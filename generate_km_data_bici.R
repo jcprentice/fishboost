@@ -8,18 +8,17 @@
 generate_km_data_bici <- function(dataset = "fb-test",
                                   scen = 1,
                                   opts = list(n_plots = 50L,
-                                              use_means = FALSE)) {
+                                              post = "sampled")) {
     if (FALSE) {
         dataset <- "fb-qtest"
         scen <- 4
-        opts <- list(n_plots = 2L, use_means = FALSE)
+        opts <- list(n_plots = 2L, post = "sampled")
     }
 
     data_dir <- str_glue("datasets/{dataset}/data")
     res_dir <- str_glue("datasets/{dataset}/results")
 
     n_plots <- opts$n_plots
-    use_means <- opts$use_means
 
     f <- list.files(data_dir, "etc_ps.rds",
                     recursive = TRUE, full.names = TRUE) |>

@@ -99,8 +99,7 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
         labs(x = "Time (days)",
              y = "Proportion",
              # title = "Kaplan-Meier plot by seeders / contact fish",
-             title = str_glue("KM by seeder / contact, {um}",
-                              um = if (opts$use_means) "mean" else "samples"),
+             title = str_glue("KM by seeder / contact, {opts$post}"),
              subtitle = str_glue("{params$dataset}/{params$label}: {description}"),
              colour = "Source") +
         theme_bw() +

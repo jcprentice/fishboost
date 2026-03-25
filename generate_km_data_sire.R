@@ -8,13 +8,12 @@
 generate_km_data_sire <- function(dataset = "fb-final",
                              scen = 1,
                              opts = list(n_plots = 30,
-                                         use_means = FALSE)) {
+                                         post = "sampled")) {
 
     # dataset <- "fb-final"; scen <- 1;
-    # opts <- list(n_plots = 3, use_means = FALSE)
+    # opts <- list(n_plots = 3, post = "sampled")
     # use_bici <- TRUE
-    n_plots   <- opts$n_plots
-    use_means <- opts$use_means
+    n_plots <- opts$n_plots
 
     message(str_glue("Generating KM data for '{dataset}/s{scen}-1'"))
 
@@ -72,7 +71,7 @@ generate_km_data_sire <- function(dataset = "fb-final",
         params$traits_source <- "posterior"
         params$patch_dataset <- dataset
         params$patch_name    <- str_glue("scen-{scen}-1")
-        params$patch_type    <- if (use_means) "mean" else "sampled"
+        params$patch_type    <- opts$post
         params$patch_state   <- TRUE # str_starts(dataset, "fb")
         params$msgs          <- FALSE
 
