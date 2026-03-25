@@ -55,7 +55,7 @@ run_all_tests <- function(dataset = "fb-qtest",
         f <- str_glue("datasets/{dataset}/meta/km_data_ps.rds")
 
         opts = list(n_plots = 50,
-                    use_means = FALSE)
+                    post = "sampled")
         plotopts = c("drop_small_groups",
                      "drop_donors",
                      "use_sire_Tinfs")[0]
