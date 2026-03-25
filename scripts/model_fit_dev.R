@@ -54,10 +54,10 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
     # Extract RMS deviance for each id, sire, trial / Tsym, RP
     fit <- map(km_data, \(x) {
         if (FALSE) {
-            i <- 1; x <- km_data[[i]]
+            i <- 4; x <- km_data[[i]]
         }
 
-        x1 <- x$data[, .(id, sire, trial, donor, Tsym, RP, src)] |>
+        x1 <- x$data[!is.na(sire), .(id, sire, trial, donor, Tsym, RP, src)] |>
             setorder(id, sire, trial)
 
         if ("drop_outliers" %in% opts) {
@@ -103,37 +103,61 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
                      survival = seq(1, 0, length = .N + 1),
                      src = first(src)),
                  .(id, sire, trial)] |>
-            melt(measure.vars = c("Tsym", "RP"))
+            melt(measure.vars = c("Tsym", "RP")) |>
+            setorder(id, sire, variable)
 
+        if (TRUE || "drop_small_groups" %in% opts) {
+            x2[, keep := !all(value %in% c(0, NA)), .(id, sire, trial, variable)]
+            x2 <- x2[keep == TRUE]
+            x2[, keep := NULL]
+        }
 
+        # Weight by number of points and by 1 / time covered
+        x2[, `:=`(wt1 = .N, wt2 = max(value, na.rm = TRUE)),
+                  .(id, sire, trial, variable)] |>
+            _[, wt := wt1 / max(wt1) / wt2 * max(wt2)] |>
+            _[, c("wt1", "wt2") := NULL]
+
+        # Expand x2 to include samples at all times [0, tmax[trial]]
+        # Don't do anything with NA values, can filter them out later
         x3 <- x2[, {
             times <- seq(0, tmax[trial])
-            lv <- last(value)
-            if (is.na(lv) || lv < tmax[trial]) {
-                value <- c(value, tmax[trial])
-                survival <- c(survival, survival[[.N]])
-            }
+            # lv <- last(value)
+            # if (is.na(lv) || lv < tmax[trial]) {
+            #     value <- c(value, tmax[trial])
+            #     survival <- c(survival, survival[[.N]])
+            # }
             f <- approxfun(value, survival,
                            method = "constant",
                            ties = list("ordered", max))
             s1 <- f(times)
-            s1[is.na(s1)] <- 0
+            # s1[is.na(s1)] <- 0
 
-            list(time = times, survival = s1, src = first(src))
+            list(time = times, survival = s1,
+                 src = first(src), wt = first(wt))
         },
         .(id, sire, trial, variable)]
 
-        x4 <- x3[, dev := survival - last(survival), time][id != last(id)]
+        # Remove times where FB is NA
+        x3[, tmp := seq(.N), id]
+        ids_to_keep <- x3[id == last(id) & !is.na(survival), tmp]
+        x3 <- x3[tmp %in% ids_to_keep]
+        x3[, tmp := NULL]
 
-        x4[, .(mad_all  = mean(abs(dev)),
-               mad_Tsym = mean(abs(dev[variable == "Tsym"])),
-               mad_RP   = mean(abs(dev[variable == "RP"])),
-               rms_all  = sqrt(mean(dev^2)),
-               rms_Tsym = sqrt(mean(dev[variable == "Tsym"]^2)),
-               rms_RP   = sqrt(mean(dev[variable == "RP"]^2))),
-           .(id, sire, trial)] |>
+        x4 <- x3[, dev := survival - last(survival), time] |>
+            _[id != last(id) & !is.na(dev)]
+
+        x5 <- x4[, .(mad_all  = sum(abs(dev)) * first(wt),
+                     mad_Tsym = sum(abs(dev[variable == "Tsym"])) * first(wt[variable == "Tsym"]),
+                     mad_RP   = sum(abs(dev[variable == "RP"])) * first(wt[variable == "RP"]),
+
+                     rms_all  = sqrt(sum(dev^2)) * first(wt),
+                     rms_Tsym = sqrt(sum(dev[variable == "Tsym"]^2)) * first(wt[variable == "Tsym"]),
+                     rms_RP   = sqrt(sum(dev[variable == "RP"]^2)) * first(wt[variable == "RP"])),
+                 .(id, sire, trial)] |>
             melt(measure.vars = measure(type, variable,
                                         pattern = "(mad|rms)_(.*)"))
+        x5
     }) |>
         rbindlist(idcol = "scen")
 
@@ -168,7 +192,7 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
              y = "RMS of deviation",
              title = "RMS of deviation between data and model output",
              subtitle = str_glue("Dataset: '{dataset}'")) +
-        theme_classic() +
+        theme_bw() +
         theme(plot.title = element_text(size = 16),
               plot.background = element_rect(fill = "white"))
     fit_plt_rms
@@ -191,7 +215,7 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
              y = "Mean area",
              title = "Mean Absolute Deviation between data and model output",
              subtitle = str_glue("Dataset: '{dataset}'")) +
-        theme_classic() +
+        theme_bw() +
         theme(plot.title = element_text(size = 16),
               plot.background = element_rect(fill = "white"))
     fit_plt_mad
