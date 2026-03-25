@@ -15,7 +15,7 @@ km_plots <- function(dataset = "fb-test",
                      scens = 0,
                      simulate_new_data = "bici",
                      opts = list(n_plots = 5,
-                                 use_means = FALSE),
+                                 post = "sample"),
                      plotopts = c("drop_small_groups",
                                   "drop_donors",
                                   "use_sire_Tinfs",
@@ -24,7 +24,7 @@ km_plots <- function(dataset = "fb-test",
     if (FALSE) {
         dataset <- "sim-test-inf"; scens <- 0;  simulate_new_data <- "no"
         dataset <- "fb-test"; scens <- 0; simulate_new_data <- "no"
-        opts <- list(n_plots = 50, use_means = FALSE)
+        opts <- list(n_plots = 50, post = "sample")
         plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors",
                       "t1", "t2")[1:2]
     }
@@ -34,10 +34,8 @@ km_plots <- function(dataset = "fb-test",
             str_split_i("-", 2) |> unique() |> as.integer() |> sort()
     }
 
-    # use_means <- FALSE
-
     # Use posterior means (pm) or sample from posterior (ps, default)
-    um <- if (opts$use_means) "_pm" else "_ps"
+    um <- switch(opts$post, "sample" = "_ps", "mean" =, "median" = "_pm")
     es <- if ("extreme_sires" %in% plotopts) "_es" else ""
     dd <- if ("drop_donors" %in% plotopts) "_dd" else ""
 
@@ -139,7 +137,7 @@ if (FALSE) {
     dataset <- "sim-test-inf"
     scens <- 0
     simulate_new_data <- "no"
-    opts <- list(n_plots = 50, use_means = FALSE)
+    opts <- list(n_plots = 50, post = "sample")
     plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors")[1]
 
     km_plots(dataset = dataset,
@@ -153,8 +151,8 @@ if (FALSE) {
     dataset <- "fb-test"
     scens <- 0
     simulate_new_data <- "no"
-    opts <- list(n_plots = 50, use_means = FALSE)
-    plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors")[1:2]
+    opts <- list(n_plots = 50, post = "sample")
+    plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors")[1]
 
     km_plots(dataset, scens, simulate_new_data, opts, plotopts)
 }
@@ -163,7 +161,7 @@ if (FALSE) {
     dataset <- "fb-final"
     scens <- 1:8
     simulate_new_data <- "no"
-    opts <- list(n_plots = 50, use_means = FALSE)
+    opts <- list(n_plots = 50, post = "sample")
     plotopts <- "drop_small_groups"
 
     km_plots(dataset = dataset,
@@ -177,7 +175,7 @@ if (FALSE) {
     dataset <- "fb-final2"
     scens <- 1:4
     simulate_new_data <- "R"
-    opts <- list(n_plots = 50, use_means = FALSE)
+    opts <- list(n_plots = 50, post = "sample")
     plotopts <- "drop_small_groups"
 
     km_plots(dataset = dataset,
@@ -191,7 +189,7 @@ if (FALSE) {
     dataset <- "fb-lp"
     scens <- 1:12
     simulate_new_data <- "R"
-    opts <- list(n_plots = 50, use_means = FALSE)
+    opts <- list(n_plots = 50, post = "sample")
     plotopts <- "drop_small_groups"
 
     km_plots(dataset = dataset,
@@ -205,7 +203,7 @@ if (FALSE) {
     dataset <- "fb-lp2"
     scens <- 1:12
     simulate_new_data <- "R"
-    opts <- list(n_plots = 50, use_means = FALSE)
+    opts <- list(n_plots = 50, post = "sample")
     plotopts <- "drop_small_groups"
 
     km_plots(dataset = dataset,
@@ -219,7 +217,7 @@ if (FALSE) {
     dataset <- "fb-simple"
     scens <- 1:10
     simulate_new_data <- "R"
-    opts <- list(n_plots = 50, use_means = FALSE)
+    opts <- list(n_plots = 50, post = "sample")
     plotopts <- "drop_small_groups"
 
     km_plots(dataset = dataset,
@@ -233,7 +231,7 @@ if (FALSE) {
     dataset <- "fb-donors"
     scens <- 1:3
     simulate_new_data <- "R"
-    opts <- list(n_plots = 50, use_means = FALSE)
+    opts <- list(n_plots = 50, post = "sample")
     plotopts <- "drop_small_groups"
 
     km_plots(dataset = dataset,
@@ -247,7 +245,7 @@ if (FALSE) {
     dataset <- "sim-test1"
     scens <- 1:2
     simulate_new_data <- "R"
-    opts <- list(n_plots = 50, use_means = FALSE)
+    opts <- list(n_plots = 50, post = "sample")
     plotopts <- "drop_small_groups"
 
     km_plots(dataset = dataset,
@@ -258,7 +256,7 @@ if (FALSE) {
 }
 
 if (FALSE) {
-    opts <- list(n_plots = 50, use_means = FALSE)
+    opts <- list(n_plots = 50, post = "sample")
     plotopts = c("drop_small_groups", "use_sire_Tinfs")
 
     km_plots(dataset = "fb-final",
