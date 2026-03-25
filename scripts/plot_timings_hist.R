@@ -9,19 +9,19 @@
 
 timings_hist <- function(dataset = "sim-test1",
                          scens = 1:9,
-                         use_means = FALSE,
+                         post = "sampled",
                          apply_gammas = 0) {
-    
+
     # dataset <- "fb-simple"; scens <- 1:10
     # dataset <- "fb-final-old"; scens <- 1L
     # dataset <- "sim-test1"; scens <- 1:9
-    # use_means <- FALSE; apply_gammas <- 0
-    
+    # post = "sampled"; apply_gammas <- 0
+
     trials <- 12
-    
-    um <- if (use_means) "_pm" else "_ps"
+
+    um <- switch(post, "sampled" = "_ps", "_pm")
     ag <- if (apply_gammas > 0) str_glue("_gam{apply_gammas}") else ""
-    
+
     f <- str_glue("datasets/{dataset}/meta/km_data{um}{ag}.rds")
     km_data <- readRDS(f)
     data <- map(scens, \(i) {
@@ -34,35 +34,35 @@ timings_hist <- function(dataset = "sim-test1",
         x1[, src2 := str_c(trial, "_", donor)]
         x1
     })
-    
+
     descriptions <- map_chr(scens, ~ km_data[[.x]]$params$description)
-    
+
     breaks <- expand.grid(trial = 1:2, donor = 0:1) |>
         apply(1, str_flatten, "_")
-    
+
     labels <- expand.grid(#src = c("Data", "Simulation"),
         trial = c("Trial 1", "Trial 2"),
         donor = c("Contact", "Seeder")) |>
         apply(1, str_flatten, " ") |>
         setNames(breaks)
-    
-    
+
+
     plts <- map(scens, \(i) {
         data_i <- data[[i]]
         description <- descriptions[[i]]
         params <- km_data[[i]]$params
-        
-        um <- if (use_means) "simulations from posterior means" else "sampled from posterior"
+
+        um <- if (post == "sampled") "sampled from posterior" else str_glue("simulations from posterior {post}")
         ag <- if (apply_gammas > 0) str_glue(", gamma={apply_gammas}")
-        
+
         subtitle <- str_flatten(c(with(params, str_glue("{dataset}/{label}: {description}")),
                                   "\n",
                                   str_flatten_comma(c(um, ag))))
-        
+
         data1 <- data_i[(var == "Tinf" & value < 160) |
                             (var == "RP" & value < 50) |
                             (var == "Tsym" & value < 160)]
-        
+
         ggplot(data1, aes(x = value)) +
             geom_histogram(aes(y = after_stat(density),
                                fill = src),
@@ -97,20 +97,20 @@ timings_hist <- function(dataset = "sim-test1",
                             # src = c(fb = "Data", sim = "Simulation")))
                             src2 = labels))
     })
-    
-    
+
+
     gfx_dir <- str_glue("datasets/{dataset}/gfx/timings")
     if (!dir.exists(gfx_dir)) {
         message("- mkdir ", gfx_dir)
         dir.create(gfx_dir)
     }
-    
+
     walk(scens, \(i) {
         plt_str <- str_glue("{gfx_dir}/{dataset}-s{i}-timings{um}{ag}.png")
         ggsave(plt_str, plts[[i]], width = 9, height = 6, unit = "in")
         message("plotting ", plt_str)
     })
-    
+
     plts
 }
 
@@ -118,11 +118,11 @@ timings_hist <- function(dataset = "sim-test1",
     # dataset <- "fb-final"; scens <- 1:8
     # dataset <- "fb-donors"; scens <- 1:3
     dataset <- "fb-lp"; scens <- 1:12
-    use_means <- FALSE
+    post = "sampled"
     apply_gammas <- 0
 }
 
 plts <- timings_hist(dataset = dataset,
                      scens = scens,
-                     use_means = use_means,
+                     post = post,
                      apply_gammas = apply_gammas)
