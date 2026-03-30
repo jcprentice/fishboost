@@ -54,7 +54,8 @@ patch_params <- function(params, trace_row = 0) {
     # Select patch ----
 
     # This might be already set, in which case skip
-    if (!is.numeric(patch_state) && patch_state == TRUE) {
+    # if (!is.numeric(patch_state) && patch_state == TRUE) {
+    if (identical(patch_state, TRUE)) {
         f <- str_glue("{out_dir}/{etc_src}.rds")
         patch_state <- if (!file.exists(f)) {
             message("no state files found, continuing without")
@@ -94,7 +95,7 @@ patch_params <- function(params, trace_row = 0) {
     # Use trace file
     # Caution: 0 == FALSE, so instead test if is logical, since we've already
     # handled is TRUE
-    if (is.logical(patch_state)) {
+    if (identical(patch_state, FALSE)) {
         # Get parameters from trace file
         f <- str_glue("{out_dir}/extended_trace_combine.tsv")
         if (!file.exists(f)) {
