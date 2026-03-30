@@ -7,6 +7,7 @@
     library(ggtext)
     library(cowplot)
     # library(ggh4x)
+
     source("utils.R")
 }
 
@@ -20,7 +21,7 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
     if (FALSE) {
         dataset <- "fb-test"
         dataset <- "sim-base-inf"
-        scens <- 0; opts = "extreme_sires"; alt = ""
+        scens <- 0; opts = character(0); alt = ""
     }
 
     message(str_glue("Calculating model fit deviation for '{dataset}'"))
@@ -54,7 +55,7 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
     # Extract RMS deviance for each id, sire, trial / Tsym, RP
     fit <- map(km_data, \(x) {
         if (FALSE) {
-            i <- 4; x <- km_data[[i]]
+            i <- 1; x <- km_data[[i]]
         }
 
         x1 <- x$data[!is.na(sire), .(id, sire, trial, donor, Tsym, RP, src)] |>
@@ -108,15 +109,21 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
 
         if (TRUE || "drop_small_groups" %in% opts) {
             x2[, keep := !all(value %in% c(0, NA)), .(id, sire, trial, variable)]
-            x2 <- x2[keep == TRUE]
+            pc <- x2[, mean(keep)]
+            if (pc < 1) {
+                message(str_glue("Keeping {p} % of values",
+                                 p = round(100 * pc, 1)))
+                x2 <- x2[keep == TRUE]
+            }
             x2[, keep := NULL]
         }
 
         # Weight by number of points and by 1 / time covered
-        x2[, `:=`(wt1 = .N, wt2 = max(value, na.rm = TRUE)),
-                  .(id, sire, trial, variable)] |>
-            _[, wt := wt1 / max(wt1) / wt2 * max(wt2)] |>
-            _[, c("wt1", "wt2") := NULL]
+        x2[, `:=`(wt1 = .N,
+                  wt2 = max(value, na.rm = TRUE)),
+           .(id, sire, trial, variable)]
+        x2[, wt := (wt1 * max(wt2)) / (max(wt1) * wt2)]
+        x2[, c("wt1", "wt2") := NULL]
 
         # Expand x2 to include samples at all times [0, tmax[trial]]
         # Don't do anything with NA values, can filter them out later
@@ -144,16 +151,18 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
         x3 <- x3[tmp %in% ids_to_keep]
         x3[, tmp := NULL]
 
+        # Calculate the deviation
         x4 <- x3[, dev := survival - last(survival), time] |>
             _[id != last(id) & !is.na(dev)]
 
+        # Reduce to summary statistics
         x5 <- x4[, .(mad_all  = sum(abs(dev)) * first(wt),
                      mad_Tsym = sum(abs(dev[variable == "Tsym"])) * first(wt[variable == "Tsym"]),
-                     mad_RP   = sum(abs(dev[variable == "RP"])) * first(wt[variable == "RP"]),
+                     mad_RP   = sum(abs(dev[variable == "RP"]))   * first(wt[variable == "RP"]),
 
                      rms_all  = sqrt(sum(dev^2)) * first(wt),
                      rms_Tsym = sqrt(sum(dev[variable == "Tsym"]^2)) * first(wt[variable == "Tsym"]),
-                     rms_RP   = sqrt(sum(dev[variable == "RP"]^2)) * first(wt[variable == "RP"])),
+                     rms_RP   = sqrt(sum(dev[variable == "RP"]^2))   * first(wt[variable == "RP"])),
                  .(id, sire, trial)] |>
             melt(measure.vars = measure(type, variable,
                                         pattern = "(mad|rms)_(.*)"))
