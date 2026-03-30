@@ -150,8 +150,8 @@ if (FALSE) {
 if (FALSE) {
     dataset <- "fb-test"
     scens <- 0
-    simulate_new_data <- "no"
-    opts <- list(n_plots = 50, post = "sample")
+    simulate_new_data <- "bici"
+    opts <- list(n_plots = 50, post = "median")
     plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors")[1]
 
     km_plots(dataset, scens, simulate_new_data, opts, plotopts)
