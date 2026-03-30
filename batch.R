@@ -255,19 +255,9 @@ message(str_glue("censor = {x}\nTmax = {y}",
 # plt <- plot_model(popn, params)
 
 
-## Generate config files ----
-{
-    # Create missing directories
-    params[str_ends(names(params), "_dir")] |>
-        as.character() |>
-        discard(dir.exists) |>
-        walk(~ message("- mkdir ", .x)) |>
-        walk(dir.create, recursive = TRUE)
+## Generate directories and config files ----
 
-    # Clean up old config files and generate fresh one
-    cleanup_bici_files(params)
-    bici_txt <- generate_bici_script(popn, params)
-}
+bici_txt <- generate_bici_script(popn, params)
 
 ## Run BICI ----
 
@@ -308,6 +298,8 @@ message(str_glue("censor = {x}\nTmax = {y}",
     output_dir <- params$output_dir
     results_dir <- params$results_dir
     bici_cmd <- params$bici_cmd
+    time_end <- now()
+
 
     if (bici_cmd == "inf") {
         # pe_name <- str_glue("{output_dir}/posterior.csv")
@@ -331,16 +323,14 @@ message(str_glue("censor = {x}\nTmax = {y}",
         results_pars <- c("params", "popn", "time_taken", "time_start", "time_end")
     }
 
-    time_end <- now()
-
     # Filter for results that we have and save
     results_pars |>
         keep(exists) |>
         mget() |>
         saveRDS(file = str_glue("{results_dir}/{name}.rds"))
 
-    # Generate etc_inf.rds or etc_sim.rds summary file
-    flatten_bici_states(dataset, name, bici_cmd)
+    # Generate etc_{inf,sim,ps}.rds summary file
+    flatten_bici_states(params)
 }
 
 message("Finished!")

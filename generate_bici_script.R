@@ -8,10 +8,23 @@
 #' @returns A character vector of lines of BICI script
 
 
-generate_bici_script <- function(popn, params) {
+generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
+
+    # Create missing directories
+    params[str_ends(names(params), "_dir")] |>
+        as.character() |>
+        discard(dir.exists) |>
+        walk(~ message("- mkdir ", .x)) |>
+        walk(dir.create, recursive = TRUE)
+
     with(params, {
         # attach(params)
         message(str_glue("Generating BICI script file '{data_dir}/{name}.bici' ..."))
+
+        if (clean_dirs) {
+            # Clean up old config files and generate fresh one
+            cleanup_bici_files(params)
+        }
 
         if (DEBUG) {
             # This turns off overwriting files while debugging
@@ -56,6 +69,14 @@ generate_bici_script <- function(popn, params) {
         ## Inference ----
 
         x$comment_inf = "Inference options"
+
+        if (is.null(params$tmax)) {
+            tmax <- if (sim_new_data == "bici") {
+                c(t1 = 200, t2 = 200)
+            } else {
+                c(t1 = 104, t2 = 160)
+            }
+        }
 
         seed <- as.integer(seed) %% 1e4L
         timestep <- max(ceiling(max(tmax) / 10) / 1e3, time_step_bici)

@@ -16,13 +16,15 @@
 # "sim": look for all 'state_<n>.txt' files, and save to 'etc-sim.rds'
 # "post-sim": look for a single 'state.txt' file and save to 'etc-ps.rds'
 
-flatten_bici_states <- function(dataset = "fb-test",
-                                name = "scen-1-1",
-                                bici_cmd = "inf") {
+flatten_bici_states <- function(params) {
     if (FALSE) {
-        dataset <- "testing"
+        dataset <- "fb-test"
         name <- "scen-1-1"
         bici_cmd <- "inf"
+    } else {
+        dataset  <- params$dataset
+        name     <- params$name
+        bici_cmd <- params$bici_cmd
     }
 
     message(str_glue("Flattening BICI state files for '{dataset}/{name}' via '{bici_cmd}'"))

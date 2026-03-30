@@ -22,7 +22,7 @@ run_from_script <- length(cmd_args) > 0
 
 {
     params <- make_parameters(
-        model_type = "SIR", # "SIR", "SEIR", "SIDR", or "SEIDR"
+        model_type = "SEIDR", # "SIR", "SEIR", "SIDR", or "SEIDR"
         dataset = "testing",
         name = "scen-1-1",
         setup = "fb_12_rpw", # chris, small, fb_12, fb_1, fb_2, single
@@ -35,7 +35,7 @@ run_from_script <- length(cmd_args) > 0
         txd_fe = "ildt",
         weight_fe = "sildt",
         weight_is_nested = TRUE,
-        sim_new_data = "r"
+        sim_new_data = "bici"
     )
 
     # Temporary override of some parameters
@@ -132,20 +132,9 @@ plt <- plot_model(popn, params)
 
 
 
-## Generate config files ----
+## Generate directories and config files ----
 
-{
-    # Create missing directories
-    params[str_ends(names(params), "_dir")] |>
-        as.character() |>
-        discard(dir.exists) |>
-        walk(~ message("- mkdir ", .x)) |>
-        walk(dir.create, recursive = TRUE)
-
-    # Clean up old config files and generate fresh one
-    cleanup_bici_files(params)
-    bici_txt <- generate_bici_script(popn, params)
-}
+bici_txt <- generate_bici_script(popn, params)
 
 
 ## Run BICI ----
@@ -210,7 +199,7 @@ plt <- plot_model(popn, params)
         mget() |>
         saveRDS(file = str_glue("{results_dir}/{name}.rds"))
 
-    # Generate etc_inf.rds summary file
-    flatten_bici_states(dataset, name, bici_cmd)
+    # Generate etc_{inf,sim,ps}.rds summary file
+    flatten_bici_states(params)
 }
 
