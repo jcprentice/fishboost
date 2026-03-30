@@ -76,7 +76,10 @@ rebuild_sire_posteriors <- function(dataset = "fb-final",
 rebuild_bici_posteriors <- function(dataset = "fb-test",
                                     name = "scen-1-1") {
 
-    # dataset <- params$dataset; name <- params$name
+    if (FALSE) {
+        dataset <- params$dataset
+        name <- params$name
+    }
 
     data_dir <- str_glue("datasets/{dataset}/data")
     res_dir  <- str_glue("datasets/{dataset}/results")
@@ -158,8 +161,11 @@ rebuild_bici_posteriors <- function(dataset = "fb-test",
     drop_pars <- c("state", names(check[check == 0]))
     cols <- setdiff(xp$parameter, drop_pars)
 
+    # In case we didn't finish or have an uneven number of samples
+    min_rows <- map_int(x, nrow) |> min()
+
     tfs <- x |>
-        map(~ .x[, ..cols]) |>
+        map(~ .x[seq_len(min_rows), ..cols]) |>
         map(~ mcmc(.x, start = nsample * burnprop, thin = nsample / thinto))
 
     grd <- as.mcmc.list(tfs) |> gelman.diag() |> _$psrf[, 2]
