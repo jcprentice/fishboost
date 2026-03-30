@@ -56,7 +56,8 @@ apply_links <- function(params) {
     # Individual Effects ----
     if (use_traits %notin% c("", "none", NA)) {
         # Turn sim_link_traits into string vector
-        new_idxs <- get_idxs(sim_link_traits)
+        new_idxs <- get_idxs(sim_link_traits) |>
+            discard(is.na)
 
         # Copy rows and columns in Sigma and cov matrix
         params2$Sigma_G[] <- Sigma_G[new_idxs, new_idxs, drop = FALSE]
