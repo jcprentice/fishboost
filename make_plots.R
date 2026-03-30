@@ -7,9 +7,6 @@ plot_model <- function(popn, params) {
                        model = str_remove(params$model_type, "_res")))
     plt <- pm(popn, params)
 
-    if (params$show_plots) {
-        print(plt)
-    }
     plt
 }
 
@@ -28,7 +25,7 @@ plot_SxxDR <- function(popn, params) {
         events <- events[time != max(time)]
     }
 
-    plt <- ggplot(events, aes(x = time)) +
+    ggplot(events, aes(x = time)) +
         geom_line(aes(y = S / N, colour = "Susceptible?"), linewidth = 1.2) +
         geom_line(aes(y = D / N, colour = "Detectable"),   linewidth = 0.6) +
         geom_line(aes(y = R / N, colour = "Removed"),      linewidth = 1.2) +
@@ -39,8 +36,6 @@ plot_SxxDR <- function(popn, params) {
         coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
         theme_bw() +
         theme(legend.position = "bottom")
-
-    plt
 }
 
 plot_SEIDR <- function(popn, params) {
@@ -51,7 +46,7 @@ plot_SEIDR <- function(popn, params) {
 
     events <- make_time_series_seidr(popn, params)
 
-    plt <- ggplot(events, aes(x = time)) +
+    ggplot(events, aes(x = time)) +
         geom_line(aes(y = S / N,  colour = "Susceptible"),  linewidth = 1.2) +
         geom_line(aes(y = E / N,  colour = "Exposed"),      linewidth = 1.2) +
         geom_line(aes(y = I / N,  colour = "Undetectable"), linewidth = 0.6) +
@@ -66,11 +61,6 @@ plot_SEIDR <- function(popn, params) {
         coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
         theme_bw() +
         theme(legend.position = "bottom")
-
-    if (params$show_plots) {
-        print(plt)
-    }
-    plt
 }
 
 
@@ -82,7 +72,7 @@ plot_SIDR <- function(popn, params) {
 
     events <- make_time_series_sidr(popn, params)
 
-    plt <- ggplot(events, aes(x = time)) +
+    ggplot(events, aes(x = time)) +
         geom_line(aes(y = S / N,  colour = "Susceptible"),  linewidth = 1.2) +
         geom_line(aes(y = I / N,  colour = "Undetectable"), linewidth = 0.6) +
         geom_line(aes(y = D / N,  colour = "Detectable"),   linewidth = 0.6) +
@@ -95,8 +85,6 @@ plot_SIDR <- function(popn, params) {
         coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
         theme_bw() +
         theme(legend.position = "bottom")
-
-    plt
 }
 
 
@@ -108,7 +96,7 @@ plot_SEIR <- function(popn, params) {
 
     events <- make_time_series_seir(popn, params)
 
-    plt <- ggplot(events, aes(x = time)) +
+    ggplot(events, aes(x = time)) +
         geom_line(aes(y = S / N, colour = "Susceptible"), linewidth = 1.2) +
         geom_line(aes(y = E / N, colour = "Exposed"),     linewidth = 1.2) +
         geom_line(aes(y = I / N, colour = "Infectious"),  linewidth = 1.2) +
@@ -120,8 +108,6 @@ plot_SEIR <- function(popn, params) {
         coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
         theme_bw() +
         theme(legend.position = "bottom")
-
-    plt
 }
 
 
@@ -133,7 +119,7 @@ plot_SIR <- function(popn, params) {
 
     events <- make_time_series_sir(popn, params)
 
-    plt <- ggplot(events, aes(x = time)) +
+    ggplot(events, aes(x = time)) +
         # geom_line(linewidth = 1.2) +
         geom_line(aes(y = S / N, colour = "Susceptible"), linewidth = 1.2) +
         geom_line(aes(y = I / N, colour = "Infectious"),  linewidth = 1.2) +
@@ -145,8 +131,6 @@ plot_SIR <- function(popn, params) {
         coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
         theme_bw() +
         theme(legend.position = "bottom")
-
-    plt
 }
 
 
@@ -158,7 +142,7 @@ plot_SIS <- function(popn, params) {
 
     events <- make_time_series_sis(popn, params)
 
-    plt <- ggplot(events, aes(x = time)) +
+    ggplot(events, aes(x = time)) +
         # geom_line(linewidth = 1.2) +
         geom_line(aes(y = S / N, colour = "Susceptible"), linewidth = 1.2) +
         geom_line(aes(y = I / N, colour = "Infectious"),  linewidth = 1.2) +
@@ -169,6 +153,4 @@ plot_SIS <- function(popn, params) {
         coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
         theme_bw() +
         theme(legend.position = "bottom")
-
-    plt
 }
