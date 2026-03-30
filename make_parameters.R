@@ -354,7 +354,7 @@ make_parameters <- function(
 
     # MCMC settings ----
 
-    bici_cmd <- "inf"
+    bici_cmd <- if (sim_new_data == "bici") "sim" else "inf"
 
     ## Samples ----
     nchains <- 16L
@@ -520,7 +520,7 @@ make_parameters <- function(
     patch_dataset <- ""
     patch_name <- "scen-1-1"
     # Use mean / median / randomly sample from posterior
-    patch_type <- c("mean", "median", "sampled")[[1]]
+    patch_type <- c("mean", "median", "sampled")[[2]]
     # Use states to patch EBVs and parameters (otherwise use trace files)
     patch_state <- FALSE
 
@@ -535,9 +535,6 @@ make_parameters <- function(
     # "posterior" = patch from posteriors given in "patch_xyz"
     traits_source <- c("pedigree", "grm", "posterior")[[1]]
 
-    # Show plots during run
-    show_plots <- TRUE
-
     # show messages
     msgs <- TRUE
 
@@ -551,7 +548,6 @@ make_parameters <- function(
     params <- mget(
         # Inputs
         c("description", "dataset", "scenario", "name", "label", "replicate", "seed",
-          "data_dir", "results_dir", "gfx_dir", "meta_dir", "output_dir", "states_dir", "config",
           "model_type", "sim_new_data", "setup", "vars", "cors", "group_layout", "use_traits",
           # Population parameters
           "ntrials", "nsires", "ndams", "nparents", "nprogeny", "ngroups", "ntotal",
@@ -570,6 +566,9 @@ make_parameters <- function(
           "fe_vals", "trial_fe", "donor_fe", "txd_fe",
           "sim_trial_fe", "sim_donor_fe", "sim_txd_fe",
           "weight_fe", "sim_weight_fe", "weight_is_nested",
+          # Files and directories
+          "data_dir", "results_dir", "gfx_dir", "meta_dir", "output_dir",
+          "states_dir", "config",
           # MCMC & extra
           "priors", "cov_prior", "single_prior",
           "popn_format", "bici_cmd", "algorithm",
@@ -579,7 +578,7 @@ make_parameters <- function(
           "fix_donors", "t_demote", "fix_eq_time",
           "pass_events", "patch_dataset", "patch_name", "patch_type", "patch_state",
           "use_weight", "use_grm", "traits_source",
-          "show_plots", "msgs", "DEBUG"))
+          "msgs", "DEBUG"))
 
     params
 }
@@ -648,16 +647,18 @@ summarise_params <- function(params) {
             ))
         }
 
-        message(str_glue(
-            "- Running MCMC with:",
-            "\t{ns} updates, {th} samples, {burnprop} burnin, {nchains} chains",
-            "- BICI script file:",
-            "\t'{data_dir}/{name}.bici'",
-            "- Results file:",
-            "\t'{results_dir}/{name}.rds'",
-            ns = format(nsample, scientific = FALSE, big.mark = ","),
-            th = format(thinto,  scientific = FALSE, big.mark = ","),
-            .trim = FALSE, .sep = "\n"
-        ))
+        if (bici_cmd == "inf") {
+            message(str_glue(
+                "- Running MCMC with:",
+                "\t{ns} updates, {th} samples, {burnprop} burnin, {nchains} chains",
+                "- BICI script file:",
+                "\t'{data_dir}/{name}.bici'",
+                "- Results file:",
+                "\t'{results_dir}/{name}.rds'",
+                ns = format(nsample, scientific = FALSE, big.mark = ","),
+                th = format(thinto,  scientific = FALSE, big.mark = ","),
+                .trim = FALSE, .sep = "\n"
+            ))
+        }
     })
 }
