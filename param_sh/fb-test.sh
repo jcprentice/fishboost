@@ -13,7 +13,7 @@
 #$ -cwd
 #$ -o out
 #$ -e out
-#$ -l h_rt=200:00:00     # <-- ** make sure this is correct!!! **
+#$ -l h_rt=336:00:00     # <-- ** make sure this is correct!!! **
 
 # Initialise the environment modules
 . /etc/profile.d/modules.sh
