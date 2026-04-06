@@ -20,8 +20,8 @@ if (run_from_script) {
     pname <- cmd_args[[1]]
     row_no <- as.integer(cmd_args[[2]])
 } else {
-    pname <- "sim-test-inf"
-    row_no <- 1L
+    pname <- "fb-test"
+    row_no <- 7L
 }
 
 {
@@ -258,6 +258,7 @@ message(str_glue("censor = {x}\nTmax = {y}",
 ## Generate directories and config files ----
 
 bici_txt <- generate_bici_script(popn, params)
+
 
 ## Run BICI ----
 
