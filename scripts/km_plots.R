@@ -26,7 +26,7 @@ km_plots <- function(dataset = "fb-test",
         dataset <- "fb-test"; scens <- 0; simulate_new_data <- "no"
         opts <- list(n_plots = 50, post = "sample")
         plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors",
-                      "t1", "t2")[1:2]
+                      "mean", "t1", "t2")[1:2]
     }
 
     if (all(scens == 0)) {
