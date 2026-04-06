@@ -41,10 +41,8 @@ run_all_tests <- function(dataset = "fb-qtest",
     pars_errorbars(dataset)
 
     if (str_detect(dataset, "fb")) {
-        walk2(scens, reps, possibly(~ plot_chains(dataset, .x, .y)))
-        walk2(scens, reps, possibly(~ get_posterior(dataset, .x, .y)))
-        walk2(scens, reps, possibly(~ plot_ebvs(dataset, .x, .y)))
-        walk2(scens, reps, possibly(~ plot_correlations(dataset, .x, .y)))
+        c(plot_chains, get_posterior, plot_ebvs, plot_correlations) |>
+            walk(\(f) walk2(scens, reps, possibly(~ f(dataset, .x, .y))))
     }
 
     if (str_detect(dataset, "sim")) {
@@ -52,13 +50,10 @@ run_all_tests <- function(dataset = "fb-qtest",
     }
 
     if (km) {
-        f <- str_glue("datasets/{dataset}/meta/km_data_ps.rds")
-
-        opts = list(n_plots = 50,
-                    post = "sampled")
-        plotopts = c("drop_small_groups",
-                     "drop_donors",
-                     "use_sire_Tinfs")[0]
+        opts <-  list(n_plots = 50,
+                      post = "sample")
+        plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors",
+                      "mean", "t1", "t2")[0]
 
         km_plots(dataset, scens,
                  simulate_new_data = "bici", opts, plotopts)
@@ -71,9 +66,8 @@ run_all_tests <- function(dataset = "fb-qtest",
 }
 
 if (FALSE) {
-    c("fb-test",
-      "fb-qtest",
-      "fb-qtest-1e5",
-      "fb-qtest-5e5") |>
-        walk(run_all_tests)
+    run_all_tests("fb-test")
+    run_all_tests("fb-qtest")
+    run_all_tests("fb-qtest-1e5")
+    run_all_tests("fb-qtest-5e5")
 }
