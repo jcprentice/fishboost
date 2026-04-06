@@ -10,8 +10,8 @@ generate_km_data_bici <- function(dataset = "fb-test",
                                   opts = list(n_plots = 50L,
                                               post = "sampled")) {
     if (FALSE) {
-        dataset <- "fb-qtest"
-        scen <- 4
+        dataset <- "fb-test"
+        scen <- 1
         opts <- list(n_plots = 2L, post = "sampled")
     }
 
