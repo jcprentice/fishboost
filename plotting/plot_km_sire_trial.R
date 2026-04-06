@@ -13,7 +13,7 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
         params <- km_data[[i]]$params
         opts <- km_data[[i]]$opts
         plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors",
-                      "t1", "t2")[1]
+                      "mean", "t1", "t2")[c(1, 4)]
     } else {
         data   <- copy(data_list$data)
         params <- data_list$params
@@ -52,21 +52,28 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
     if ("t1" %in% plotopts) data <- data[trial == 1]
     if ("t2" %in% plotopts) data <- data[trial == 2]
 
-    # If Tsym is missing but Tdeath is not, then let Tsym = Tdeath
-    data[, `:=`(Tsym = fifelse(is.na(Tsym) & !is.na(Tdeath), Tdeath, Tsym),
-                RP   = Tdeath - Tsym)]
+    tmax <- params$tmax
+
+    # If Tsym is missing but Tdeath is not, then let Tsym = Tdeath, otherwise
+    # set to tmax + 1
+    data[is.na(Tsym), Tsym := fifelse(!is.na(Tdeath), Tdeath, tmax[trial] + 1)]
+    # RP can be extended from Tsym to tmax + 1 if Tdeath is missing
+    data[, RP := Tdeath - Tsym]
+    data[is.na(RP), RP := tmax[trial] - Tsym]
 
     if ("drop_donors" %in% plotopts) {
         data <- data[donor == 0]
     }
 
+    sv_curve <- function(x) c(0, sort(x, na.last = TRUE))
+
     # Make a copy of the data and add in rows representing t=0, sort times, make
     # sure to include NA values last
     data_t0 <- data[!is.na(sire),
                     .(donor = fifelse(any(donor == 1), 1, 0),
-                      Tinf = c(0, sort(Tinf, na.last = TRUE)),
-                      Tsym = c(0, sort(Tsym, na.last = TRUE)),
-                      RP   = c(0, sort(RP,   na.last = TRUE)),
+                      Tinf = sv_curve(Tinf),
+                      Tsym = sv_curve(Tsym),
+                      RP   = sv_curve(RP),
                       src = src[c(1, 1:.N)]),
                     .(id, sire, trial)] |>
         setorder(id, sire, trial)
@@ -90,7 +97,6 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
        # Filter out any sires with fewer than 5 non-NA values
        foo[, p := .N - sum(is.na(Tsym)), .(sire, trial)]
        foo <- foo[p > 5]
-       foo[is.na(Tsym), Tsym := tmax[trial]]
        foo1 <- foo[, .(mu = mean(Tsym, na.rm = TRUE)), .(sire, trial)] |>
            setorder(trial, sire, mu)
        foo1[, donor := fifelse(sire %in% unlist(donor_sires), 1L, 0L)]
@@ -102,40 +108,78 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
     }
 
     # Melt so we can use facet_wrap
-    data_t1 <- melt(data_t0, measure.vars = c("Tinf", "Tsym", "RP"))
+    data_t1 <- melt(data_t0,
+                    measure.vars = c("Tinf", "Tsym", "RP"),
+                    value.name = "time")
+    setcolorder(data_t1, "survival", after = "time")
+
+
+    # Use approxfun to convert to t = 0,1,...,tmax
+    data_t2 <- data_t1[, {
+        times <- seq(0, tmax[trial[[1]]])
+        list(time = times,
+             survival = approx(time, survival, times,
+                               method = "constant",
+                               ties = list("ordered", max))$y)
+    },
+    .(id, sire, trial, donor, src, gp, variable)]
+
+    data_t2[variable == "Tsym",
+             survival := nafill(survival, type = "locf")]
+    data_t2[variable == "RP" & src == "sim",
+             survival := nafill(survival, type = "locf")]
+    data_t2[, tmp := seq(.N), id]
+    ids_to_keep <- data_t2[src == "fb" & !is.na(survival), tmp]
+
+    data_t2 <- data_t2[tmp %in% ids_to_keep, .SD]
+    data_t2[, tmp := NULL]
+
+    # Apply means
+    if ("mean" %in% plotopts) {
+        data_t2a <- data_t2[, map(.SD, mean),
+                 .(sire, trial, donor, src, variable, time),
+                 .SDcols = -"id"]
+        data_t2a[, id := .GRP, src]
+        data_t2a[, gp := .GRP, .(id, sire, trial)]
+        setcolorder(data_t2a, names(data_t2))
+
+        data_t2 <- data_t2a
+    }
+
+    data_t2 <- data_t2[time <= tmax[trial]]
 
     # Drop the really high values
-    # data_t1[, value := fifelse(value > c(104, 160)[trial], NA, value)]
-    # data_t1[(trial == 1 & value >= 104) | (trial == 2 & value >= 160), value := NA]
+    # data_t2[, time := fifelse(time > c(104, 160)[trial], NA, time)]
+    # data_t2[(trial == 1 & time >= 104) | (trial == 2 & time >= 160), time := NA]
     # maxvals <- data[, ceiling(max(c(Tsym, Tdeath), na.rm = TRUE)), trial][, V1]
-    maxvals <- c(104, 160)
-    data_t1[, value := fifelse(value >= maxvals[trial], maxvals[trial], value)]
+    # maxvals <- c(104, 160)
+    # data_t2[, time := fifelse(time >= maxvals[trial], maxvals[trial], time)]
 
     # we might want to get a subset of the best and worst sires in each trial
     # if ("extremes" %in% plotopts) {
-    #     sires1 <- (data_t1[str_starts(src, "fb1") & variable == "Tsym" & !is.na(value),
+    #     sires1 <- (data_t2[str_starts(src, "fb1") & variable == "Tsym" & !is.na(time),
     #                        .(survival = survival[.N]), sire]
     #                [, .(sire_min = sire[which.min(survival)],
     #                     sire_max = sire[which.max(survival)])]
     #                [, c(sire_min, sire_max) |> sort()])
     #
-    #     sires2 <- (data_t1[str_starts(src, "fb2") & variable == "Tsym" & !is.na(value),
+    #     sires2 <- (data_t2[str_starts(src, "fb2") & variable == "Tsym" & !is.na(time),
     #                        .(survival = survival[.N]), sire]
     #                [, .(sire_min = sire[which.min(survival)],
     #                     sire_max = sire[which.max(survival)])]
     #                [, c(sire_min, sire_max) |> sort()])
     #
-    #     data_t1 <- data_t1[(trial == 1 & sire %in% sires1) | (trial == 2 & sire %in% sires2)]
+    #     data_t2 <- data_t2[(trial == 1 & sire %in% sires1) | (trial == 2 & sire %in% sires2)]
     # }
 
     if ("show_Tinfs" %notin% plotopts) {
-        data_t1 <- data_t1[variable != "Tinf"]
+        data_t2 <- data_t2[variable != "Tinf"]
     }
 
     if ("extreme_sires" %in% plotopts) {
-        data_t1[, str := str_c(src, "_", str)]
+        data_t2[, str := str_c(src, "_", str)]
     } else {
-        data_t1[, str := src]
+        data_t2[, str := src]
     }
 
     breaks <- c("fb",  "fb_lo_d",  "fb_hi_d",  "fb_lo_r",  "fb_hi_r",
@@ -152,10 +196,16 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
     col_vals <- c("#1F78B4", "#FF7F00", "#1F78B4", "#E31A1C", "#33A02C", # Data
                   "#A6CEE3", "#FDBF6F", "#A6CEE3", "#FB9A99", "#B2DF8A") # Simulation
 
+    if ("mean" %in% plotopts) {
+        col_vals <- c("#1F78B4", "#FF7F00", "#1F78B4", "#E31A1C", "#33A02C", # Data
+                      "#E31A1C", "#FDBF6F", "#A6CEE3", "#FB9A99", "#B2DF8A") # Simulation
+    }
+
+
     # Plot
-    plt <- ggplot(data_t1) +
+    plt <- ggplot(data_t2) +
         # geom_step
-        geom_line(aes(x = value,
+        geom_line(aes(x = time,
                       y = survival,
                       group = gp,
                       colour = str,
@@ -172,7 +222,6 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
              #linewidth = "Source",
              x = "Time (days)",
              y = "Proportion",
-             # title = "Kaplan-Meier plot by family (sires)",
              title = str_glue("KM by family (sires), {opts$post}"),
              subtitle = str_glue("{params$dataset}/{params$label}: {description}")) +
         facet_grid(cols = vars(variable),
@@ -213,5 +262,5 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
     # ggsave(str_glue("{gfx_dir}/{dataset}-s{scen}-KM_grid.png"),
     #        plot = plt2, width = 12, height = 6, dpi = 600)
 
-    list(plt = plt, data = data_t1)
+    list(plt = plt, data = data_t2)
 }
