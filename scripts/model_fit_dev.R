@@ -58,6 +58,9 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
             i <- 1; x <- km_data[[i]]
         }
 
+        # If Tsym is missing, sub in Tdeath if available
+        x$data[src == "fb" & is.na(Tsym) & !is.na(Tdeath), Tsym := Tdeath]
+
         x1 <- x$data[!is.na(sire), .(id, sire, trial, donor, Tsym, RP, src)] |>
             setorder(id, sire, trial)
 
@@ -91,24 +94,20 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
         # This only affects simulations
         x1[, `:=`(Tsym = ceiling(Tsym), RP = ceiling(RP))]
 
-        # x1[, `:=`(Tsym = as.integer(fifelse(Tsym > tmax[trial], tmax[trial], ceiling(Tsym), tmax[trial])),
-        #           RP   = as.integer(fifelse(RP   > tmax[trial], tmax[trial], ceiling(RP),   tmax[trial])))]
-
-        # x1[, `:=`(Tsym = fifelse(Tsym > tmax[trial], tmax[trial], Tsym, tmax[trial]),
-        #           RP   = fifelse(RP   > tmax[trial], tmax[trial], RP,   tmax[trial]))]
-
         sv_curve <- function(x) c(0, sort(x, na.last = TRUE))
 
         x2 <- x1[, .(Tsym = sv_curve(Tsym),
-                     RP   = sv_curve(RP),
+                     RP   = sv_curve(Tsym),
                      survival = seq(1, 0, length = .N + 1),
                      src = first(src)),
                  .(id, sire, trial)] |>
-            melt(measure.vars = c("Tsym", "RP")) |>
-            setorder(id, sire, variable)
+            melt(measure.vars = c("Tsym", "RP"),
+                 value.name = "time") |>
+            setorder(id, sire, variable) |>
+            setcolorder(c("src", "id", "sire", "trial", "variable", "time", "survival"))
 
         if (TRUE || "drop_small_groups" %in% opts) {
-            x2[, keep := !all(value %in% c(0, NA)), .(id, sire, trial, variable)]
+            x2[, keep := !all(time %in% c(0, NA)), .(id, sire, trial, variable)]
             pc <- x2[, mean(keep)]
             if (pc < 1) {
                 message(str_glue("Keeping {p} % of values",
@@ -120,7 +119,7 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
 
         # Weight by number of points and by 1 / time covered
         x2[, `:=`(wt1 = .N,
-                  wt2 = max(value, na.rm = TRUE)),
+                  wt2 = max(time[time < tmax[trial]], na.rm = TRUE)),
            .(id, sire, trial, variable)]
         x2[, wt := (wt1 * max(wt2)) / (max(wt1) * wt2)]
         x2[, c("wt1", "wt2") := NULL]
@@ -128,22 +127,18 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
         # Expand x2 to include samples at all times [0, tmax[trial]]
         # Don't do anything with NA values, can filter them out later
         x3 <- x2[, {
-            times <- seq(0, tmax[trial])
-            # lv <- last(value)
-            # if (is.na(lv) || lv < tmax[trial]) {
-            #     value <- c(value, tmax[trial])
-            #     survival <- c(survival, survival[[.N]])
-            # }
-            f <- approxfun(value, survival,
-                           method = "constant",
-                           ties = list("ordered", max))
-            s1 <- f(times)
-            # s1[is.na(s1)] <- 0
-
-            list(time = times, survival = s1,
-                 src = first(src), wt = first(wt))
+            times <- seq(0, tmax[first(trial)])
+            list(time = times,
+                 survival = approx(time, survival, times,
+                                   method = "constant",
+                                   ties = list("ordered", max))$y,
+                 src = first(src),
+                 wt = first(wt))
         },
         .(id, sire, trial, variable)]
+
+        # Extend all missing sim values
+        x3[src == "sim", survival := nafill(survival, "locf")]
 
         # Remove times where FB is NA
         x3[, tmp := seq(.N), id]
@@ -151,9 +146,14 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
         x3 <- x3[tmp %in% ids_to_keep]
         x3[, tmp := NULL]
 
+        # Take mean over all sim values
+        x4 <- x3[, map(.SD, mean),
+                 .(sire, trial, variable, time, src),
+                 .SDcols = -"id"]
+
         # Calculate the deviation
-        x4 <- x3[, dev := survival - last(survival), time] |>
-            _[id != last(id) & !is.na(dev)]
+        x4[, dev := abs(survival[[1]] - survival[[2]]),
+           .(time, variable)]
 
         # Reduce to summary statistics
         x5 <- x4[, .(mad_all  = sum(abs(dev)) * first(wt),
@@ -163,20 +163,37 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
                      rms_all  = sqrt(sum(dev^2)) * first(wt),
                      rms_Tsym = sqrt(sum(dev[variable == "Tsym"]^2)) * first(wt[variable == "Tsym"]),
                      rms_RP   = sqrt(sum(dev[variable == "RP"]^2))   * first(wt[variable == "RP"])),
-                 .(id, sire, trial)] |>
+                 .(sire, trial)] |>
             melt(measure.vars = measure(type, variable,
                                         pattern = "(mad|rms)_(.*)"))
+
+        # # Calculate the deviation
+        # x4 <- x3[, dev := survival - last(survival), time] |>
+        #     _[id != last(id) & !is.na(dev)]
+        #
+        # # Reduce to summary statistics
+        # x5 <- x4[, .(mad_all  = sum(abs(dev)) * first(wt),
+        #              mad_Tsym = sum(abs(dev[variable == "Tsym"])) * first(wt[variable == "Tsym"]),
+        #              mad_RP   = sum(abs(dev[variable == "RP"]))   * first(wt[variable == "RP"]),
+        #
+        #              rms_all  = sqrt(sum(dev^2)) * first(wt),
+        #              rms_Tsym = sqrt(sum(dev[variable == "Tsym"]^2)) * first(wt[variable == "Tsym"]),
+        #              rms_RP   = sqrt(sum(dev[variable == "RP"]^2))   * first(wt[variable == "RP"])),
+        #          .(id, sire, trial)] |>
+        #     melt(measure.vars = measure(type, variable,
+        #                                 pattern = "(mad|rms)_(.*)"))
         x5
     }) |>
         rbindlist(idcol = "scen")
 
-    fit[, scen := ordered(labels[scen], levels = str_sort(labels, numeric = TRUE))]
+    fit[, scen := ordered(labels[scen],
+                          levels = str_sort(labels, numeric = TRUE))]
 
     # fit[, `:=`(scen = factor(str_c("s", scen), levels = labels),
     #            id = format(id),
     #            sire = format(sire),
     #            trial = format(trial))]
-    setorder(fit, scen, id, sire, trial, variable)
+    setorder(fit, scen, sire, trial, variable)
 
     fit_wide <- fit[type == "mad", .(value = mean(value)), .(scen, variable)] |>
         dcast(scen ~ variable)
