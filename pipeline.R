@@ -143,7 +143,7 @@ bici_txt <- generate_bici_script(popn, params)
     cmd <- with(params, str_glue(
         if (algorithm == "pas")
             "mpirun -n {nchains} --output :raw --oversubscribe " else "",
-        "../BICI/bici-{platform} {data_dir}/{config} {bici_cmd}",
+        "../BICI/bici-{platform} {config} {bici_cmd}",
         platform = Sys.info()[["sysname"]]
     ))
     message(str_glue("Running:\n$ {cmd}"))
