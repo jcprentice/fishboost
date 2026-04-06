@@ -12,8 +12,11 @@
 }
 
 plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
-    # dataset <- "sim-base-inf"; scen <- 2; rep <- 1
-    # dataset <- "fb-test"; scen <- 1; rep <- 1
+    if (FALSE) {
+        dataset <- "sim-base-inf"; scen <- 2; rep <- 1
+        dataset <- "fb-test"; scen <- 7; rep <- 1
+    }
+
     message(str_glue("plotting chain for '{dataset}' / s{scen}-{rep}"))
 
     {
@@ -55,16 +58,15 @@ plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
                                                            "removal_period" = "RP"))]
         priors <- priors[parameter %in% pars,
                          .(parameter, min = val1, max = val2, true_val)]
-        nchains <- res_file$params$nchains
         description <- res_file$params$description
     } else {
         priors <- ltraces[, .(min = min(y), max = max(y),
                               true_val = NA_real_),
                           parameter]
-        nchains <- ltraces$chain |> levels() |> length()
         description <- ""
     }
 
+    nchains <- ltraces$chain |> levels() |> length()
     thin <- 1L
     plts <- map(pars, \(par) {
         # par <- "cov_G_ii"
