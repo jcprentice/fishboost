@@ -3,6 +3,10 @@ library(ggplot2)
 library(viridisLite)
 
 plot_model <- function(popn, params) {
+    if (all(c("Tinf", "Tinc", "Tsym", "Tdeath") %notin% names(popn))) {
+        return(NULL)
+    }
+
     pm <- get(str_glue("plot_{model}",
                        model = str_remove(params$model_type, "_res")))
     plt <- pm(popn, params)
