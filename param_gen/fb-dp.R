@@ -51,7 +51,7 @@ source("param_gen/common2.R")
 common <- list(sim_new_data = "no",
                setup = "fb_12_drop71",
                use_grm = "H",
-               prior__detection_period__type = "constant",
+               prior__detection_period__type = "fix",
                fix_donors = "no_Tsym_survivors",
                t_demote = "10,80",
                trial_fe = "ildt",

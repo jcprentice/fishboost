@@ -45,7 +45,7 @@ common <- list(setup = "fb_12",
                fix_donors = "no_Tsym_survivors",
                use_weight = "log",
                group_effect = 0.1,
-               prior__latent_period__type = "constant",
+               prior__latent_period__type = "fix",
                prior__latent_period__val2 = 10,
                RP_dist = "gamma") |>
     safe_merge(common2)
