@@ -23,10 +23,11 @@ sigma2f <- function(sigma = 0.5, mu = 0, q = 0.9) {
 plot_covariances <- function(dataset = "fb-test",
                              scen = 1L,
                              itn = 1L,
-                             ci = "hpdi") {
+                             ci = "hpdi",
+                             output = "png") {
 
     if (FALSE) {
-        dataset <- "fb-test"; scen <- 1; itn <- 1; ci <- "hpdi"
+        dataset <- "fb-test"; scen <- 1; itn <- 1; ci <- "hpdi"; output <- "png"
     }
 
     base_dir <- str_glue("datasets/{dataset}")
@@ -170,7 +171,8 @@ plot_covariances <- function(dataset = "fb-test",
     pltE_cov <- plot_grid(title_plt, pltE, ncol = 1, rel_heights = c(0.08, 1))
     pltP_cov <- plot_grid(title_plt, pltP, ncol = 1, rel_heights = c(0.08, 1))
     pltH_cov <- plot_grid(title_plt, pltH, ncol = 1, rel_heights = c(0.08, 1))
-    pltGE_cov <- plot_grid(title_plt, plot_grid(pltG, pltE, ncol = 2), ncol = 1, rel_heights = c(0.08, 1))
+    pltGE_cov <- plot_grid(title_plt, plot_grid(pltG, pltE, ncol = 2),
+                           ncol = 1, rel_heights = c(0.08, 1))
     # pltG_cov <- pltG
     # pltE_cov <- pltE
     # pltP_cov <- pltP
@@ -185,12 +187,12 @@ plot_covariances <- function(dataset = "fb-test",
     }
 
     walk(c("G", "E", "P", "H", "GE"), \(x) {
-        png_str <- str_glue("{cov_dir}/{dataset}-s{scen}-{itn}-cov-{x}.png")
-        message(str_glue("Plotting '{png_str}'"))
-        ggsave(png_str,
-               get(str_glue("plt{x}_cov")),
-               width = if (x == "GE") 18 else 9,
-               height = 6)
+        plt_str <- str_glue("{cov_dir}/{dataset}-s{scen}-{itn}-cov-{x}")
+        message(str_glue("Plotting '{plt_str}'"))
+        walk(output, \(ft) ggsave(str_c(plt_str, ".", ft),
+                                  get(str_glue("plt{x}_cov")),
+                                  width = if (x == "GE") 18 else 9,
+                                  height = 6))
     })
 
     list(G = pltG_cov,
