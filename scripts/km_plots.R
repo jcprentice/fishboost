@@ -36,9 +36,6 @@ km_plots <- function(dataset = "fb-test",
 
     # Use posterior means (pm) or sample from posterior (ps, default)
     um <- switch(opts$post, "mean" =, "median" = "_pm", "_ps")
-    es <- if ("extreme_sires" %in% plotopts) "_es" else ""
-    dd <- if ("drop_donors" %in% plotopts) "_dd" else ""
-
     f <- str_glue("datasets/{dataset}/meta/km_data{um}.rds")
 
     if (simulate_new_data != "no" && file.exists(f)) {
@@ -116,17 +113,21 @@ km_plots <- function(dataset = "fb-test",
     }
 
 
+    mu <- if ("mean" %in% plotopts) "_mu" else ""
+    es <- if ("extreme_sires" %in% plotopts) "_es" else ""
+    dd <- if ("drop_donors" %in% plotopts) "_dd" else ""
+
     # Save the plots as PDF and PNG
     walk(seq_along(scens), \(i) {
         scen <- scens[[i]]
         plt_st <- plts_st[[i]]$plt
-        st_str <- str_glue("{km_dir_st}/{dataset}-s{scen}-sire-trial{um}{es}{dd}")
+        st_str <- str_glue("{km_dir_st}/{dataset}-s{scen}-sire-trial{um}{mu}{es}{dd}")
         # ggsave(str_glue("{st_str}.pdf"), plt_st, width = 9, height = 6, unit = "in")
         ggsave(str_glue("{st_str}.png"), plt_st, width = 9, height = 6, unit = "in")
         message(str_glue("Saved plots to {st_str}"))
 
         plt_dt <- plts_dt[[i]]$plt
-        dt_str <- str_glue("{km_dir_dt}/{dataset}-s{scen}-donor-trial{um}{es}{dd}")
+        dt_str <- str_glue("{km_dir_dt}/{dataset}-s{scen}-donor-trial{um}{mu}{es}{dd}")
         # ggsave(str_glue("{dt_str}.pdf"), plt_dt, width = 9, height = 6, unit = "in")
         ggsave(str_glue("{dt_str}.png"), plt_dt, width = 9, height = 6, unit = "in")
         message(str_glue("Saved plots to {dt_str}"))
@@ -134,142 +135,34 @@ km_plots <- function(dataset = "fb-test",
 }
 
 if (FALSE) {
-    dataset <- "sim-test-inf"
-    scens <- 0
-    simulate_new_data <- "no"
-    opts <- list(n_plots = 50, post = "sample")
-    plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors")[1]
+    km_plots(dataset = "fb-test",
+             scens = 0,
+             simulate_new_data = "no",
+             opts = list(n_plots = 50, post = "sample"),
+             plotopts = c("drop_small_groups", "extreme_sires", "drop_donors",
+                          "mean", "t1", "t2")[c(2, 4)])
+}
 
-    km_plots(dataset = dataset,
-             scens = scens,
-             simulate_new_data = simulate_new_data,
-             opts = opts,
-             plotopts = plotopts)
+if (FALSE) {
+    km_plots(dataset =  "sim-test-inf",
+             scens = 0,
+             simulate_new_data = "no",
+             opts = list(n_plots = 50, post = "sample"),
+             plotopts = c("drop_small_groups",
+                          "extreme_sires",
+                          "drop_donors")[1])
 }
 
 if (FALSE) {
     dataset <- "fb-test"
     scens <- 0
-    simulate_new_data <- "bici"
-    opts <- list(n_plots = 50, post = "median")
-    plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors")[1]
+    simulate_new_data <- "no"
+    opts <- list(n_plots = 50,
+                post = "sample")
+    plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors",
+                 "mean", "t1", "t2")[c(2,4)]
 
     km_plots(dataset, scens, simulate_new_data, opts, plotopts)
-}
-
-if (FALSE) {
-    dataset <- "fb-final"
-    scens <- 1:8
-    simulate_new_data <- "no"
-    opts <- list(n_plots = 50, post = "sample")
-    plotopts <- "drop_small_groups"
-
-    km_plots(dataset = dataset,
-             scens = scens,
-             simulate_new_data = simulate_new_data,
-             opts = opts,
-             plotopts = plotopts)
-}
-
-if (FALSE) {
-    dataset <- "fb-final2"
-    scens <- 1:4
-    simulate_new_data <- "R"
-    opts <- list(n_plots = 50, post = "sample")
-    plotopts <- "drop_small_groups"
-
-    km_plots(dataset = dataset,
-             scens = scens,
-             simulate_new_data = simulate_new_data,
-             opts = opts,
-             plotopts = plotopts)
-}
-
-if (FALSE) {
-    dataset <- "fb-lp"
-    scens <- 1:12
-    simulate_new_data <- "R"
-    opts <- list(n_plots = 50, post = "sample")
-    plotopts <- "drop_small_groups"
-
-    km_plots(dataset = dataset,
-             scens = scens,
-             simulate_new_data = simulate_new_data,
-             opts = opts,
-             plotopts = plotopts)
-}
-
-if (FALSE) {
-    dataset <- "fb-lp2"
-    scens <- 1:12
-    simulate_new_data <- "R"
-    opts <- list(n_plots = 50, post = "sample")
-    plotopts <- "drop_small_groups"
-
-    km_plots(dataset = dataset,
-             scens = scens,
-             simulate_new_data = simulate_new_data,
-             opts = opts,
-             plotopts = plotopts)
-}
-
-if (FALSE) {
-    dataset <- "fb-simple"
-    scens <- 1:10
-    simulate_new_data <- "R"
-    opts <- list(n_plots = 50, post = "sample")
-    plotopts <- "drop_small_groups"
-
-    km_plots(dataset = dataset,
-             scens = scens,
-             simulate_new_data = simulate_new_data,
-             opts = opts,
-             plotopts = plotopts)
-}
-
-if (FALSE) {
-    dataset <- "fb-donors"
-    scens <- 1:3
-    simulate_new_data <- "R"
-    opts <- list(n_plots = 50, post = "sample")
-    plotopts <- "drop_small_groups"
-
-    km_plots(dataset = dataset,
-             scens = scens,
-             simulate_new_data = simulate_new_data,
-             opts = opts,
-             plotopts = plotopts)
-}
-
-if (FALSE) {
-    dataset <- "sim-test1"
-    scens <- 1:2
-    simulate_new_data <- "R"
-    opts <- list(n_plots = 50, post = "sample")
-    plotopts <- "drop_small_groups"
-
-    km_plots(dataset = dataset,
-             scens = scens,
-             simulate_new_data = simulate_new_data,
-             opts = opts,
-             plotopts = plotopts)
-}
-
-if (FALSE) {
-    opts <- list(n_plots = 50, post = "sample")
-    plotopts = c("drop_small_groups", "use_sire_Tinfs")
-
-    km_plots(dataset = "fb-final",
-             scens = 1,
-             simulate_new_data = TRUE,
-             opts = opts,
-             plotopts = plotopts)
-
-    km_plots(dataset = "sim-test2",
-             scens = 1:4,
-             simulate_new_data = FALSE,
-             opts = opts,
-             plotopts = plotsopts)
 }
 
 
