@@ -637,6 +637,14 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
 
         x$section_priors <- "Model priors"
 
+        # Some checks
+        priors[type == "constant", type := "fix"]
+        priors[type == "inverse", val1 := pmax(0.01, val1)]
+        priors[type == "inverse" & str_detect(parameter, "beta"),
+               val1 := pmax(0.1, val1)]
+        priors[type == "inverse" & str_detect(parameter, "period"),
+               val1 := pmax(1, val1)]
+
         ## TP priors ----
         period_to_pp <- function(period = "latent") {
             period |> str_1st() |> str_to_upper() |> str_c("P")
@@ -667,7 +675,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
             bp <- priors[parameter %in% str_c("beta_", trials),
                          .(Value = true_val,
                            Prior = str_glue("{single_prior}({v1},{v2})",
-                                            v1 = max(0.01, val1), v2 = val2))]
+                                            v1 = val1, v2 = val2))]
 
             data.table(b = trials, Value = bp$Value) |>
                 fwrite(str_glue("{out_dir}/value-beta.tsv"),
@@ -698,14 +706,10 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
 
                 prior <- priors[parameter %in% str_c(period, "_period", t_bc),
                                 .(Value = true_val,
-                                  Prior = fcase(
-                                      type == "constant",
-                                      str_glue("fix({x})", x = true_val),
-                                      type == "uniform",
-                                      str_glue("uniform({v1},{v2})", v1 = val1, v2 = val2),
-                                      type == "inverse",
-                                      str_glue("inverse({v1},{v2})", v1 = max(1, val1), v2 = val2)
-                                  )), .I]
+                                  Prior = fifelse(type == "fix",
+                                                  str_glue("fix({v})", v = true_val),
+                                                  str_glue("{type}({v1},{v2})",
+                                                           v1 = val1, v2 = val2)))]
 
 
                 data.table(tab, Value = prior$Value) |>
@@ -836,13 +840,11 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
                 x_ns[["prior-split"]] <- str_glue("prior-{ppar}.tsv",
                                                   ppar = period_to_pp(ppi$parameter))
             } else {
-                x_ns$prior <- switch(
-                    ppi$type,
-                    "constant" = str_glue("fix({ppi$true_val})"),
-                    "uniform"  = str_glue("uniform({ppi$val1},{ppi$val2})"),
-                    "inverse"  = str_glue("inverse({v1},{ppi$val2})",
-                                          v1 = max(ppi$val1, 0.01))
-                )
+                x_ns$prior <- if (ppi$type == "fix") {
+                    str_glue("fix({ppi$true_val})")
+                } else {
+                    with(ppi, str_glue("{type}({val1},{val2})"))
+                }
             }
 
             x[[node_str]] <<- x_ns
