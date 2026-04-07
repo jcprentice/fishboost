@@ -55,7 +55,7 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
     # Extract RMS deviance for each id, sire, trial / Tsym, RP
     fit <- map(km_data, \(x) {
         if (FALSE) {
-            i <- 1; x <- km_data[[i]]
+            i <- 4; x <- km_data[[i]]
         }
 
         # If Tsym is missing, sub in Tdeath if available
@@ -155,14 +155,19 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
         x4[, dev := abs(survival[[1]] - survival[[2]]),
            .(time, variable)]
 
-        # Reduce to summary statistics
-        x5 <- x4[, .(mad_all  = sum(abs(dev)) * first(wt),
-                     mad_Tsym = sum(abs(dev[variable == "Tsym"])) * first(wt[variable == "Tsym"]),
-                     mad_RP   = sum(abs(dev[variable == "RP"]))   * first(wt[variable == "RP"]),
+        x5 <- x4 |> dcast(... ~ src, value.var = c("survival", "wt"))
+        x5[, dev := abs(survival_sim - survival_fb) * wt_fb]
+        x5[, sum(dev),
+           .(sire, trial)]
 
-                     rms_all  = sqrt(sum(dev^2)) * first(wt),
-                     rms_Tsym = sqrt(sum(dev[variable == "Tsym"]^2)) * first(wt[variable == "Tsym"]),
-                     rms_RP   = sqrt(sum(dev[variable == "RP"]^2))   * first(wt[variable == "RP"])),
+        # Reduce to summary statistics
+        x6 <- x5[, .(mad_all  = sum(dev),
+                     mad_Tsym = sum(dev[variable == "Tsym"]),
+                     mad_RP   = sum(dev[variable == "RP"]),
+
+                     rms_all  = sqrt(sum(dev^2)),
+                     rms_Tsym = sqrt(sum(dev[variable == "Tsym"]^2)),
+                     rms_RP   = sqrt(sum(dev[variable == "RP"]^2))),
                  .(sire, trial)] |>
             melt(measure.vars = measure(type, variable,
                                         pattern = "(mad|rms)_(.*)"))
@@ -182,7 +187,7 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
         #          .(id, sire, trial)] |>
         #     melt(measure.vars = measure(type, variable,
         #                                 pattern = "(mad|rms)_(.*)"))
-        x5
+        x6
     }) |>
         rbindlist(idcol = "scen")
 
