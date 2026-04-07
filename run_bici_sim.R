@@ -32,12 +32,14 @@ run_bici_sim <- function(dataset = "fb-test",
         writeLines(lines, bici_file)
     }
 
+    gcd <- function(x, y) if (y == 0) x else Tailcall(gcd, y, x %% y)
+
     cmd <- str_glue(
         "mpirun -n {cores} --output :raw --oversubscribe",
         "../BICI/bici-{platform}", bici_file, bici_cmd,
         .sep = " ",
         platform = Sys.info()[["sysname"]],
-        cores = primes::gcd(parallel::detectCores(), reps_in_cf)
+        cores = gcd(parallel::detectCores(), reps_in_cf)
     )
     message(cmd)
 
