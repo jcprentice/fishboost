@@ -14,22 +14,16 @@ n <- 2
 goal <- c("convergence", "coverage")[[n]]
 message("Goal = ", goal)
 
-dataset <- "sim-test-inf"
+dataset <- "sim-test-inf2"
 
 # Variable parameters ----
 protocol <- rbind(
     # Basic models for Trial 1
-    data.table(d = "FB_1_rpw, GEV SIT,   Weight SIT,   Fit d1"), # 1
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d2"), # 2
-    # Misspecified models
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d3, (Overfitting SITTT to none)"),    # 3
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d4, (Overfitting SITTT to ST)"),      # 4
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d5, (Underfitting SITTT to SILDT)"),  # 5
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d6, (Underfitting SITTT to Cors=0)"), # 6
-    data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit d1, (Underfitting none to SIT)"),     # 7
+    data.table(d = "FB_1_rpw, GEV SIT,   Weight SIT,   Fit d7"), # 1
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d8"), # 2
     # Basic models for both Trials
-    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit d7"), # 11
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d8"), # 12
+    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit d9"), # 3
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d10"), # 4
 
     fill = TRUE
 )
@@ -89,7 +83,7 @@ protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
     setnames("d", "description")
 
 ## Add replicates ----
-n_replicates <- 10
+n_replicates <- 20
 protocol[, scenario := .I]
 protocol <- protocol[rep(1:.N, each = n_replicates)]
 protocol[, replicate := 1:.N, scenario]

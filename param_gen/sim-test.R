@@ -20,17 +20,17 @@ dataset <- "sim-test"
 protocol <- rbind(
     # Basic models
     data.table(d = "FB_1_rpw, GEV SIT,   Weight SIT,   Fit s1, GRM pedigree"), # 1
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit s3, GRM pedigree"), # 2
-    data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit s3, GRM pedigree"), # 3
-    data.table(d = "FB_1_rpw, GEV ST,    Weight SITTT, Fit s3, GRM pedigree"), # 4
-    data.table(d = "FB_1_rpw, GEV SILDT, Weight SITTT, Fit s3, GRM pedigree"), # 5
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit s3, Cors 0, GRM pedigree"), # 6
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit s2, GRM pedigree"), # 2
+    data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit s2, GRM pedigree"), # 3
+    data.table(d = "FB_1_rpw, GEV ST,    Weight SITTT, Fit s2, GRM pedigree"), # 4
+    data.table(d = "FB_1_rpw, GEV SILDT, Weight SITTT, Fit s2, GRM pedigree"), # 5
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit s2, Cors 0, GRM pedigree"), # 6
 
     data.table(d = "FB_1_rpw, GEV SIT,   Weight SIT,   Fit s1, GRM HG_inv"), # 7
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit s3, GRM HG_inv"), # 8
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit s2, GRM HG_inv"), # 8
 
-    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit s1, GRM HG_inv"), # 9
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit s3, GRM HG_inv"), # 10
+    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit s7, GRM HG_inv"), # 9
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit s8, GRM HG_inv"), # 10
 
     # data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit s9, GRM pedigree"),  # 9
     # data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit s11, GRM pedigree"), # 10
@@ -94,7 +94,7 @@ common <- list(sim_new_data = "bici",
                weight_is_nested = TRUE,
                # expand_priors = 4,
                group_effect = 0.05,
-               patch_dataset = "fb-test~",
+               patch_dataset = "fb-test",
                patch_type = "median",
                patch_state = FALSE,
                # skip_patches = "beta", # "cov,base,beta",
