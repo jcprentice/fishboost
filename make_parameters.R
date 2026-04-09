@@ -428,6 +428,18 @@ make_parameters <- function(
     cov_priors[str_starts(parameter, "r_"),
                `:=`(val1 = -0.9, val2 = 0.9)]
 
+    for (i in seq_along(model_traits)) for (j in seq_along(model_traits)) {
+        ti <- names(model_traits)[[i]]
+        tj <- names(model_traits)[[j]]
+        if (i == j) {
+            cov_priors[str_detect(parameter, str_glue("cov_._{ti}{tj}")),
+                       true_val := Sigma_G[i, j]]
+        } else if (i < j) {
+            cov_priors[str_detect(parameter, str_glue("r_._{ti}{tj}")),
+                       true_val := Sigma_G[i, j]]
+        }
+    }
+
     fes <- c("trial", "donor", "txd", "weight", "weight1", "weight2")
     fe_p <- expand.grid(t1, fes) |> rev() |> apply(1, str_flatten, "_")
     fe_priors <- data.table(parameter = fe_p, true_val = 0,
