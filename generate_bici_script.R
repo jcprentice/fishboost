@@ -729,9 +729,9 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
         ## Cov priors ----
 
         if (use_traits %notin% c("", "none", NA)) {
-           if (!exists("cov_prior")) {
+            if (!exists("cov_prior")) {
                 cov_prior <- list(type = "default", vals = c())
-           }
+            }
 
             if (cov_prior$type == "uniform-lkj") {
                 cov_prior$vals[[1]] <- max(cov_prior$vals[[1]], 1e-4)
