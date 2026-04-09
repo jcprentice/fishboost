@@ -53,10 +53,10 @@ run_all_tests <- function(dataset = "fb-qtest",
         opts <-  list(n_plots = 50,
                       post = "sample")
         plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors",
-                      "mean", "t1", "t2")[0]
+                      "mean", "fb_only", "t1", "t2")[c(1)]
 
         km_plots(dataset, scens,
-                 simulate_new_data = "bici", opts, plotopts)
+                 simulate_new_data = "no", opts, plotopts)
         fit <- model_fit_dev(dataset)
     } else {
         fit <- NULL
