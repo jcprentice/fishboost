@@ -17,7 +17,7 @@
 # }
 
 model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
-                          opts = c("drop_outliers", "extreme_sires")[0]) {
+                          opts = c("extreme_sires")[0]) {
     if (FALSE) {
         dataset <- "fb-test"
         dataset <- "sim-base-inf"
@@ -26,7 +26,6 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
 
     message(str_glue("Calculating model fit deviation for '{dataset}'"))
 
-    if ("drop_outliers" %in% opts) message("- Dropping outliers")
     suffix <- str_c("",
                     if ("drop_outliers" %in% opts) "drop",
                     if ("extreme_sires" %in% opts) "es",
@@ -47,31 +46,23 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
 
     # Set limits on AUC length
     tmax <- if (str_detect(dataset, "fb")) {
-        c(104, 160)
+        c(t1 = 104, t2 = 160)
     } else {
-        c(200, 200)
+        c(t1 = 200, t2 = 200)
     }
 
     # Extract RMS deviance for each id, sire, trial / Tsym, RP
     fit <- map(km_data, \(x) {
         if (FALSE) {
-            i <- 4; x <- km_data[[i]]
+            i <- 7; x <- copy(km_data[[i]])
         }
 
-        # If Tsym is missing, sub in Tdeath if available
-        x$data[src == "fb" & is.na(Tsym) & !is.na(Tdeath), Tsym := Tdeath]
-
-        x1 <- x$data[!is.na(sire), .(id, sire, trial, donor, Tsym, RP, src)] |>
+        x1 <- x$data[!is.na(sire), .(id, sire, trial, donor, Tsym, Tdeath, RP, src)] |>
             setorder(id, sire, trial)
 
-        if ("drop_outliers" %in% opts) {
-            drop_ids <- if (km_data[[1]]$data[, max(sire)] == 28) {
-                c(3, 8, 22, 25)
-            } else {
-                c(3, 8, 23, 26)
-            }
-            x1 <- x1[sire %notin% drop_ids]
-        }
+        # If Tsym is missing, sub in Tdeath if available
+        x1[src == "fb" & is.na(Tsym) & is.na(Tdeath), Tsym := Tdeath]
+        x1[, Tdeath := NULL]
 
         if ("extreme_sires" %in% opts) {
             foo <- x1[id == last(id), .(sire, trial, donor, Tsym)]
@@ -84,8 +75,7 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
             donor_sires <- foo[donor == 1, sort(unique(sire)), trial] |>
                 split(by = "trial") |> map("V1")
             foo1[, donor := fifelse(sire %in% unlist(donor_sires), 1L, 0L)]
-            ids <- foo1[, .(sire = sire[c(which.min(mu), which.max(mu))],
-                            str = str_c(c("lo", "hi"), "_", fifelse(donor == 1, "d", "r"))),
+            ids <- foo1[, .(sire = sire[c(which.min(mu), which.max(mu))]),
                         .(trial, donor)]
             x1 <- merge(x1, ids, by = c("sire", "trial", "donor")) |>
                 setcolorder("donor", after = "trial")
@@ -96,9 +86,9 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
 
         sv_curve <- function(x) c(0, sort(x, na.last = TRUE))
 
-        x2 <- x1[, .(Tsym = sv_curve(Tsym),
-                     RP   = sv_curve(Tsym),
-                     survival = seq(1, 0, length = .N + 1),
+        x2 <- x1[, .(survival = seq(1, 0, length = .N + 1),
+                     Tsym = sv_curve(Tsym),
+                     RP = sv_curve(RP),
                      src = first(src)),
                  .(id, sire, trial)] |>
             melt(measure.vars = c("Tsym", "RP"),
@@ -106,8 +96,9 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
             setorder(id, sire, variable) |>
             setcolorder(c("src", "id", "sire", "trial", "variable", "time", "survival"))
 
-        if (TRUE || "drop_small_groups" %in% opts) {
-            x2[, keep := !all(time %in% c(0, NA)), .(id, sire, trial, variable)]
+        if (FALSE && "drop_small_groups" %in% opts) {
+            # If times are only 0 or NA, then we drop them
+            x2[, keep := any(time %notin% c(0, NA)), .(id, sire, trial, variable)]
             pc <- x2[, mean(keep)]
             if (pc < 1) {
                 message(str_glue("Keeping {p} % of values",
@@ -147,18 +138,14 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
         x3[, tmp := NULL]
 
         # Take mean over all sim values
-        x4 <- x3[, map(.SD, mean),
+        x4 <- x3[, map(.SD, mean, na.rm = TRUE),
                  .(sire, trial, variable, time, src),
                  .SDcols = -"id"]
 
-        # Calculate the deviation
-        x4[, dev := abs(survival[[1]] - survival[[2]]),
-           .(time, variable)]
-
-        x5 <- x4 |> dcast(... ~ src, value.var = c("survival", "wt"))
+        x5 <- x4 |>
+            dcast(... ~ src, value.var = c("survival", "wt")) |>
+            _[is.finite(wt_sim) & is.finite(wt_fb)]
         x5[, dev := abs(survival_sim - survival_fb) * wt_fb]
-        x5[, sum(dev),
-           .(sire, trial)]
 
         # Reduce to summary statistics
         x6 <- x5[, .(mad_all  = sum(dev),
@@ -283,7 +270,7 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
     #     theme(legend.position = "bottom")
     # families_plt
     #
-    # plt_str <- str_glue("{mf_base}_by_family{outliers}{alt}.png")
+    # plt_str <- str_glue("{mf_base}_by_family{alt}.png")
     # ggsave(plt_str, families_plt, width = 12, height = 8)
 
     list(fit = fit_wide,
