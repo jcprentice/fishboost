@@ -137,9 +137,11 @@ patch_params <- function(params, trace_row = 0) {
         priors <- params$priors
     }
 
+    setcolorder(priors, "true_val", after = "parameter")
+
     # Correct for old type
     priors[type == "Flat",  type := "uniform"]
-    priors[type == "Fixed", type := "constant"]
+    priors[type == "Fixed", type := "fix"]
 
     # Determine what to patch ----
 
