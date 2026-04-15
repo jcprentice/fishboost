@@ -7,8 +7,10 @@
 # Check convergence ----
 
 check_convergence <- function(dataset = "fb-test") {
-    # dataset <- "sim-base-inf"
-    # dataset <- "fb-test"
+    if (FALSE) {
+        dataset <- "sim-test-inf2"
+        dataset <- "fb-test"
+    }
 
     files <- list.files(str_glue("datasets/{dataset}/results"),
                         full.names = TRUE) |>
@@ -54,7 +56,7 @@ check_convergence <- function(dataset = "fb-test") {
         # Tidy up
         pes[, `:=`(file = NULL, ci95min = NULL, ci95max = NULL)]
         setcolorder(pes, c("scen", "rep", "GEV"))
-        }
+    }
 
     pes2 <- pes[, .(desc = first(desc),
                     # GEV = first(GEV),
