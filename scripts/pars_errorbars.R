@@ -77,8 +77,8 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
                   val2 = max(val2, true_val)),
            parameter]
 
-    pars <- x[, unique(parameter)] |>
-        str_subset("^G_|^Group", negate = TRUE)
+    pars <- x[, unique(parameter)] # |>
+        # str_subset("^G_|^Group", negate = TRUE)
     tidy_pars <- setNames(rename_pars(pars), pars)
 
     x1 <- merge(x[parameter %in% pars],
