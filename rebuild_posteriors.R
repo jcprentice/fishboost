@@ -9,6 +9,10 @@
 rebuild_sire_posteriors <- function(dataset = "fb-final",
                                     name = "scen-1-1") {
 
+    if (FALSE) {
+        dataset <- "fb-final"
+        name <- "scen-1-1"
+    }
     # dataset <- params$dataset; name <- params$name
 
     data_dir <- str_glue("datasets/{dataset}/data")
@@ -20,44 +24,81 @@ rebuild_sire_posteriors <- function(dataset = "fb-final",
 
     if (file.exists(tc_txt)) file.rename(tc_txt, tc)
 
-    x <- fread(tc)
-    x[, state := NULL]
+    pf <- str_glue("{res_dir}/{name}.rds")
+    if (file.exists(pf)) {
+        params <- readRDS(pf)$params
+        nsample <- params$nsample
+        burnprop <- params$burnprop
+        thinto <- params$thinto
+        priors <- params$priors
+    } else {
+        lines <- readLines(str_glue("{out_dir}/model.txt"), 4)
+        nsample <- str_subset(lines, "Samples") |> str_split_i(" ", 3) |> as.numeric()
+        burnin <- str_subset(lines, "Burnin")  |> str_split_i(" ", 3) |> as.numeric()
+        burnprop <- burnin / nsample
+        thinto <- 1e4L
+        priors <- data.table(parameter = names(x),
+                             prior = NA_real_)
+    }
+
+
+    x <- list.files(str_glue("{out_dir}"),
+                    "trace",
+                    full.names = TRUE) |>
+        str_subset("combine", negate = TRUE) |>
+        str_sort(numeric = TRUE) |>
+        map(fread) |>
+        map(~ .x[, .SD, .SDcols = !patterns("^L_|Prior|Posterior|Number|log")]) |>
+        map(~ setnames(.x, \(x) str_replace(x, "Group effect ", "G_")))
+
+    xs <- x |> map(~ .x[-seq_len(burnin * .N)]) |> rbindlist()
+    xs[, state := .I]
+
+    # Write to trace_combine.tsv
+    tc <- str_glue("{out_dir}/trace_combine.tsv")
+    message(str_glue("- Writing '{tc}'"))
+    fwrite(xs, file = tc, sep = "\t")
+
+    xs[, state := NULL]
 
     xp <- xs[, .(parameter = .SD |> names(),
+                 true_val  = NA_real_,
                  mean      = .SD |> map_dbl(mean),
                  median    = .SD |> map_dbl(median),
+                 sd        = .SD |> map_dbl(sd),
                  ci95min   = .SD |> map_dbl(quantile, 0.025),
                  ci95max   = .SD |> map_dbl(quantile, 0.975),
                  hdi95min  = .SD |> map(hdi) |> map_dbl("lower"),
                  hdi95max  = .SD |> map(hdi) |> map_dbl("upper"))]
 
+    if (str_detect(dataset, "sim")) {
+        tvs <- with(priors, setNames(true_val, parameter))
+        xp[parameter %in% names(tvs), true_val := tvs[parameter]]
+    }
+
 
     # Add in ESS and GR
-    lines <- readLines(str_glue("{out_dir}/model.txt"), 4)
-
-    nsample <- str_subset(lines, "Samples") |> str_split_i(" ", 3) |> as.numeric()
-    burnin  <- str_subset(lines, "Burnin")  |> str_split_i(" ", 3) |> as.numeric()
-
-    # Check for txt files and rename to tsv
-    txt_files <- list.files(out_dir, "trace.*txt", full.names = TRUE)
-    file.rename(txt_files,
-                str_replace(txt_files, "txt", "tsv"))
-
-    files <- list.files(out_dir, "trace", full.names = TRUE) |>
-        str_subset("extended|combine", negate = TRUE) |>
-        str_sort(numeric = TRUE)
-
 
     # Need to avoid cols with 0 variance
-    check <- x[, map_dbl(.SD, sd)]
-    drop_pars <- names(check[check == 0])
+    check <- xs[, map_dbl(.SD, sd)]
+    drop_pars <- c("state", names(check[check == 0]))
     cols <- setdiff(xp$parameter, drop_pars)
 
-    tfs <- map(files, ~ mcmc(fread(.x)[, ..cols]), thin = nsample / 1e4)
+    # In case we didn't finish or have an uneven number of samples
+    min_rows <- map_int(x, nrow) |> min()
+
+    tfs <- x |>
+        map(~ .x[seq_len(min_rows), ..cols]) |>
+        map(~ mcmc(.x, start = nsample * burnprop, thin = nsample / thinto))
+
     grd <- as.mcmc.list(tfs) |> gelman.diag() |> _$psrf[, 2]
     ess <- effectiveSize(tfs) |> round()
 
     xp[parameter %in% cols, `:=`(ESS = ess, GR = grd)]
+    xp[, convergence := fcase(ESS >= 500 & GR < 1.05, "***",
+                              ESS >= 200 & GR < 1.1, "**",
+                              ESS >= 100 & GR < 1.2, "*",
+                              default = "")]
 
     res_file <- str_glue("{res_dir}/{name}.rds")
     if (file.exists(res_file)) {
@@ -77,6 +118,8 @@ rebuild_bici_posteriors <- function(dataset = "fb-test",
                                     name = "scen-1-1") {
 
     if (FALSE) {
+        dataset <- "sim-test-inf2"
+        name <- "scen-1-1"
         dataset <- params$dataset
         name <- params$name
     }
@@ -84,11 +127,6 @@ rebuild_bici_posteriors <- function(dataset = "fb-test",
     data_dir <- str_glue("datasets/{dataset}/data")
     res_dir  <- str_glue("datasets/{dataset}/results")
     out_dir  <- str_glue("{data_dir}/{name}-out")
-
-    pfiles <- list.files(str_glue("{out_dir}/output-inf"),
-                         "^param_",
-                         full.names = TRUE) |>
-        str_sort(numeric = TRUE)
 
     f <- str_glue("{res_dir}/{name}.rds")
     if (file.exists(f)) {
@@ -132,34 +170,47 @@ rebuild_bici_posteriors <- function(dataset = "fb-test",
               "omega_(.?)e,(.?)e" = "r_E_\\1\\2"))
     }
 
-    x <- pfiles |>
+    x <- list.files(str_glue("{out_dir}/output-inf"),
+                    "^param_",
+                    full.names = TRUE) |>
+        str_sort(numeric = TRUE) |>
         map(fread) |>
         map(~ .x[, .SD, .SDcols = !patterns("L\\^|N\\^|Prior")]) |>
         map(~ setnames(.x, change_names))
 
-    xs <- map(x, ~ .x[-seq_len(burnprop * .N)]) |> rbindlist()
+    xs <- x |> map(~ .x[-seq_len(burnprop * .N)]) |> rbindlist()
     xs[, state := .I]
 
     # Write to trace_combine.tsv
     tc <- str_glue("{out_dir}/trace_combine.tsv")
     message(str_glue("- Writing '{tc}'"))
     fwrite(xs, file = tc, sep = "\t")
+
     xs[, state := NULL]
 
     xp <- xs[, .(parameter = .SD |> names(),
+                 true_val  = NA_real_,
                  mean      = .SD |> map_dbl(mean),
                  median    = .SD |> map_dbl(median),
+                 sd        = .SD |> map_dbl(sd),
                  ci95min   = .SD |> map_dbl(quantile, 0.025),
                  ci95max   = .SD |> map_dbl(quantile, 0.975),
                  hdi95min  = .SD |> map(hdi) |> map_dbl("lower"),
                  hdi95max  = .SD |> map(hdi) |> map_dbl("upper"))]
 
+    if (str_detect(dataset, "sim")) {
+        tvs <- with(params$priors, setNames(true_val, parameter))
+        xp[parameter %in% names(tvs), true_val := tvs[parameter]]
+    }
+
+
     # Add in ESS and GR
 
     # Need to avoid cols with 0 variance
     check <- xs[, map_dbl(.SD, sd)]
-    drop_pars <- c("state", names(check[check == 0]))
-    cols <- setdiff(xp$parameter, drop_pars)
+    drop_pars <- names(check[check == 0])
+    cols <- setdiff(xp$parameter, drop_pars) |>
+        str_subset("state|^G_", negate = TRUE)
 
     # In case we didn't finish or have an uneven number of samples
     min_rows <- map_int(x, nrow) |> min()
