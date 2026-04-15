@@ -8,6 +8,7 @@
     source("scripts/posterior.R")
     source("scripts/plot_ebvs.R")
     source("scripts/pars_errorbars.R")
+    source("scripts/pars_bias.R")
     source("plotting/plot_chains.R")
     source("plotting/plot_correlations.R")
     source("scripts/tornadoes.R")
@@ -46,6 +47,7 @@ run_all_tests <- function(dataset = "fb-qtest",
     }
 
     if (str_detect(dataset, "sim")) {
+        pars_bias(dataset)
         tornadoes(dataset)
     }
 
