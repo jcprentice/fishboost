@@ -111,8 +111,8 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
                           width = 0.5) +
             {if (is_sim)
                 geom_segment(data = priors2,
-                             aes(x = scen - 0.5, xend = scen + 0.5, y = true_val, yend = true_val),
-                             # aes(x = scen, xend = scen, y = true_val, yend = true_val),
+                             aes(x = scen - 0.5, xend = scen + 0.5,
+                                 y = true_val, yend = true_val),
                              colour = "green",
                              linewidth = 0.5,
                              linetype = "dashed")} +
