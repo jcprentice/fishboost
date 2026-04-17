@@ -51,85 +51,42 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "") {
     x <- map(scens_str, ~ {
         rf <- str_glue("{res_dir}/{.x}.rds")
         pe <- readRDS(rf)$parameter_estimates
-        pe[!str_starts(parameter, "Group effect|G_")]
+        pe[!str_starts(parameter, "G_|Group"),
+           .(parameter, bias = (median - true_val) / sd, convergence)]
     }) |>
         rbindlist(idcol = "scen", fill = TRUE)
 
-    rf <- str_glue("{res_dir}/{scens_str[[1]]}.rds")
-    x[, parameter := rename_bici_pars(parameter)]
-
-    # Extract the widest priors for all parameters
-    priors <- map(scens, ~ {
-        files <- list.files(res_dir, str_glue("scen-{.x}-"), full.names = TRUE) |>
-            str_sort(numeric = TRUE)
-        if (is_empty(files)) return(NULL)
-        readRDS(files[[1]])$params$priors[, .(parameter, type, val1, val2, true_val)]
-    }) |>
-        rbindlist(idcol = "scen")
-
-    # Make scenario a factor e.g. c(s2, s4, ...)
-    priors[, scen := factor(str_c("s", scens[scen]), levels = str_c("s", scens))]
-    # x[, scen := factor(str_c("s", scen), levels = str_c("s", scens))]
     x[, scen := scens_str[scen] |> str_split_i("-", 2) |> str_c("s", x = _) |>
           factor(levels = str_c("s", scens))]
 
-    priors[, `:=`(val1 = min(val1, true_val),
-                  val2 = max(val2, true_val)),
-           parameter]
+    x[, parameter := rename_bici_pars(parameter)]
 
-    pars <- x[, unique(parameter)] |>
-        str_subset("^G_|^Group", negate = TRUE)
+    pars <- x[, unique(parameter)]
     tidy_pars <- setNames(rename_pars(pars), pars)
 
-    x1 <- merge(x[parameter %in% pars],
-                priors[parameter %in% pars, .(scen, parameter, type)],
-                by = c("scen", "parameter"))
-
-    if ("type" %notin% names(x1)) x1[, type := "uniform"]
-
-    setorder(x1, parameter, median)
+    setorder(x, parameter, bias)
 
     plts <- map(pars, \(par) {
         # i <- 1; par <- pars[[i]]
-        y_rng <- priors[parameter == par, c(min(val1), max(val2))]
-        y_true <- priors[parameter == par, true_val]
-        ymin <- x1[parameter == par, min(hdi95min)]
-        ymin <- ymin - 0.1 * abs(ymin)
-        ymax <- x1[parameter == par, max(hdi95max)]
-        ymax <- ymax + 0.1 * abs(ymax)
+        x1 <- x[parameter == par]
+        mu_x1 <- x1[, .(mu = median(bias)), scen]
+        mu_x1[, scen := as.integer(scen)]
 
-        priors2 <- priors[parameter == par, .(scen = as.integer(scen), true_val)]
-
-        # Colour = type vs colour = convergence
-
-        ggplot(x1[parameter == par],
-               # aes(x = scen, y = median, colour = type)) +
-               aes(x = scen, y = median, colour = convergence)) +
-            # geom_boxplot() +
-            geom_errorbar(aes(ymin = hdi95min, ymax = hdi95max),
-                          position = position_dodge2(),
-                          width = 0.5) +
-            {if (is_sim)
-                geom_segment(data = priors2,
-                             aes(x = scen - 0.5, xend = scen + 0.5, y = true_val, yend = true_val),
-                             # aes(x = scen, xend = scen, y = true_val, yend = true_val),
-                             colour = "green",
-                             linewidth = 0.5,
-                             linetype = "dashed")} +
-            geom_point(position = position_dodge2(width = 0.5),
-                       size = 1) +
-            geom_hline(yintercept = y_rng[[2]],
-                       colour = "grey", linewidth = 0.5, linetype = "dashed") +
-            # scale_colour_manual(breaks = c("uniform", "inverse", "constant"),
-            #                     values = c("red", "red", "grey40")) +
+        ggplot(x1, aes(x = scen, y = bias, colour = convergence)) +
+            geom_segment(data = mu_x1,
+                         aes(x = scen - 0.4, xend = scen + 0.4,
+                             y = mu, yend = mu),
+                      colour = "blue",
+                      linewidth = 0.5) +
+            geom_point() +
+            geom_hline(yintercept = 0, linetype = "dashed") +
             scale_colour_manual(breaks = c("", "*", "**", "***"),
                                 values = c("blue3", "green4", "yellow3", "red2")) +
             scale_x_discrete(drop = FALSE) +
             # scale_y_discrete(limits = ~ range(.x, y_rng)) +
             expand_limits(y = 0) +
-            coord_cartesian(ylim = range(0, ymin, ymax)) +
             labs(x = "Scenario",
-                 y = "Value",
+                 y = "Bias",
                  title = tidy_pars[[par]]) +
             theme_classic() +
             theme(legend.position = "none")
@@ -197,8 +154,9 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "") {
                      ncol = 1, rel_heights = c(0.06, 1))
 
     if (str_length(alt) > 0) alt <- str_c("-", alt)
-    plt_str <- str_glue("{gfx_dir}/{dataset}-all_hpdi{alt}")
+    plt_str <- str_glue("{gfx_dir}/{dataset}-all_bias{alt}")
 
+    message(str_glue("plotted '{plt_str}'"))
     ggsave(str_glue("{plt_str}.png"), plt, width = 20, height = 25)
     ggsave(str_glue("{plt_str}.pdf"), plt, width = 20, height = 25)
 
@@ -206,24 +164,24 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "") {
 }
 
 if (FALSE) {
-    # pars_errorbars("testing", 1, "")
-    # pars_errorbars("fb-final", 1:8, "Testing Unlinked vs Linked Traits and FEs")
-    # pars_errorbars("fb-final2", 1:4, "Testing Unlinked vs Linked Traits and FEs")
-    # pars_errorbars("fb-lp", 1:12, "Testing varying the LP")
-    # pars_errorbars("fb-donors", 1:3, "Testing reclassifying Seeder fish")
-    # pars_errorbars("fb-simple", 1:6, "Testing if we can fit the LP")
-    # pars_errorbars("fb-simple-b", 1:6, "Testing if we can fit the LP with BICI")
-    pars_errorbars("sim-test2", 1:5, "Testing coverage")
-    pars_errorbars("fb-dp", 1:6, "Testing DPs")
-    pars_errorbars("fb-donors", 1:27, "Testing donor reclassification")
-    pars_errorbars("fb-test", 0, "Testing BICI on FB data")
-    pars_errorbars("fb-test-1e7", 0, "Testing BICI on FB data")
-    pars_errorbars("fb-qtest", 0, "Testing BICI on FB data")
-    pars_errorbars("sim-base-inf", 0, "Validating BICI")
-    pars_errorbars("sim-base-inf", 1:2, "Validating BICI - Base models", "base")
-    pars_errorbars("sim-base-inf", 1:12, "Validating BICI - Misspecifying model", "misspecify")
-    # pars_errorbars("sim-base-inf", c(1:2, 13:20), "Validating BICI - convergence", "conv")
-    pars_errorbars("sim-test-inf", 0, "Validating BICI on Simulated data")
-    pars_errorbars("sim-test-inf", 1:10, "Validating BICI on Simulated data", "tr1")
-    pars_errorbars("sim-test-inf", 11:20, "Validating BICI on Simulated data", "tr12")
+    # pars_bias("testing", 1, "")
+    # pars_bias("fb-final", 1:8, "Testing Unlinked vs Linked Traits and FEs")
+    # pars_bias("fb-final2", 1:4, "Testing Unlinked vs Linked Traits and FEs")
+    # pars_bias("fb-lp", 1:12, "Testing varying the LP")
+    # pars_bias("fb-donors", 1:3, "Testing reclassifying Seeder fish")
+    # pars_bias("fb-simple", 1:6, "Testing if we can fit the LP")
+    # pars_bias("fb-simple-b", 1:6, "Testing if we can fit the LP with BICI")
+    pars_bias("sim-test2", 1:5, "Testing coverage")
+    pars_bias("fb-dp", 1:6, "Testing DPs")
+    pars_bias("fb-donors", 1:27, "Testing donor reclassification")
+    pars_bias("fb-test", 0, "Testing BICI on FB data")
+    pars_bias("fb-test-1e7", 0, "Testing BICI on FB data")
+    pars_bias("fb-qtest", 0, "Testing BICI on FB data")
+    pars_bias("sim-base-inf", 0, "Validating BICI")
+    pars_bias("sim-base-inf", 1:2, "Validating BICI - Base models", "base")
+    pars_bias("sim-base-inf", 1:12, "Validating BICI - Misspecifying model", "misspecify")
+    # pars_bias("sim-base-inf", c(1:2, 13:20), "Validating BICI - convergence", "conv")
+    pars_bias("sim-test-inf", 0, "Validating BICI on Simulated data")
+    pars_bias("sim-test-inf", 1:10, "Validating BICI on Simulated data", "tr1")
+    pars_bias("sim-test-inf", 11:20, "Validating BICI on Simulated data", "tr12")
 }
