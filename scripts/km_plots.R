@@ -144,13 +144,12 @@ if (FALSE) {
 }
 
 if (FALSE) {
-    km_plots(dataset = "sim-test-inf",
+    km_plots(dataset = "sim-test-inf2",
              scens = 0,
              simulate_new_data = "no",
              opts = list(n_plots = 50, post = "sample"),
-             plotopts = c("drop_small_groups",
-                          "extreme_sires",
-                          "drop_donors")[1])
+             plotopts = c("drop_small_groups", "extreme_sires", "drop_donors",
+                          "mean", "t1", "t2")[c(4)])
 }
 
 if (FALSE) {
