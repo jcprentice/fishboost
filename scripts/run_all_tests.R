@@ -7,6 +7,7 @@
     source("scripts/check_convergence.R")
     source("scripts/posterior.R")
     source("scripts/plot_ebvs.R")
+    source("scripts/plot_ebvs2.R")
     source("scripts/pars_errorbars.R")
     source("scripts/pars_bias.R")
     source("plotting/plot_chains.R")
@@ -16,10 +17,11 @@
     source("scripts/model_fit_dev.R")
 }
 
-run_all_tests <- function(dataset = "fb-qtest",
+run_all_tests <- function(dataset = "fb-test",
                           km = FALSE) {
     if (FALSE) {
         dataset <- "fb-test"
+        dataset <- "sim-test-inf2"
         km <- FALSE
     }
 
@@ -47,6 +49,7 @@ run_all_tests <- function(dataset = "fb-qtest",
     }
 
     if (str_detect(dataset, "sim")) {
+        walk2(scens, reps, possibly(~ plot_ebvs(dataset, .x, .y)))
         pars_bias(dataset)
         tornadoes(dataset)
     }
