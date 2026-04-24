@@ -176,7 +176,11 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
         "fb_hi_r",  "Data Contact high",       "#1F78B4",
         "sim_hi_r", "Simulation Contact high", "#A6CEE3",
         "fb_lo_r",  "Data Contact low",        "#FF7F00",
-        "sim_lo_r", "Simulation Contact low",  "#FDBF6F"
+        "sim_lo_r", "Simulation Contact low",  "#FDBF6F",
+        "fb_d",     "Data Seeder",             "#33A02C",
+        "sim_d",    "Simulation Seeder",       "#B2DF8A",
+        "fb_r",     "Data Contact",            "#1F78B4",
+        "sim_r",    "Simulation Contact",      "#A6CEE3"
     )
 
     if ("extreme_sires" %notin% plotopts) {
