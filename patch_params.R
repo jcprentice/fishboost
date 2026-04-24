@@ -58,7 +58,7 @@ patch_params <- function(params, trace_row = 0) {
     if (identical(patch_state, TRUE)) {
         f <- str_glue("{out_dir}/{etc_src}.rds")
         patch_state <- if (!file.exists(f)) {
-            message("no state files found, continuing without")
+            message("- no state files found, continuing without")
             FALSE
         } else {
             if (patch_type == "sampled") {
