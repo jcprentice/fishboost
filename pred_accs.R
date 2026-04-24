@@ -4,15 +4,22 @@
     library(purrr)
     library(ggplot2)
     library(cowplot)
+    library(pipebind)
 }
 
-pred_accs_plot <- function(dataset = "sim-test-inf", name = "scen-1-1", parents_only = TRUE) {
+pred_accs_plot <- function(dataset = "sim-test-inf", scen = 1, rep = 1, parents_only = TRUE) {
     if (FALSE) {
-        dataset <- "sim-test-inf"; name <- "scen-1-1"; parents_only <- TRUE
+        dataset <- "sim-test-inf2"
+        scen <- 1
+        rep <- 1
+        parents_only <- TRUE
     }
+
+    name <- str_glue("scen-{scen}-{rep}")
 
     pa_dir <- str_glue("datasets/{dataset}/gfx/pred_accs")
     if (!dir.exists(pa_dir)) {
+        message("- mkdir ", pa_dir)
         dir.create(pa_dir)
     }
 
@@ -100,11 +107,16 @@ pred_accs_plot <- function(dataset = "sim-test-inf", name = "scen-1-1", parents_
     plt
 }
 
-pred_accs <- function(dataset = "sim-base-inf", name = "scen-5-1", parents_only = TRUE, method = "kendall") {
+pred_accs <- function(dataset = "sim-base-inf", scen = 1, rep = 1, parents_only = TRUE, method = "kendall") {
     if (FALSE) {
-        dataset <- "sim-base-inf"; name <- "scen-5-1"
-        parents_only <- TRUE; method <- "kendall"
+        dataset <- "sim-base-inf"
+        scen <- 1
+        rep <- 1
+        parents_only <- TRUE
+        method <- "kendall"
     }
+
+    name <- str_glue("scen-{scen}-{rep}")
 
     x <- readRDS(str_glue("datasets/{dataset}/results/{name}.rds"))$popn
     x[, names(.SD) := NULL, .SDcols = !patterns("^(id|sdp|sus|inf|tol|end)")]
@@ -138,6 +150,11 @@ pred_accs <- function(dataset = "sim-base-inf", name = "scen-5-1", parents_only 
     y <- y[, map(.SD, mean), id, .SDcols = patterns("_[ge]$")]
     setcolorder(y, cols, skip_absent = TRUE)
 
+    if (str_detect("top", method)) {
+        pc2p <- function(x) 1 - x / 100
+        method <- str_remove(method, "top") |> as.numeric() |> pc2p()
+    }
+
     if (is.character(method)) {
         if (method %notin% c("pearson", "spearman", "kendall")) {
             method <- "kendall"
@@ -163,20 +180,32 @@ pred_accs <- function(dataset = "sim-base-inf", name = "scen-5-1", parents_only 
 }
 
 if (FALSE) {
-    dataset <- "sim-test-inf"
-    scens <- 1:10
+    dataset <- "sim-test-inf2"
 
-    PAs <- map(scens, \(scen) {
-        reps <- 1:10
-        out <- map(reps, possibly(~ pred_accs(dataset, str_glue("scen-{scen}-{.x}"),
-                                     parents_only = TRUE, method = "kendall")))
-        out1 <- map(out, as.list) |> rbindlist(idcol = "rep")
-        # out1[, map(.SD, mean)]
+    sr <- list.files(str_glue("datasets/{dataset}/results")) |>
+        str_sort(numeric = TRUE) |> str_remove_all("scen-|.rds") |>
+        str_split("-") |> map(as.integer)
+    scens <- map_int(sr, 1)
+    reps  <- map_int(sr, 2)
+
+    methods <- c("kendall", "pearson", "spearman", "top20")
+    parents_only <- TRUE
+
+    PAs <- map(methods, \(method) {
+        map2(scens, reps, possibly(
+            ~ pred_accs(dataset, .x, .y, parents_only, method)
+        )) |>
+            map(as.list) |> rbindlist(idcol = "id")
     }) |>
-        rbindlist(idcol = "scen")
+        map(~ {
+            .x[, `:=`(scen = scens[id], rep = reps[id])] |>
+                setcolorder(c("id", "scen", "rep"))
+            .x[, map(.SD, ~ round(100 * mean(.x), 1)),
+               .(scen = str_c("s", scen)),
+               .SDcols = patterns("sus|inf|tol")]
+        }) |>
+        setNames(methods)
 
-    PAs[, .(Scenario = str_c("s", scen),
-            Susceptibility = round(100 * sus, 1),
-            Infectivity    = round(100 * inf, 1),
-            Tolerance      = round(100 * tol, 1))]
+    saveRDS(PAs, str_glue("datasets/{dataset}/meta/PAs{parents}.rds",
+                          parents = if (parents_only) "-parents" else ""))
 }
