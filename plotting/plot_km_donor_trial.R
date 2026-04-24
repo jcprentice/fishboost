@@ -91,13 +91,6 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
     # Create a column to group by
     data_t0[, gp := .GRP, .(id, donor, trial)]
 
-    if ("drop_small_groups" %in% plotopts) {
-        if (DEBUG) message("- Dropping small groups")
-        small_groups <- data_t0[, .(N = .N), gp][N < 10, gp]
-        data_t0 <- data_t0[gp %notin% small_groups]
-        data_t0[, gp := .GRP, .(id, sire, trial)]
-    }
-
     # Melt so we can use facet_wrap
     data_t1 <- melt(data_t0,
                     measure.vars = c("Tinf", "Tsym", "RP"),
@@ -155,7 +148,11 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
         "sim_lo_d", "Simulation Seeder low",   "#FB9A99",
         "sim_hi_r", "Simulation Contact high", "#A6CEE3",
         "fb_lo_r",  "Data Contact low",        "#FF7F00",
-        "sim_lo_r", "Simulation Contact low",  "#FDBF6F"
+        "sim_lo_r", "Simulation Contact low",  "#FDBF6F",
+        "fb_d",     "Data Seeder",             "#33A02C",
+        "sim_d",    "Simulation Seeder",       "#B2DF8A",
+        "fb_r",     "Data Contact",            "#1F78B4",
+        "sim_r",    "Simulation Contact",      "#A6CEE3"
     )
 
     if ("extreme_sires" %notin% plotopts) {
