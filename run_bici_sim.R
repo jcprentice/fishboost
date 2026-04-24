@@ -8,7 +8,12 @@ run_bici_sim <- function(dataset = "fb-test",
                          bici_cmd = "post-sim",
                          nreps = 0) {
 
-    # dataset <- "sim-base-inf"; name <- "scen-5-1"; bici_cmd <- "post-sim"; nreps <- 0
+    if (FALSE) {
+        dataset <- "sim-test-inf2"
+        name <- "scen-1-1"
+        bici_cmd <- "post-sim"
+        nreps <- 50
+    }
 
     bici_file <- str_glue("datasets/{dataset}/data/{name}.bici")
 
