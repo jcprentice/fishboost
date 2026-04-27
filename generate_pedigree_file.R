@@ -52,8 +52,8 @@ setorder(fb, id)
 cols2 <- c("id", "sire", "dam", "trial", "group")
 fb[, (cols2) := map(.SD, as.integer), .SDcols = cols2]
 
-# Add sire / dam / progeny as factor (although they're all progeny here):
-fb[, sdp := factor("progeny", levels = c("sire", "dam", "progeny"))]
+# Add sire / dam / progeny (although they're all progeny here):
+fb[, sdp := "progeny"]
 
 
 # Collect pedigree columns at start
