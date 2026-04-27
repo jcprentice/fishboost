@@ -36,8 +36,7 @@ make_pedigree <- function(params) {
     # set type
     pedigree[, sdp := fcase(id <= nsires, "sire",
                             id <= nparents, "dam",
-                            default = "progeny") |>
-                 factor(levels = c("sire", "dam", "progeny"))]
+                            default = "progeny")]
 
     pedigree
 }
