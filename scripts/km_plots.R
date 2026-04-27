@@ -140,7 +140,7 @@ if (FALSE) {
              simulate_new_data = "no",
              opts = list(n_plots = 50, post = "sample"),
              plotopts = c("drop_small_groups", "extreme_sires", "drop_donors",
-                          "mean", "t1", "t2")[c(4)])
+                          "mean", "t1", "t2")[c(1,2,4)])
 }
 
 if (FALSE) {
