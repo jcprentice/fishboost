@@ -91,8 +91,8 @@ import_fishboost_data <- function() {
     # Removed "yes" / "no"
     fb[, removed := removed == "yes"]
 
-    # Add sire / dam / progeny as factor (although they're all progeny here):
-    fb[, sdp := factor("progeny", levels = c("sire", "dam", "progeny"))]
+    # Add sire / dam / progeny as (although they're all progeny here):
+    fb[, sdp := "progeny"]
 
 
     # Collect pedigree columns at start
