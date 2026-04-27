@@ -1,8 +1,14 @@
+# History files
 .Rproj.user
 .Rhistory
+# Session Data files
 .RData
+.RDatatmp
+# User-specific files
 .Ruserdata
+# MacOS files
 .DS_Store
+# Fishboost files
 fb_data/H*
 fb_data/*xlsx
 Hinv
@@ -12,3 +18,4 @@ gfx
 meta
 out
 r0_results
+.positai
