@@ -786,7 +786,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
             if (ppi$use == FALSE) return()
 
             # Ensure numbers like 1e-3 appear as 0.001
-            ppi <- map(ppi, ~ format(.x, scientific = FALSE))
+            ppi <- map(ppi, format, scientific = FALSE)
 
             pname <- ppi$parameter
             node_str <- str_glue("prior_{pname}")
