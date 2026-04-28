@@ -46,10 +46,10 @@ make_traits_from_pedigree <- function(pedigree, params) {
         message("- Matrix is not positive definite, shrinking correlations")
         n <- 0
         while (n < 50 && any(eigen(cov_G)$values < 0)) {
-            message("shrinking")
             n <- n + 1
+            message("shrinking x ", n)
             dcov <- diag(cov_G)
-            cov_G <- 0.9 * cov_G
+            cov_G <- 0.95 * cov_G
             diag(cov_G) <- dcov
         }
     }
@@ -97,8 +97,8 @@ make_traits_from_pedigree <- function(pedigree, params) {
 
     # We need to shift the traits by the mean in order for the exp() values to
     # have mean 1.
-    GVs <- GVs - apply(GVs, 2, var) / 2
-    EVs <- EVs - apply(EVs, 2, var) / 2
+    GVs <- GVs - diag(cov_G) / 2
+    EVs <- EVs - diag(cov_E) / 2
 
     phenotypes <- exp(GVs + EVs)
     colnames(phenotypes) <- traitnames
