@@ -220,12 +220,22 @@ patch_params <- function(params, trace_row = 0) {
 
     # Rates and LPs ----
 
-    if ("beta" %in% pp) {
-        params2$r_beta <- patch_vals$beta
+    if (any(str_detect(pp, "beta"))) {
+        if ("beta" %in% pp) {
+            params2$r_beta <- patch_vals$beta
+        } else if ("beta_Tr1" %in% pp && "beta_Tr2" %in% pp) {
+            params2$r_beta <- with(patch_vals, sqrt(beta_Tr1 * beta_Tr2))
+            params2$fe_vals["trial", "inf"] <- with(patch_vals, log(beta_Tr2 / beta_Tr1))
+        } else if ("beta_Tr1" %in% pp) {
+            params2$r_beta <- patch_vals$beta_Tr1
+        } else if ("beta_Tr2" %in% pp) {
+            params2$r_beta <- patch_vals$beta_Tr2
+        }
         pars_patched <- c(pars_patched, "beta")
     }
     if ("infrat" %in% pp) {
         params2$inf_ratio <- patch_vals$infrat
+        params2$fe_vals["donor", "inf"] <- log(patch_vals$infrat)
         pars_patched <- c(pars_patched, "infection ratio")
     }
     if ("latent_period" %in% pp) {
@@ -278,7 +288,7 @@ patch_params <- function(params, trace_row = 0) {
     for (fe_type in fe_types) {
         for (fe_trait in model_traits) {
             # build name e.g. trial_l
-            fe_name <- str_c(fe_type, "_", str_sub(fe_trait, 1, 1))
+            fe_name <- str_c(fe_type, "_", str_1st(fe_trait))
             if (fe_name %in% pp) {
                 params2$fe_vals[fe_type, fe_trait] <- patch_vals[[fe_name]]
                 pars_patched <- c(pars_patched, fe_name)
