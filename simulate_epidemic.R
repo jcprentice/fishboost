@@ -2,7 +2,6 @@
 source("models/model_SIS.R")
 source("models/model_SIR.R")
 source("models/model_SEIR.R")
-source("models/model_SEIR_res.R")
 source("models/model_SIDR.R")
 source("models/model_SEIDR.R")
 
