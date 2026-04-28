@@ -55,7 +55,7 @@ run_from_script <- length(cmd_args) > 0
     params$time_step <- 1
     params$censor <- 0.8
     params$use_weight <- "log"
-    params$use_grm <- "pedigree"
+    params$use_grm <- "HG_inv"
     params$weight_is_nested <- TRUE
     # params$fix_donors <- c(params$fix_donors, "set_to_R")
 
@@ -63,12 +63,12 @@ run_from_script <- length(cmd_args) > 0
     params <- tidy_up_periods(params)
 
     # Patch params with posterior mean values from data set/scenario
-    params$patch_dataset <- "" # "fb-test"
-    params$patch_name <- "scen-1-1"
+    params$patch_dataset <- "fb-test"
+    params$patch_name <- "scen-7-1"
     params$traits_source <- "pedigree" # posterior
     params$patch_type <- "median"
     params$patch_state <- TRUE
-    params$skip_patches <- c("") #, "covariance")
+    params$skip_patches <- c() #, "covariance")
 
     params <- params |>
         patch_params() |>  # Patch params with posteriors from dataset / scenario
