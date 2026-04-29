@@ -31,7 +31,7 @@ protocol[, time_step_bici := get_part(d, "timestep") |> as.numeric(), .I]
 # Common options ----
 source("param_gen/common2.R")
 
-common <- list(sim_new_data = "etc_sim",
+common <- list(sim_new_data = "summary_sim",
                setup = "fb_12_rpw",
                use_traits = "sit",
                trial_fe = "ildt",

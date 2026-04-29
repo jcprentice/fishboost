@@ -59,7 +59,7 @@ protocol[, patch_name := get_part(d, "Fit ") |>
 # Common options ----
 source("param_gen/common2.R")
 
-common <- list(sim_new_data = "etc_sim",
+common <- list(sim_new_data = "summary_sim",
                use_grm = "pedigree", # "HG_inv",
                inf_model = 4L,
                traits_source = "posterior", # should this be GRM?
