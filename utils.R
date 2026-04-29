@@ -60,12 +60,13 @@ safe_sample <- function(x, ...) {
 }
 
 # Sample just 1 index from a probability (faster than R's built in version)
-samp1 <- function(x, prob) {
+samp1 <- function(prob) {
     mid <- \(a, b) floor((a + b) / 2L) |> as.integer()
     a <- 1L
-    b <- length(x)
+    b <- length(prob)
     m <- mid(a, b)
     if (is.null(prob)) prob <- rep(1, b)
+    x <- seq_along(prob)
     y <- cumsum(prob)
     z <- runif(1L) * y[[b]]
 
