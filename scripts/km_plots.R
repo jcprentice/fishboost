@@ -3,7 +3,7 @@
     library(stringr)
     library(purrr)
 
-    source("etc_to_km.R")
+    source("summary_to_km.R")
     source("generate_km_data_sire.R")
     source("generate_km_data_bici.R")
     source("run_bici_sim.R")
@@ -45,7 +45,7 @@ km_plots <- function(dataset = "fb-test",
 
     if (!file.exists(f)) {
         if (simulate_new_data == "no") {
-            out <- etc_to_km(dataset, scens, opts, "post-sim")
+            out <- summary_to_km(dataset, scens, opts, "post-sim")
             if (is.null(out)) {
                 simulate_new_data <- "bici"
             }

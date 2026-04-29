@@ -20,7 +20,7 @@ generate_km_data_bici <- function(dataset = "fb-test",
 
     n_plots <- opts$n_plots
 
-    f <- list.files(data_dir, "etc_ps.rds",
+    f <- list.files(data_dir, "summary_ps.rds",
                     recursive = TRUE, full.names = TRUE) |>
         keep(~ .x |> str_split_i("/", 4) |> str_split_i("-", 2) |>
                  as.integer() |> is.element(scen))

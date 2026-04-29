@@ -1,4 +1,4 @@
-x <- readRDS("datasets/fb-test/data/scen-7-1-out/etc_inf.rds")$popn
+x <- readRDS("datasets/fb-test/data/scen-7-1-out/summary_inf.rds")$popn
 
 sires_s <- x[sdp == "sire", .(id, trait = sus_g)]
 sires_i <- x[sdp == "sire", .(id, trait = inf_g)]

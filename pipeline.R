@@ -35,7 +35,7 @@ run_from_script <- length(cmd_args) > 0
         txd_fe = "ildt",
         weight_fe = "sildt",
         weight_is_nested = TRUE,
-        sim_new_data = "bici"
+        sim_new_data = "r"
     )
 
     # Temporary override of some parameters
@@ -199,7 +199,7 @@ bici_txt <- generate_bici_script(popn, params)
         mget() |>
         saveRDS(file = str_glue("{results_dir}/{name}.rds"))
 
-    # Generate etc_{inf,sim,ps}.rds summary file
+    # Generate summary_{inf,sim,ps}.rds summary file
     flatten_bici_states(params)
 }
 

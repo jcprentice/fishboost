@@ -49,14 +49,14 @@ patch_params <- function(params, trace_row = 0) {
     # If 'patch_state' is specified, use that, otherwise check if a trace file
     # is present and store the row used.
 
-    etc_src <- if (sim_new_data == "etc_sim") "etc_sim" else "etc_inf"
+    summary_src <- if (sim_new_data == "summary_sim") "summary_sim" else "summary_inf"
 
     # Select patch ----
 
     # This might be already set, in which case skip
     # if (!is.numeric(patch_state) && patch_state == TRUE) {
     if (identical(patch_state, TRUE)) {
-        f <- str_glue("{out_dir}/{etc_src}.rds")
+        f <- str_glue("{out_dir}/{summary_src}.rds")
         patch_state <- if (!file.exists(f)) {
             message("- no state files found, continuing without")
             FALSE
@@ -76,7 +76,7 @@ patch_params <- function(params, trace_row = 0) {
     if (is.numeric(patch_state)) {
         if (msgs) message(str_glue("- using state: {patch_state}"))
 
-        f <- str_glue("{out_dir}/{etc_src}.rds")
+        f <- str_glue("{out_dir}/{summary_src}.rds")
         tmp <- readRDS(f)$parameters[!str_starts(parameter, "^Group")]
         tmp <- if (patch_state == 0) {
             tmp[, .(value = get(patch_type)(value)), parameter]

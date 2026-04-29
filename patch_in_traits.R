@@ -28,7 +28,7 @@ patch_in_traits <- function(popn, params) {
     # If we're not using mean or median, then need to sample from the files
     # available, so check if we even have any first
     if (patch_type %notin% c("mean", "median")) {
-        f <- str_glue("{output_dir}/etc_inf.rds")
+        f <- str_glue("{output_dir}/summary_inf.rds")
 
         # If we don't find anything, revert to patching with median
         message("- no ETC file, reverting to posterior median")
@@ -36,7 +36,7 @@ patch_in_traits <- function(popn, params) {
     }
 
     if (patch_type %in% c("mean", "median")) {
-        f <- str_glue("{output_dir}/etc_inf.rds")
+        f <- str_glue("{output_dir}/summary_inf.rds")
         if (file.exists(f)) {
             tmp <- readRDS(f)$popn # FIXME
             cols <- names(tmp) |> str_subset("^(sus|inf|lat|det|tol)")
@@ -48,7 +48,7 @@ patch_in_traits <- function(popn, params) {
         if (msgs) message(str_glue("- making popn by copying EBVs from '{patch_dataset}/{name}' ..."))
 
     } else if (is.numeric(patch_state)) {
-        f <- str_glue("{output_dir}/etc_inf.rds")
+        f <- str_glue("{output_dir}/summary_inf.rds")
         if (file.exists(f)) {
             ebvs <- readRDS(f)$ies[state == patch_state, map(.SD, mean), id, .SDcols = -1]
         } else {

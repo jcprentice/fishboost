@@ -330,7 +330,7 @@ bici_txt <- generate_bici_script(popn, params)
         mget() |>
         saveRDS(file = str_glue("{results_dir}/{name}.rds"))
 
-    # Generate etc_{inf,sim,ps}.rds summary file
+    # Generate summary_{inf,sim,ps}.rds summary file
     flatten_bici_states(params)
 }
 

@@ -25,7 +25,7 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
         walk(~ message("- mkdir ", .x)) |>
         walk(dir.create)
 
-    etc <- str_glue("{data_dir}/scen-{scen}-{rep}-out/etc_inf.rds")
+    etc <- str_glue("{data_dir}/scen-{scen}-{rep}-out/summary_inf.rds")
     if (file.exists(etc)) {
         popn <- readRDS(etc)$popn
     } else {

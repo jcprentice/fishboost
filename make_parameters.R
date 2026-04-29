@@ -49,8 +49,8 @@
 #' @param weight_is_nested should weight be nested across trials? (default
 #'   TRUE),
 #' @param sim_new_data Simulate new data in "r" or "bici". Alternatively, "no"
-#'   for using FB data, or "etc_sim" or "etc_inf" for getting data from an
-#'   existing dataset (specified in patches)
+#'   for using FB data, or "summary_sim" or "summary_inf" for getting data from
+#'   an existing dataset (specified in patches)
 #'
 #' @returns A list containing all the parameters
 
@@ -607,9 +607,9 @@ summarise_params <- function(params) {
     with(params, {
         if (sim_new_data == "no") {
             message("Using Fishboost data")
-        } else if (sim_new_data == "etc_inf") {
+        } else if (sim_new_data == "summary_inf") {
             message("Using data simulated in BICI from prior")
-        } else if (sim_new_data == "etc_ps") {
+        } else if (sim_new_data == "summary_ps") {
             message("Using data simulated in BICI from posterior")
         } else {
             message(str_glue("Simulating new {model_type} data via {x}",

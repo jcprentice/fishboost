@@ -43,7 +43,7 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 1, rep = 1, parents_
         return(NULL)
     }
 
-    rf <- str_glue("datasets/{dataset}/data/{name}-out/etc_inf.rds")
+    rf <- str_glue("datasets/{dataset}/data/{name}-out/summary_inf.rds")
     if (!file.exists(rf)) {
         message(str_glue("Warning: missing '{rf}'"))
         return(c(sus = 0, inf = 0, tol = 0))
@@ -138,7 +138,7 @@ pred_accs <- function(dataset = "sim-base-inf", scen = 1, rep = 1, parents_only 
         return(c(sus = 0, inf = 0, tol = 0))
     }
 
-    rf <- str_glue("datasets/{dataset}/data/{name}-out/etc_inf.rds")
+    rf <- str_glue("datasets/{dataset}/data/{name}-out/summary_inf.rds")
     if (!file.exists(rf)) {
         message(str_glue("Warning: missing '{rf}'"))
         return(c(sus = 0, inf = 0, tol = 0))

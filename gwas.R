@@ -14,7 +14,7 @@ gwas <- function(dataset = "fb-test", scen = 1, rep = 1) {
     }
 
 
-    f <- str_glue("datasets/{dataset}/data/scen-{scen}-{rep}-out/etc_inf.rds")
+    f <- str_glue("datasets/{dataset}/data/scen-{scen}-{rep}-out/summary_inf.rds")
     ebvs <- readRDS(f)$popn[, .(state, id, sdp, sus_g, inf_g, tol_g, sus_e, inf_e, tol_e)]
     ebvs[, `:=`(sus_p = sus_g + sus_e,
                 inf_p = inf_g + inf_e,

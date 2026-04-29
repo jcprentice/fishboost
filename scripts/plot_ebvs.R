@@ -30,7 +30,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
         walk(~ message("- mkdir ", .x)) |>
         walk(dir.create, recursive = TRUE)
 
-    etc <- str_glue("{data_dir}/scen-{scen}-{rep}-out/etc_inf.rds")
+    etc <- str_glue("{data_dir}/scen-{scen}-{rep}-out/summary_inf.rds")
     if (!file.exists(etc)) {
         return(NULL)
     }
