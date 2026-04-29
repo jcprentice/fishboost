@@ -59,9 +59,31 @@ safe_sample <- function(x, ...) {
     }
 }
 
+# Sample just 1 index from a probability (faster than R's built in version)
+samp1 <- function(x, prob) {
+    mid <- \(a, b) floor((a + b) / 2L) |> as.integer()
+    a <- 1L
+    b <- length(x)
+    m <- mid(a, b)
+    if (is.null(prob)) prob <- rep(1, b)
+    y <- cumsum(prob)
+    z <- runif(1L) * y[[b]]
+
+    while (TRUE) {
+        if (a >= b) {
+            return(x[[a]])
+        } else if (z < y[[m]]) {
+            b <- m
+        } else {
+            a <- m + 1L
+        }
+        m <- mid(a, b)
+    }
+}
+
 # This function handles list columns, preventing lists of lists
 dt_row_to_list <- function(x) {
-    map(x, ~ if (typeof(.x[[1]]) == "list") .x[[1]] else .x)
+    map(x, ~ {if (typeof(.x[[1]]) == "list") .x[[1]] else .x})
 }
 
 
