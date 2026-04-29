@@ -8,123 +8,144 @@
 
 # Main model ----
 model_SIS <- function(popn, params) {
-    message("Simulating an SIS epidemic ...")
+    message("Simulating an SIS groups epidemic ...")
 
     # copy necessary parameters
     r_beta <- params$r_beta
-    tmax   <- params$tmax
     DEBUG  <- params$DEBUG
 
-    # initialise population ----
-    X <- init_popn(popn, params)
+    t_stop <- 10
 
-    # This is a priority queue for the next event
-    ni_events <- X[, .(.I, Tdeath)] |>
-        melt(id.vars = "I", variable.name = "event", value.name = "time") |>
-        setorder(time, na.last = TRUE)
-    ni_events[, event := NULL]
+    # initialise populations ----
+    Xgroups <- init_popn(popn, params) |>
+        split(by = "group")
 
-    # Start epidemic simulation loop
-    epi_time <- 0.0
-    while (epi_time < tmax && X[, sum(status == "I") > 0] > 0L) {
-        if (DEBUG) message("time = ", signif(epi_time, 5))
+    # Each group is independent, so it seems to be about ~33% faster to split
+    # them by group, run them separately, then recombine them.
 
-        # Calculate infection rates in each group
-        # this is the sum of the log infectivitities
-        X[, group_inf := r_beta * GE * mean(inf * (status == "I")), by = group]
-
-        # if S, infection at rate beta SI
-        X[, inf_rate := fifelse(status == "S", sus * group_inf, 0.0)]
-
-        # id and time of next non-infection event
-        ni_event <- next_sis_ni_event(X, epi_time)
-        t_next_event <- ni_event$t_next_event
-        id_next_event <- ni_event$id_next_event
-
-        if (DEBUG) message("Next NI event id = ", id_next_event, " at t = ", t_next_event)
+    Y <- map(Xgroups, \(X) {
+        X[, names(.SD) := map(.SD, ~ map(.x, ~ .x)), .SDcols = c("Tinf", "Tdeath")]
 
 
-        # generate random timestep ----
-        total_inf_rate <- sum(X$inf_rate)
+        # This is a priority queue for the next event
+        ni_events <- X[, .(.I, Tdeath = unlist(Tdeath))] |>
+            melt(id.vars = "I", variable.name = "event", value.name = "time") |>
+            setorder(time, na.last = TRUE)
+        ni_events[, event := NULL]
 
-        # calculate dt if infections event rate > 0
-        if (total_inf_rate > 0.0) {
-            dt <- rexp(1L, rate = total_inf_rate)
-        } else {
-            dt <- Inf
-        }
-        if (DEBUG) message("Total Infections Event Rate = ", signif(total_inf_rate, 5))
+        # Start epidemic simulation loop ----
+        epi_time <- 0.0
+        while (epi_time < t_stop && X[, sum(status == "I") > 0]) {
+            if (DEBUG) message("time = ", signif(epi_time, 5))
 
-        # check if next event is infection or non-infection
-        if (epi_time + dt < t_next_event) {
-            if (DEBUG) message("Next event is infection at t = ", signif(epi_time, 5))
+            # Calculate infection rates in each group ----
+            X[, group_inf := r_beta * GE * mean(fifelse(status == "I", inf, 0.0))]
 
-            epi_time <- epi_time + dt
+            # if S, infection at rate beta SI
+            X[, inf_rate := fifelse(status == "S", sus * group_inf, 0.0)]
 
-            # randomly select individual
-            id_next_event <- sample(nrow(X),
-                                    size = 1L,
-                                    prob = X$inf_rate)
+            # id and time of next non-infection event
+            t_next_event  <- ni_events$time[[1]]
+            id_next_event <- ni_events$I[[1]]
 
-            group_id <- X$group[id_next_event]
-            infectives <- X[, .(.I, group, status, inf)][group == group_id & status == "I"]
-            infd_by <- safe_sample(x = infectives$I,
-                                   size = 1L,
-                                   prob = infectives$inf)
-            next_gen <- X[infd_by, generation + 1L]
+            if (is.na(t_next_event)) t_next_event <- Inf
 
-            sis_path <- generate_sis_path(epi_time, X, id_next_event, params)
-            set(X, id_next_event, c("status", "Tinf", "Tdeath"), sis_path)
+            if (DEBUG) message("Next NI event id = ", id_next_event, " at t = ", signif(t_next_event, 5))
 
-            ni_events[I == id_next_event, time := as.numeric(sis_path[-(1:2)])]
+            # generate random timestep ----
+            total_inf_rate <- sum(X$inf_rate)
 
-            set(X, id_next_event, c("generation", "infected_by"), list(next_gen, infd_by))
+            # calculate dt if infections event rate > 0
+            dt <- if (total_inf_rate > 0.0) {
+                rexp(1L, rate = total_inf_rate)
+            } else {
+                Inf
+            }
 
-            if (DEBUG) message("ID ", id_next_event, ": S -> I, infected by ID ", infd_by)
-        } else {
-            if (DEBUG) message("Next event is non-infection at t = ", signif(t_next_event, 5))
+            if (DEBUG) message("Total infections event rate = ", signif(total_inf_rate, 5))
 
-            epi_time <- t_next_event
+            # check if next event is infection or non-infection ----
+            if (epi_time + dt < t_next_event) {
+                if (DEBUG) message("Next event is infection at t = ", signif(epi_time, 5))
 
-            set(ni_events, 1L, "time", NA)
+                epi_time <- epi_time + dt
 
-            status <- X[id_next_event, status]
+                # randomly select individual
+                id_next_event <- samp1(X$inf_rate)
 
-            if (status == "I") {
+                infectives <- X[status == "I", .(.I, status, inf)]
+                infd_by <- safe_sample(x = infectives$I,
+                                       size = 1L,
+                                       prob = infectives$inf)
+                next_gen <- X$generation[[infd_by]] + 1L
+
+                sis_path <- generate_sis_path(epi_time, X, id_next_event, params)
+                X[id_next_event, `:=`(
+                    status = "I",
+                    Tinf   = map(Tinf,   append, sis_path[[2]]),
+                    Tdeath = map(Tdeath, append, sis_path[[3]])
+                )]
+
+                ni_events[I == id_next_event, time := as.numeric(sis_path[-(1:2)])]
+
+                set(X, id_next_event, c("generation", "infected_by"), list(next_gen, infd_by))
+
+                if (DEBUG) message("ID ", id_next_event, ": S -> I, infected by ID ", infd_by)
+            } else {
+                if (DEBUG) message("Next event is non-infection at t = ", signif(t_next_event, 5))
+
+                epi_time <- t_next_event
+
+                set(ni_events, 1L, "time", NA)
+
+                if (status != "I") {
+                    message("status = ", status)
+                    print(X[, .(group, donor, status, Tinf, Tdeath, group_inf, inf_rate)])
+                    stop("selected ID ", id_next_event, "... unexpected event!")
+                    break
+                }
+
                 if (DEBUG) message("ID ", id_next_event, ": I -> S")
                 set(X, id_next_event, "status", "S")
-            } else {
+            }
+
+            # Every event we set the order of the ni_events. This should be fast
+            # though as data.table uses a sensible sort method.
+            setorder(ni_events, time, na.last = TRUE)
+
+            if (DEBUG == 2) {
                 print(X[, .(group, donor, status, Tinf, Tdeath, group_inf, inf_rate)])
-                print(X[id_next_event, .(group, donor, status, Tinf, Tdeath, group_inf, inf_rate)])
-                stop(str_c("selected ID ", id_next_event, "... unexpected event!"))
-                break
             }
         }
+        X
+    },
+    .progress = TRUE) |>
+        rbindlist()
 
-        # Every event we set the order of the ni_events. This should be fast
-        # though as data.table uses a sensible sort method.
-        setorder(ni_events, time, na.last = TRUE)
+    Y[, `:=`(
+        Tinf   = map(Tinf,   ~ .x[!is.na(.x)]),
+        Tdeath = map(Tdeath, ~ .x[!is.na(.x)])
+    )]
 
-        if (DEBUG) {
-            print(X[, .(group, donor, status, Tinf, Tdeath, group_inf, inf_rate)])
-        }
-    }
-
-    final_t <- epi_time |> signif(5)
+    final_t <- map_dbl(Y$Tdeath, last) |>
+        max(na.rm = TRUE) |>
+        min(t_stop) |>
+        signif(5)
 
     message(str_glue("- Final t = {final_t}, values are:"),
-            str_flatten(capture.output(table(X$status)), "\n"))
+            str_flatten(capture.output(table(Y$status)), "\n"))
 
     # tidy up X
-    X[, c("group_inf", "inf_rate") := NULL]
-    X[, parasites := !is.na(Tinf)]
-    setorder(X, id)
+    Y[, c("group_inf", "inf_rate") := NULL]
+    Y[, parasites := !is.na(Tinf)]
 
-    popn2 <- rbind(popn[sdp != "progeny"], X, fill = TRUE)
+    # fix generation
+    # X[status == "R" & donor == 0L, generation := 2L]
 
-    return(popn2)
+    popn2 <- rbind(popn[sdp != "progeny"], Y, fill = TRUE)
+
+    popn2
 }
-
 
 # A Susceptible individual's future disease trajectory is fixed at the point of
 # exposure.
