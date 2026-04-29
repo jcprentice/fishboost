@@ -103,7 +103,6 @@ model_SEIR <- function(popn, params) {
                 } else {
                     message("status = ", status)
                     print(X[, .(group, donor, status, Tinf, Tsym, Tdeath, group_inf, inf_rate)])
-                    print(X[id_next_event, .(group, donor, status, Tinf, Tsym, Tdeath, group_inf, inf_rate)])
                     stop("selected ID ", id_next_event, "... unexpected event!")
                     break
                 }

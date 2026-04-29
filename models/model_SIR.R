@@ -40,9 +40,8 @@ model_SIR <- function(popn, params) {
             X[, inf_rate := fifelse(status == "S", sus * group_inf, 0.0)]
 
             # id and time of next non-infection event
-            ni_event      <- next_sir_ni_event(X, epi_time)
-            t_next_event  <- ni_event$t_next_event
-            id_next_event <- ni_event$id_next_event
+            t_next_event  <- ni_events$time[[1]]
+            id_next_event <- ni_events$I[[1]]
 
             if (is.na(t_next_event)) t_next_event <- Inf
 
@@ -100,7 +99,6 @@ model_SIR <- function(popn, params) {
                 } else {
                     message("status = ", status)
                     print(X[, .(group, donor, status, Tinf, Tdeath, group_inf, inf_rate)])
-                    print(X[id_next_event, .(group, donor, status, Tinf, Tdeath, group_inf, inf_rate)])
                     stop("selected ID ", id_next_event, "... unexpected event!")
                     break
                 }
