@@ -5,12 +5,12 @@
 }
 
 scan_ess_gr <- function(dataset = "fb-test") {
-    
+
     files <- list.files(str_glue("datasets/{dataset}/results"), "scen") |>
         str_remove("scen-") |>
         str_remove("\\.rds") |>
         str_sort(numeric = TRUE)
-    
+
     out <- map(files, \(f) {
         f2 <- str_glue("datasets/{dataset}/results/scen-{f}.rds")
         if (!file.exists(f2)) return(data.table(ESS = NA, GR = NA))
@@ -21,7 +21,7 @@ scan_ess_gr <- function(dataset = "fb-test") {
                                 GR = round(max(GR, na.rm = TRUE), 2))]
     }) |> rbindlist()
     print(out)
-    
+
     out[, scen := files]
     out[, .(min_ESS = min(ESS), max_GR = max(GR))]
 }
