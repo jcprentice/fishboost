@@ -3,18 +3,19 @@
     library(stringr)
     library(purrr)
     library(ggplot2)
+    library(HDInterval)
 }
 
 plot_km_donor_trial <- function(data_list, plotopts = NULL) {
 
     if (FALSE) {
         km_data  <- readRDS("datasets/fb-test/meta/km_data_ps.rds")
-        i        <- 1
+        i        <- 7
         data     <- copy(km_data[[i]]$data)
         params   <- km_data[[i]]$params
         opts     <- km_data[[i]]$opts
-        plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors",
-                      "mean", "fb_only", "t1", "t2")[c(2, 4)]
+        plotopts <- c("keep_small_groups", "extreme_sires", "drop_donors",
+                      "mean", "fb_only", "ribbon", "t1", "t2")[c(4, 6)]
         DEBUG    <- TRUE
     } else {
         data   <- copy(data_list$data)
@@ -23,14 +24,14 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
         DEBUG  <- FALSE
     }
 
+    if ("mean" %notin% plotopts) {
+        plotops <- setdiff(plotopts, "ribbon")
+    }
+
     if ("fb_only" %in% plotopts) {
         if (DEBUG) message("- Dropping all simulated values")
         data <- data[src == "fb"]
     }
-
-    # Families who have any donors
-    donor_sires <- data[donor == 1, sort(unique(sire)), trial] |>
-        split(by = "trial") |> map("V1")
 
     description <- params$description |>
         str_split_1(", ") |>
@@ -55,8 +56,11 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
     }
 
     # Filter by trial
-    if ("t1" %in% plotopts) data <- data[trial == 1]
-    if ("t2" %in% plotopts) data <- data[trial == 2]
+    if ("t1" %in% plotopts && "t2" %notin% plotopts) {
+        data <- data[trial == 1]
+    } else if ("t1" %notin% plotopts && "t2" %in% plotopts) {
+        data <- data[trial == 2]
+    }
 
     tmax <- params$tmax
 
@@ -77,11 +81,12 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
 
     # Make a copy of the data and add in rows representing t=0, sort times, make
     # sure to include NA values last.
-    data_t0 <- data[, .(survival = seq(1, 0, length.out = .N + 1),
-                        Tinf = sv_curve(Tinf),
-                        Tsym = sv_curve(Tsym),
-                        RP   = sv_curve(RP),
-                        src = c(first(src), src)),
+    data_t0 <- data[!is.na(sire),
+                    .(survival = seq(1, 0, length.out = .N + 1),
+                      Tinf = sv_curve(Tinf),
+                      Tsym = sv_curve(Tsym),
+                      RP   = sv_curve(RP),
+                      src = c(first(src), src)),
                     .(id, donor, trial)] |>
         setorder(id, donor, trial)
 
@@ -124,35 +129,35 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
         data_t2a <- data_t2[, map_if(.SD, is.numeric, mean, .else = first),
                  .(trial, donor, src, variable, time),
                  .SDcols = -"id"]
+
+        data_t2a <- data_t2[, .(survival = mean(survival),
+                                hdi1 = hdi(survival)[["lower"]],
+                                hdi2 = hdi(survival)[["upper"]]),
+                            .(trial, donor, src, variable, time)]
+
         data_t2a[, id := .GRP, src]
         data_t2a[, gp := .GRP, .(id, donor, trial)]
         setcolorder(data_t2a, names(data_t2))
 
-        data_t2 <- data_t2a
+        data_t3 <- data_t2a
+    } else {
+        data_t3 <- copy(data_t2)
     }
 
-    data_t2 <- data_t2[time <= tmax[trial]]
+    data_t3 <- data_t3[time <= tmax[trial]]
 
     if ("show_Tinfs" %notin% plotopts) {
-        data_t2 <- data_t2[variable != "Tinf"]
+        data_t3 <- data_t3[variable != "Tinf"]
     }
 
-    data_t2[, str := str_c(src, fifelse(donor == 1, "_d", "_r"))]
+    data_t3[, str := str_c(src, fifelse(donor == 1, "_d", "_r"))]
 
     scm <- rowwiseDT(
-        breaks=,    labels=,                   values=,
-        "fb_hi_d",  "Data Seeder high",        "#33A02C",
-        "sim_hi_d", "Simulation Seeder high",  "#B2DF8A",
-        "fb_lo_d",  "Data Seeder low",         "#E31A1C",
-        "fb_hi_r",  "Data Contact high",       "#1F78B4",
-        "sim_lo_d", "Simulation Seeder low",   "#FB9A99",
-        "sim_hi_r", "Simulation Contact high", "#A6CEE3",
-        "fb_lo_r",  "Data Contact low",        "#FF7F00",
-        "sim_lo_r", "Simulation Contact low",  "#FDBF6F",
-        "fb_d",     "Data Seeder",             "#33A02C",
-        "sim_d",    "Simulation Seeder",       "#B2DF8A",
-        "fb_r",     "Data Contact",            "#1F78B4",
-        "sim_r",    "Simulation Contact",      "#A6CEE3"
+        breaks=, labels=,              values=,
+        "fb_d",  "Data Seeder",        "#33A02C",
+        "sim_d", "Simulation Seeder",  "#B2DF8A",
+        "fb_r",  "Data Contact",       "#1F78B4",
+        "sim_r", "Simulation Contact", "#A6CEE3"
     )
 
     if ("extreme_sires" %notin% plotopts) {
@@ -162,19 +167,31 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
     slw <- if ("mean" %in% plotopts) 0.7 else 0.2
 
     # Plot
-    plt <- ggplot(data_t2) +
-        # geom_step
+    plt <- ggplot() +
+        {if (all(c("mean", "ribbon") %in% plotopts)) {
+            geom_ribbon(aes(x = time, ymin = hdi1, ymax = hdi2,
+                            group = gp, fill = str, linewidth = src),
+                        data_t3[src == "sim"],
+                        alpha = 0.5, show.legend = FALSE)}} +
         geom_line(aes(x = time,
                       y = survival,
                       group = gp,
                       colour = str,
-                      linewidth = src)) +
+                      linewidth = src,
+                      linetype = src),
+                  data_t3) +
+        scale_fill_manual(breaks = scm$breaks,
+                          labels = scm$labels,
+                          values = scm$values) +
         scale_colour_manual(breaks = scm$breaks,
                             labels = scm$labels,
                             values = scm$values) +
         scale_linewidth_manual(breaks = c("fb", "sim"),
                                values = c(0.5, slw),
                                guide = "none") +
+        scale_linetype_manual(breaks = c("fb", "sim"),
+                              values = c("solid", "dashed"),
+                              guide = "none") +
         lims(y = 0:1) +
         # coord_cartesian(expand = FALSE) +
         labs(colour = "Source",
@@ -199,7 +216,7 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
               legend.position = "bottom")
     plt
 
-    list(plt = plt, data = data_t2)
+    list(plt = plt, data = data_t3)
 
 }
 

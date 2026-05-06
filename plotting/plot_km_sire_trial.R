@@ -3,18 +3,19 @@
     library(stringr)
     library(purrr)
     library(ggplot2)
+    library(HDInterval)
 }
 
 plot_km_sire_trial <- function(data_list, plotopts = NULL) {
 
     if (FALSE) {
         km_data  <- readRDS("datasets/fb-test/meta/km_data_ps.rds")
-        i        <- 1
+        i        <- 7
         data     <- copy(km_data[[i]]$data)
         params   <- km_data[[i]]$params
         opts     <- km_data[[i]]$opts
-        plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors",
-                      "mean", "fb_only", "t1", "t2")[c(1, 2)]
+        plotopts <- c("keep_small_groups", "extreme_sires", "drop_donors",
+                      "mean", "fb_only", "ribbon", "t1", "t2")[c(4, 6)]
         DEBUG    <- TRUE
     } else {
         data   <- copy(data_list$data)
@@ -23,14 +24,17 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
         DEBUG  <- FALSE
     }
 
+    if ("mean" %notin% plotopts) {
+        plotops <- setdiff(plotopts, "ribbon")
+    }
+
     if ("fb_only" %in% plotopts) {
         if (DEBUG) message("- Dropping all simulated values")
         data <- data[src == "fb"]
     }
 
-    # Families who have any donors
-    donor_sires <- data[donor == 1, sort(unique(sire)), trial] |>
-        split(by = "trial") |> map("V1")
+    # Donor families are any families
+    data[, donor := fifelse(any(donor == 1L), 1L, 0L), .(sire, trial)]
 
     description <- params$description |>
         str_split_1(", ") |>
@@ -55,8 +59,11 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
     }
 
     # Filter by trial
-    if ("t1" %in% plotopts) data <- data[trial == 1]
-    if ("t2" %in% plotopts) data <- data[trial == 2]
+    if ("t1" %in% plotopts && "t2" %notin% plotopts) {
+        data <- data[trial == 1]
+    } else if ("t1" %notin% plotopts && "t2" %in% plotopts) {
+        data <- data[trial == 2]
+    }
 
     tmax <- params$tmax
 
@@ -87,35 +94,33 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
                     .(id, sire, trial)] |>
         setorder(id, sire, trial)
 
-    # Rename src
-    # data_t0[, src := str_c(src, trial)]
-
     # Create a column to group by
-    data_t0[, gp := .GRP, .(id, sire, trial)]
+    data_t0[, gp := .GRP, .(id, sire, trial, donor)]
 
-    if ("drop_small_groups" %in% plotopts) {
+    if ("keep_small_groups" %notin% plotopts) {
         if (DEBUG) message("- Dropping small groups")
         small_groups <- data_t0[, .(N = .N), gp][N < 10, gp]
         data_t0 <- data_t0[gp %notin% small_groups]
-        data_t0[, gp := .GRP, .(id, sire, trial)]
+        data_t0[, gp := .GRP, .(id, sire, trial, donor)]
     }
 
     if ("extreme_sires" %in% plotopts) {
         if (DEBUG) message("- Keeping only extreme sires")
-        foo <- data_t0[id == last(id), .(sire, trial, Tsym)]
+        foo <- data_t0[id == last(id), .(sire, trial, donor, Tsym)]
         # Filter out any sires with fewer than 5 non-NA values
         foo[, p := .N - sum(is.na(Tsym)), .(sire, trial)]
         foo <- foo[p > 5]
-        foo1 <- foo[, .(mu = mean(Tsym, na.rm = TRUE)), .(sire, trial)] |>
+        foo1 <- foo[, .(mu = mean(Tsym, na.rm = TRUE)),
+                    .(sire, trial, donor)] |>
             setorder(trial, sire, mu)
-        foo1[, donor := fifelse(sire %in% unlist(donor_sires), 1L, 0L)]
+        # foo1[, donor := fifelse(sire %in% donor_sires, 1L, 0L)]
         ids <- foo1[, .(sire = sire[c(which.min(mu), which.max(mu))],
                         es = c("lo", "hi")),
                     .(trial, donor)]
         data_t0 <- merge(data_t0, ids, by = c("sire", "trial", "donor")) |>
             setcolorder("donor", after = "trial")
     } else {
-        data_t0[, es := "hi"]
+        data_t0[, es := "X"]
     }
 
     # Melt so we can use facet_wrap
@@ -136,36 +141,58 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
     },
     .(id, sire, trial, donor, src, gp, variable)]
 
-    data_t2[variable == "Tsym",
-             survival := nafill(survival, type = "locf")]
-    data_t2[variable == "RP" & src == "sim",
-             survival := nafill(survival, type = "locf")]
+    data_t2[variable == "Tsym" | (variable == "RP" & src == "sim"),
+            survival := nafill(survival, type = "locf")]
     data_t2[, tmp := seq(.N), id]
     ids_to_keep <- data_t2[src == "fb" & !is.na(survival), tmp]
 
     data_t2 <- data_t2[tmp %in% ids_to_keep, .SD]
     data_t2[, tmp := NULL]
 
-    # Apply means
+
+    # Apply means and HDI
     if ("mean" %in% plotopts) {
         if (DEBUG) message("- Reducing to mean of simulated curves")
-        data_t2a <- data_t2[, map_if(.SD, is.numeric, mean, .else = first),
-                 .(sire, trial, donor, src, variable, time),
-                 .SDcols = -"id"]
+        data_t2a <- if ("extreme_sires" %in% plotopts) {
+            data_t2[, .(es = first(es),
+                        survival = mean(survival),
+                        hdi1 = hdi(survival)[["lower"]],
+                        hdi2 = hdi(survival)[["upper"]]),
+                    .(sire, trial, donor, src, variable, time)]
+        } else {
+            rbind(
+                data_t2[src == "sim",
+                        .(sire = 0,
+                          es = first(es),
+                          survival = mean(survival),
+                          hdi1 = hdi(survival)[["lower"]],
+                          hdi2 = hdi(survival)[["upper"]]),
+                        .(trial, donor, src, variable, time)],
+                data_t2[src == "fb",
+                        .(gp = first(gp),
+                          es = first(es),
+                          survival = mean(survival)),
+                        .(sire, trial, donor, src, variable, time)],
+                fill = TRUE) |>
+                setorder(-src, trial, sire, donor, variable, time)
+        }
         data_t2a[, id := .GRP, src]
-        data_t2a[, gp := .GRP, .(id, sire, trial)]
+        data_t2a[, gp := .GRP, .(id, sire, trial, donor)]
         setcolorder(data_t2a, names(data_t2))
 
-        data_t2 <- data_t2a
+        data_t3 <- data_t2a
+    } else {
+        data_t3 <- copy(data_t2)
     }
 
-    data_t2 <- data_t2[time <= tmax[trial]]
+    data_t3 <- data_t3[time <= tmax[trial]]
 
     if ("show_Tinfs" %notin% plotopts) {
-        data_t2 <- data_t2[variable != "Tinf"]
+        data_t3 <- data_t3[variable != "Tinf"]
     }
 
-    data_t2[, str := str_c(src, es, fifelse(donor == 1, "d", "r"), sep = "_")]
+    data_t3[, str := str_c(src, es, fifelse(donor == 1, "d", "r"), sep = "_") |>
+                str_remove("X_")]
 
     scm <- rowwiseDT(
         breaks=,    labels=,                   values=,
@@ -187,23 +214,33 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
         scm[, labels := str_remove(labels, " high| low")]
     }
 
-    slw <- if (all(c("mean", "extreme_sires") %in% plotopts)) 0.7 else 0.2
+    slw <- if ("mean" %in% plotopts) 0.7 else 0.2
+    slt <- if ("mean" %in% plotopts) "dashed" else "solid"
 
     # Plot
-    plt <- ggplot(data_t2) +
-        # geom_step
-        geom_line(aes(x = time,
-                      y = survival,
-                      group = gp,
-                      colour = str,
-                      linewidth = src)) +
+    plt <- ggplot() +
+        {if (all(c("mean", "ribbon") %in% plotopts)) {
+            geom_ribbon(aes(x = time, ymin = hdi1, ymax = hdi2,
+                            group = gp, fill = str, linewidth = src),
+                        data_t3[src == "sim"],
+                        alpha = 0.5, show.legend = FALSE)}} +
+        geom_line(aes(x = time, y = survival,
+                      group = gp, colour = str,
+                      linewidth = src, linetype = src),
+                  data_t3) +
+        scale_fill_manual(breaks = scm$breaks,
+                          labels = scm$labels,
+                          values = scm$values) +
         scale_colour_manual(breaks = scm$breaks,
                             labels = scm$labels,
                             values = scm$values) +
         scale_linewidth_manual(breaks = c("fb", "sim"),
                                values = c(0.5, slw),
                                guide = "none") +
-        lims(y = 0:1) +
+        scale_linetype_manual(breaks = c("fb", "sim"),
+                              values = c("solid", slt),
+                              guide = "none") +
+        lims(y = c(0, 1)) +
         # coord_cartesian(expand = FALSE) +
         labs(colour = "Source",
              #linewidth = "Source",
