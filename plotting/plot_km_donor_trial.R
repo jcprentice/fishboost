@@ -160,11 +160,8 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
         "sim_r", "Simulation Contact", "#A6CEE3"
     )
 
-    if ("extreme_sires" %notin% plotopts) {
-        scm[, labels := str_remove(labels, " high| low")]
-    }
-
     slw <- if ("mean" %in% plotopts) 0.7 else 0.2
+    slt <- if ("mean" %in% plotopts) "dashed" else "solid"
 
     # Plot
     plt <- ggplot() +
@@ -190,7 +187,7 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
                                values = c(0.5, slw),
                                guide = "none") +
         scale_linetype_manual(breaks = c("fb", "sim"),
-                              values = c("solid", "dashed"),
+                              values = c("solid", slt),
                               guide = "none") +
         lims(y = 0:1) +
         # coord_cartesian(expand = FALSE) +
