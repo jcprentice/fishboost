@@ -6,6 +6,7 @@
     source("fix_H_links.R")
     source("scripts/check_convergence.R")
     source("scripts/posterior.R")
+    source("scripts/get_covariances.R")
     source("scripts/plot_ebvs.R")
     source("scripts/plot_ebvs2.R")
     source("scripts/pars_errorbars.R")
@@ -44,7 +45,7 @@ run_all_tests <- function(dataset = "fb-test",
     pars_errorbars(dataset)
 
     if (str_detect(dataset, "fb")) {
-        c(plot_chains, get_posterior, plot_ebvs, plot_correlations) |>
+        c(plot_chains, get_posterior, get_covariances, plot_ebvs, plot_correlations) |>
             walk(\(f) walk2(scens, reps, possibly(~ f(dataset, .x, .y))))
     }
 
@@ -55,13 +56,17 @@ run_all_tests <- function(dataset = "fb-test",
     }
 
     if (km) {
-        opts <-  list(n_plots = 50,
-                      post = "sample")
-        plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors",
-                      "mean", "fb_only", "t1", "t2")[c(1)]
+        plotopts = c("keep_small_groups", "extreme_sires", "drop_donors",
+                     "mean", "ribbon", "fb_only", "t1", "t2")
 
-        km_plots(dataset, scens,
-                 simulate_new_data = "no", opts, plotopts)
+        km_plots(dataset, scens, simulate_new_data = "no",
+                 opts = list(n_plots = 50, post = "sample"),
+                 plotopts = plotopts[c(4, 5)])
+
+        km_plots(dataset, scens, simulate_new_data = "no",
+                 opts = list(n_plots = 50, post = "sample"),
+                 plotopts = plotopts[c(2, 4, 5)])
+
         fit <- model_fit_dev(dataset)
     } else {
         fit <- NULL
