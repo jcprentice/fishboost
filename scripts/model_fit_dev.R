@@ -96,7 +96,7 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
             setorder(id, sire, variable) |>
             setcolorder(c("src", "id", "sire", "trial", "variable", "time", "survival"))
 
-        if (FALSE && "drop_small_groups" %in% opts) {
+        if (FALSE && "keep_small_groups" %notin% opts) {
             # If times are only 0 or NA, then we drop them
             x2[, keep := any(time %notin% c(0, NA)), .(id, sire, trial, variable)]
             pc <- x2[, mean(keep)]

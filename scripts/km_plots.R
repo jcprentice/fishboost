@@ -16,7 +16,7 @@ km_plots <- function(dataset = "fb-test",
                      simulate_new_data = "bici",
                      opts = list(n_plots = 5,
                                  post = "sample"),
-                     plotopts = c("drop_small_groups",
+                     plotopts = c("keep_small_groups",
                                   "drop_donors",
                                   "use_sire_Tinfs",
                                   "t1", "t2")[0]) {
@@ -25,7 +25,7 @@ km_plots <- function(dataset = "fb-test",
         dataset <- "sim-test-inf"; scens <- 0;  simulate_new_data <- "no"
         dataset <- "fb-test"; scens <- 0; simulate_new_data <- "no"
         opts <- list(n_plots = 50, post = "sample")
-        plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors",
+        plotopts <- c("keep_small_groups", "extreme_sires", "drop_donors",
                       "mean", "t1", "t2")[0]
     }
 
@@ -139,8 +139,8 @@ if (FALSE) {
              scens = 0,
              simulate_new_data = "no",
              opts = list(n_plots = 50, post = "sample"),
-             plotopts = c("drop_small_groups", "extreme_sires", "drop_donors",
-                          "mean", "t1", "t2")[c(1,2,4)])
+             plotopts = c("keep_small_groups", "extreme_sires", "drop_donors",
+                          "mean", "ribbon", "t1", "t2")[c(4, 5)])
 }
 
 if (FALSE) {
@@ -148,7 +148,7 @@ if (FALSE) {
              scens = 0,
              simulate_new_data = "no",
              opts = list(n_plots = 50, post = "sample"),
-             plotopts = c("drop_small_groups", "extreme_sires", "drop_donors",
+             plotopts = c("keep_small_groups", "extreme_sires", "drop_donors",
                           "mean", "t1", "t2")[c(4)])
 }
 
@@ -158,7 +158,7 @@ if (FALSE) {
     simulate_new_data <- "no"
     opts <- list(n_plots = 50,
                 post = "sample")
-    plotopts <- c("drop_small_groups", "extreme_sires", "drop_donors",
+    plotopts <- c("keep_small_groups", "extreme_sires", "drop_donors",
                  "mean", "t1", "t2")[c(2,4)]
 
     km_plots(dataset, scens, simulate_new_data, opts, plotopts)

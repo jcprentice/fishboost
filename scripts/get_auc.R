@@ -26,7 +26,7 @@ get_auc <- function(dataset = "fb-final",
                  opts = list(n_plots = 50,
                              post = "sampled",
                              apply_gammas = 0),
-                 plotopts = list("drop_small_groups"))
+                 plotopts = c())
     }
     km_data <- readRDS(f)
 
@@ -89,7 +89,7 @@ get_auc_donor <- function(dataset = "fb-final",
                  opts = list(n_plots = 50,
                              post = "sampled",
                              apply_gammas = 0),
-                 plotopts = list("drop_small_groups"))
+                 plotopts = c())
     }
     km_data <- readRDS(f)
 
