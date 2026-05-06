@@ -67,7 +67,7 @@ model_SEIDR <- function(popn, params) {
                 epi_time <- epi_time + dt
 
                 # randomly select individual
-                id_next_event <- sample(nrow(X), size = 1L, prob = X$inf_rate)
+                id_next_event <- samp1(X$inf_rate)
 
                 infectives <- X[status %in% c("I", "D"), .(.I, status, inf)]
                 infd_by <- safe_sample(x = infectives$I,
