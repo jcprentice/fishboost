@@ -56,16 +56,23 @@ run_all_tests <- function(dataset = "fb-test",
     }
 
     if (km) {
-        plotopts = c("keep_small_groups", "extreme_sires", "drop_donors",
-                     "mean", "ribbon", "fb_only", "t1", "t2")
+        opts <- list(n_plots = 50, post = "sample")
+        plotopts <- c("keep_small_groups", "extreme_sires", "drop_donors",
+                      "mean", "ribbon", "fb_only", "t1", "t2")
 
-        km_plots(dataset, scens, simulate_new_data = "no",
-                 opts = list(n_plots = 50, post = "sample"),
+        km_plots(dataset, scens, simulate_new_data = "no", opts = opts,
                  plotopts = plotopts[c(4, 5)])
 
-        km_plots(dataset, scens, simulate_new_data = "no",
-                 opts = list(n_plots = 50, post = "sample"),
+        km_plots(dataset, scens, simulate_new_data = "no", opts = opts,
                  plotopts = plotopts[c(2, 4, 5)])
+
+        km_plots(dataset, scens, simulate_new_data = "no", opts = opts,
+                 plotopts = plotopts[0])
+
+        # Don't want the extreme sires results for donor/trial KM plots
+        list.files(str_glue("datasets/{dataset}/gfx/km_dt"), "_es",
+                   full.names = TRUE) |>
+            file.remove()
 
         fit <- model_fit_dev(dataset)
     } else {
