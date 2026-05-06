@@ -1,3 +1,5 @@
+// [[Rcpp::plugins("cpp11")]]
+
 #include <cmath.h>
 #include <Rcpp.h>
 
@@ -7,12 +9,14 @@ using namespace std;
 // Find the no. of individuals capable of infecting susceptibles at some point
 // (so includes those currently exposed and not yet infectious).
 int get_seidr_infectives(DataFrame pop) {
-    NumericVector status = pop["status"];
+    CharacterVector status = pop["status"];
 
     int n = 0;
-    for (auto s : status)
-        if (s == 'E' || s == 'I' || s == 'D')
+    for (auto s : status) {
+        if (s == "E" || s == "I" || s == "D") {
             ++n;
+        }
+    }
     return n;
 }
 
@@ -29,12 +33,12 @@ List generate_seidr_path(double epi_time, DataFrame pop, int id, List params) {
 
     NumericVector lat = pop["lat"];
     NumericVector det = pop["det"];
-    NumericVector recoverability = pop["recoverability"];
+    NumericVector tol = pop["tol"];
 
     double Tinf = epi_time;
-    double Tinc = Tinf + R::rgamma(LP_shape, 1.0 / LP_scale) * lat[id];
-    double Tsym = Tinc + R::rgamma(DP_shape, 1.0 / DP_scale) * det[id];
-    double Trec = Tsym + R::rgamma(RP_shape, 1.0 / RP_scale) * recoverability[id];
+    double Tinc = Tinf + R::rgamma(LP_shape, LP_scale) * lat[id];
+    double Tsym = Tinc + R::rgamma(DP_shape, DP_scale) * det[id];
+    double Trec = Tsym + R::rgamma(RP_shape, RP_scale) * tol[id];
 
     return List::create("E", Tinf, Tinc, Tsym, Trec);
 }
@@ -78,21 +82,58 @@ List next_seidr_ni_event(DataFrame pop, double epi_time) {
 
 
 double signif(double x, int n) {
+    for (int i = 0; i < n; ++i)
+        x *= 10;
+    x = round(x);
+    for (int i = 0; i < n; ++i)
+        x *= 0.1;
     return round(x * pow(10.0, n)) * pow(10.0, -n);
 }
 
 
 // Main model ----
 // [[Rcpp::export]]
-DataFrame model_SEIDR(DataFrame traits, List params) {
+DataFrame model_SEIDR(DataFrame popn, List params) {
     Rcout << "Simulating an SEIDR epidemic ..." << endl;
 
     // copy necessary parameters
     double r_beta = params["r_beta"];
-    bool DEBUG  = params["DEBUG"];
+    bool DEBUG = params["DEBUG"];
+    int nparents = params["nparents"];
+    int nprogeny = params["nprogeny"];
+    int ngroups = params["ngroups"];
+
+
 
     // initialise populations ----
-    DataFrame pop = init_pop(traits, params);
+    {
+        DataFrame popn2
+
+        // Only want to work with the progeny
+        popn2 <- popn[sdp == "progeny"]
+
+        // Add extra columns
+        popn2[, (timings) := NA_real_]
+        popn2[, `:=`(status = factor("S", levels = compartments),
+                     group_inf = 0.0,
+                     generation = NA_integer_)]
+
+        // Handle donors
+        popn2[donor == 1L, `:=`(generation = 1L,
+                                infected_by = 0L)]
+
+        // Select appropriate path generating function
+        gp <- get(str_c("generate_", str_to_lower(model_type), "_path"))
+
+        // Generate paths for donors
+        walk(popn2[, .I[donor == 1L]], \(i) {
+            set(popn2, i, c("status", timings), gp(0.0, popn2, i, params))
+        })
+
+        popn2
+    }
+
+
     NumericVector group_inf
 
     // Start epidemic simulation loop ----
@@ -172,7 +213,6 @@ DataFrame model_SEIDR(DataFrame traits, List params) {
 				} else {
 					Rcout << "status = " << status << endl;
 					print(pop[, .(group, donor, status, Tinf, Tinc, Tsym, Trec, group_inf, event_rate)]);
-					print(pop[id_next_event, .(group, donor, status, Tinf, Tinc, Tsym, Trec, group_inf, event_rate)]);
 					stop("selected ID ", id_next_event, "... unexpected event!");
 					break;
 				}
