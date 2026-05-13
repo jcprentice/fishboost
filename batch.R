@@ -20,8 +20,8 @@ if (run_from_script) {
     pname <- cmd_args[[1]]
     row_no <- as.integer(cmd_args[[2]])
 } else {
-    pname <- "sim-test"
-    row_no <- 10L
+    pname <- "sim-r0"
+    row_no <- 1L
 }
 
 {
@@ -46,7 +46,7 @@ if (run_from_script) {
     walk(names(protocol), \(param) {
         value <- protocol[[param]]
 
-       message(str_glue("- {param} = {q}{v}{q}",
+        message(str_glue("- {param} = {q}{v}{q}",
                          q = if (is.character(value)) '"' else "",
                          v = if (is.list(value)) {
                              capture.output(dput(value))
@@ -56,7 +56,7 @@ if (run_from_script) {
 
         # Skip any values already provided to make_pars()
         if (param %in% c("model_type", "dataset", "name", "setup", "group_effect",
-                         "use_traits", "vars", "cors",
+                         "use_traits", "h2", "vars", "cors",
                          "trial_fe", "donor_fe", "txd_fe", "weight_fe") ||
             (length(value) == 1 && is.na(value))) {
             return()
@@ -204,6 +204,7 @@ if (params$sim_new_data %in% c("r", "bici")) {
         set_groups(params) |>
         set_traits(params) |>
         set_weights(params) |>
+        apply_selection(params) |>
         apply_fixed_effects(params)
 } else if (params$sim_new_data == "no") {
     # Load popn, pedigree, and GRM
