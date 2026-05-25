@@ -35,11 +35,9 @@ patch_params <- function(params, trace_row = 0) {
                                "'{patch_dataset}' scenario {patch_name} ..."))
 
     {
-        data_dir    <- str_glue("datasets/{patch_dataset}/data")
-        results_dir <- str_glue("datasets/{patch_dataset}/results")
-        out_dir     <- str_glue("{data_dir}/{patch_name}-out")
-        inf_out_dir <- str_glue("{out_dir}/output-inf")
-        sim_out_dir <- str_glue("{out_dir}/output-sim")
+        data_dir      <- str_glue("datasets/{patch_dataset}/data")
+        results_dir   <- str_glue("datasets/{patch_dataset}/results")
+        patch_out_dir <- str_glue("{data_dir}/{patch_name}-out")
     }
 
     # Make changes to a copy of params and later return that
@@ -56,7 +54,7 @@ patch_params <- function(params, trace_row = 0) {
     # This might be already set, in which case skip
     # if (!is.numeric(patch_state) && patch_state == TRUE) {
     if (identical(patch_state, TRUE)) {
-        f <- str_glue("{out_dir}/{summary_src}.rds")
+        f <- str_glue("{patch_out_dir}/{summary_src}.rds")
         patch_state <- if (!file.exists(f)) {
             message("- no state files found, continuing without")
             FALSE
@@ -76,7 +74,7 @@ patch_params <- function(params, trace_row = 0) {
     if (is.numeric(patch_state)) {
         if (msgs) message(str_glue("- using state: {patch_state}"))
 
-        f <- str_glue("{out_dir}/{summary_src}.rds")
+        f <- str_glue("{patch_out_dir}/{summary_src}.rds")
         tmp <- readRDS(f)$parameters[!str_starts(parameter, "^Group")]
         tmp <- if (patch_state == 0) {
             tmp[, .(value = get(patch_type)(value)), parameter]
@@ -97,7 +95,7 @@ patch_params <- function(params, trace_row = 0) {
     # handled is TRUE
     if (identical(patch_state, FALSE)) {
         # Get parameters from trace file
-        f <- str_glue("{out_dir}/extended_trace_combine.tsv")
+        f <- str_glue("{patch_out_dir}/extended_trace_combine.tsv")
         if (!file.exists(f)) {
             f <- str_remove(f, "extended_")
             if (!file.exists(f)) {
@@ -153,20 +151,21 @@ patch_params <- function(params, trace_row = 0) {
     # Now remove anything we don't want to patch
     walk(skip_patches, \(x) {
         pp <<- pp |>
-            str_subset(switch(x,
-                              "base" = "sigma|beta|period|shape",
-                              "LP" = "latent_period",
-                              "RP" = "removal_period",
-                              "DP" = "detection_period",
-                              "ies" = "^(cov|r)_[GE]_",
-                              "var" = "^cov_[GE]_",
-                              "cor" = "^r_[GE]_",
-                              "infrat" = "infrat",
-                              "fes" = "trial|donor|txd",
-                              "weight" = "weight",
-                              "all" = ".",
-                              x),
-                       negate = TRUE)
+            str_subset(switch(
+                x,
+                "base" = "sigma|beta|period|shape",
+                "LP" = "latent_period",
+                "RP" = "removal_period",
+                "DP" = "detection_period",
+                "ies" = "^(cov|r)_[GE]_",
+                "var" = "^cov_[GE]_",
+                "cor" = "^r_[GE]_",
+                "infrat" = "infrat",
+                "fes" = "trial|donor|txd",
+                "weight" = "weight",
+                "all" = ".",
+                x
+            ), negate = TRUE)
     })
 
     priors2 <- priors[parameter %in% pp]
@@ -201,7 +200,7 @@ patch_params <- function(params, trace_row = 0) {
         params2$cov_G[] <- 0
         params2$cov_E[] <- 0
 
-        out <- make_matrices_from_priors(priors1)
+        out <- make_matrices_from_priors(priors1, params)
 
         # Copy the used values, discarding the rest (even if non-zero)
         used <- model_traits[str_chars(use_traits)]

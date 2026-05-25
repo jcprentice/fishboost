@@ -9,6 +9,7 @@
     source("run_bici_sim.R")
     source("plotting/plot_km_sire_trial.R")
     source("plotting/plot_km_donor_trial.R")
+    source("plotting/plot_km_family_trial.R")
 }
 
 km_plots <- function(dataset = "fb-test",
@@ -87,6 +88,7 @@ km_plots <- function(dataset = "fb-test",
     # Generate the plots
     plts_st <- map(km_data, plot_km_sire_trial,  plotopts)
     plts_dt <- map(km_data, plot_km_donor_trial, plotopts)
+    plts_ft <- map(km_data, plot_km_family_trial, plotopts)
 
     # Grab the descriptions of the first available result for each scen
     descriptions <- map_chr(scens, \(i) {
@@ -99,6 +101,7 @@ km_plots <- function(dataset = "fb-test",
     # Zip the plots with their descriptions
     plts_st <- map2(plts_st, descriptions, \(x, y) append(x, list(description = y)))
     plts_dt <- map2(plts_dt, descriptions, \(x, y) append(x, list(description = y)))
+    plts_ft <- map2(plts_ft, descriptions, \(x, y) append(x, list(description = y)))
 
     km_dir_st <- str_glue("datasets/{dataset}/gfx/km_st")
     if (!dir.exists(km_dir_st)) {
@@ -110,6 +113,12 @@ km_plots <- function(dataset = "fb-test",
     if (!dir.exists(km_dir_dt)) {
         message("- mkdir ", km_dir_dt)
         dir.create(km_dir_dt, recursive = TRUE)
+    }
+
+    km_dir_ft <- str_glue("datasets/{dataset}/gfx/km_ft")
+    if (!dir.exists(km_dir_ft)) {
+        message("- mkdir ", km_dir_ft)
+        dir.create(km_dir_ft, recursive = TRUE)
     }
 
 
@@ -131,6 +140,12 @@ km_plots <- function(dataset = "fb-test",
         # ggsave(str_glue("{dt_str}.pdf"), plt_dt, width = 9, height = 6, unit = "in")
         ggsave(str_glue("{dt_str}.png"), plt_dt, width = 9, height = 6, unit = "in")
         message(str_glue("Saved plots to {dt_str}"))
+
+        plt_ft <- plts_ft[[i]]$plt
+        ft_str <- str_glue("{km_dir_ft}/{dataset}-s{scen}-family-trial{um}{mu}{es}{dd}")
+        # ggsave(str_glue("{ft_str}.pdf"), plt_ft, wifth = 9, height = 6, unit = "in")
+        ggsave(str_glue("{ft_str}.png"), plt_ft, width = 9, height = 6, unit = "in")
+        message(str_glue("Saved plots to {ft_str}"))
     })
 }
 
@@ -140,7 +155,7 @@ if (FALSE) {
              simulate_new_data = "no",
              opts = list(n_plots = 50, post = "sample"),
              plotopts = c("keep_small_groups", "extreme_sires", "drop_donors",
-                          "mean", "ribbon", "t1", "t2")[c(4, 5)])
+                          "mean", "ribbon", "t1", "t2")[c(2, 4, 5)])
 }
 
 if (FALSE) {

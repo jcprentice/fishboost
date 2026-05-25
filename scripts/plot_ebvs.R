@@ -109,7 +109,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
              subtitle = st) +
         # scale_colour_manual(values = rep(brewer.pal(4, "Set1"),
         #                                  length.out = length(levels(x2$id)))) +
-        facet_wrap(. ~ trait,
+        facet_wrap(vars(trait),
                    ncol = 2,
                    labeller = labeller(
                        trait = c(sus_g = "Sus G",
@@ -140,7 +140,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
              subtitle = st) +
         # scale_colour_manual(values = rep(brewer.pal(4, "Set1"),
         #                                  length.out = length(levels(x2$id)))) +
-        facet_wrap(. ~ trait,
+        facet_wrap(vars(trait),
                    ncol = 2,
                    labeller = labeller(
                        trait = c(sus_g = "Sus G",

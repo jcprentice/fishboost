@@ -15,10 +15,14 @@ make_pedigree <- function(params) {
 
     # if "fishboost", we already have a pedigree)
     if (str_starts(setup, "fb")) {
-        if (msgs) message("- copying FB pedigree: ", setup)
-        fb_data <- readRDS(str_glue("fb_data/{setup}.rds"))
-        pedigree <- fb_data[, .(id, sire, dam, sdp, weight)]
-        return(pedigree)
+        f <- str_glue("fb_data/{setup}.rds")
+        if (file.exists(f)) {
+            if (msgs) message("- copying FB pedigree: ", setup)
+            pedigree <- readRDS(f)[, .(id, sire, dam, sdp, weight)]
+            return(pedigree)
+        } else {
+            message("- no FB file, continuing without!")
+        }
     }
 
     # create an empty data table
@@ -40,3 +44,4 @@ make_pedigree <- function(params) {
 
     pedigree
 }
+

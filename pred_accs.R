@@ -54,30 +54,39 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 1, rep = 1, parents_
     y <- y[, map(.SD, mean), .(id, sdp), .SDcols = patterns("_[ge]$")]
     setcolorder(y, cols, skip_absent = TRUE)
 
-    xy <- merge(melt(x[, .(id, sdp, sus_g, inf_g, tol_g)], id.vars = c("id", "sdp"), value.name = "x"),
-                melt(y[, .(id, sdp, sus_g, inf_g, tol_g)], id.vars = c("id", "sdp"), value.name = "y"))
+    xy <- merge(melt(x[, .SD, .SDcols = -patterns("_e")], id.vars = c("id", "sdp"), value.name = "x"),
+                melt(y[, .SD, .SDcols = -patterns("_e")], id.vars = c("id", "sdp"), value.name = "y"))
     # xy <- merge(melt(x, "id", value.name = "x"),
     #             melt(y, "id", value.name = "y"))
-    xy[, topx := fifelse(x >= quantile(x, 0.8) & y >= quantile(y, 0.8),
-                         "correct", "wrong") |> factor(), variable]
+
+    qx <- xy[, quantile(x, 0.8) |> as.numeric()]
+    qy <- xy[, quantile(y, 0.8) |> as.numeric()]
+
+    xy[, topx := fcase(x >= quantile(x, 0.8) & y >= quantile(y, 0.8), "TP",
+                       x <  quantile(x, 0.8) & y <  quantile(y, 0.8), "TN",
+                       x >= quantile(x, 0.8) & y <  quantile(y, 0.8), "FN",
+                       x <  quantile(x, 0.8) & y >= quantile(y, 0.8), "FP"), variable]
 
     p <- ggplot(xy, aes(x = x, y = y, group = variable, colour = topx)) +
         geom_point() +
         geom_abline(linetype = "dashed", linewidth = 0.5) +
         geom_hline(yintercept = 0, colour = "black") +
         geom_vline(xintercept = 0, colour = "black") +
-        geom_smooth(inherit.aes = FALSE,
-                    mapping = aes(x, y),
-                    method = lm, se = FALSE, linewidth = 0.5) +
+        geom_smooth(mapping = aes(x, y),
+                    method = lm, se = FALSE, fullrange = TRUE,
+                    colour = "red", linewidth = 0.5) +
         scale_colour_manual("Top 20%",
-                            breaks = c("correct", "wrong"),
-                            labels = c("Correct", "Wrong"),
-                            values = c("green3", "tomato")) +
+                            breaks = c("TP", "TN", "FN", "FP"),
+                            labels = c("True Positive", "True Negative",
+                                       "False Negative", "False Positive"),
+                            # values = c("green3", "blue3", "red2", "red4")) +
+                            values = brewer.pal(n = 4, name = "Set1")) +
         labs(x = "True BVs",
              y = "Estimated BVs") +
         # coord_fixed() +
-        facet_wrap(. ~ variable,
+        facet_wrap(vars(variable),
                    ncol = 3,
+                   # scales = "free",
                    labeller = labeller(
                        variable = c(sus_g = "Genetic Susceptibility",
                                     inf_g = "Genetic Infectivity",
@@ -87,6 +96,7 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 1, rep = 1, parents_
                                     tol_e = "Environmental Endurance"))) +
         theme_bw() +
         theme(legend.position = "bottom")
+    p
 
     title_plt <- ggplot() +
         labs(title = with(params, str_glue("Dataset: '{dataset} / s{scenario}-{replicate}'")),

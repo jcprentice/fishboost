@@ -24,6 +24,7 @@
 #' @param use_traits Which traits have individual genetic effects applied. Use
 #' * "all" or "none", or a subset using the first letter of each trait
 #' * "sildt" = "sus", "inf", "lat", "det", "tol"
+#' @param h2 heritability, a proportion (0 to 1), with default 0.5
 #' @param vars Variances: diagonal of covariance matrix, either
 #' * a single value, e.g. 1.0
 #' * a list wrapped vector of compatible length, e.g.
@@ -57,7 +58,7 @@
 make_parameters <- function(
         model_type = "SEIDR", dataset = "testing", name = "scen-1-1",
         scenario = 1L, replicate = 1L, setup = "fb_12_rpw", use_traits = "sit",
-        vars = 1, cors = 0.2, group_layout = "fishboost", group_effect = -1,
+        h2 = 0.5, vars = 1, cors = 0.2, group_layout = "fishboost", group_effect = -1,
         trial_fe = "none", donor_fe = "none", txd_fe = "none",
         weight_fe = "none", weight_is_nested = TRUE, sim_new_data = "bici",
         protocol = NULL
@@ -79,10 +80,10 @@ make_parameters <- function(
     if (!is.null(protocol)) {
         message("- using Protocol for args")
         for (v in c("model_type", "dataset", "name", "scenario", "replicate",
-                    "setup", "use_traits", "vars", "cors", "group_layout",
+                    "setup", "use_traits", "h2", "vars", "cors", "group_layout",
                     "group_effect", "trial_fe", "donor_fe", "txd_fe",
                     "weight_fe", "weight_is_nested", "sim_new_data,")) {
-            if (v %in% names(protocol)) {
+            if (v %in% names(protocol) && !is.na(protocol[[v]])) {
                 assign(v, protocol[[v]])
             }
         }
@@ -90,21 +91,22 @@ make_parameters <- function(
 
     # Fix any parameters incorrectly assigned as NULL
     {
-        model_type    <- model_type %||% "SEIDR"
-        name          <- name %||% "scen-1-1"
-        dataset       <- dataset %||% "testing"
-        scenario      <- scenario %||% 1L
-        replicate     <- replicate %||% 1L
-        setup         <- setup %||% "fb_12_rpw"
-        use_traits    <- use_traits %||% "sit"
-        vars          <- vars %||% 0
-        cors          <- cors %||% 0
-        group_layout  <- group_layout %||% "fishboost"
-        trial_fe      <- trial_fe %||% "none"
-        donor_fe      <- donor_fe %||% "none"
-        txd_fe        <- txd_fe %||% "none"
-        weight_fe     <- weight_fe %||% "none"
-        sim_new_data  <- sim_new_data %||% "bici"
+        model_type   <- model_type %||% "SEIDR"
+        name         <- name %||% "scen-1-1"
+        dataset      <- dataset %||% "testing"
+        scenario     <- scenario %||% 1L
+        replicate    <- replicate %||% 1L
+        setup        <- setup %||% "fb_12_rpw"
+        use_traits   <- use_traits %||% "sit"
+        h2           <- h2 %||% 0.5
+        vars         <- vars %||% 0
+        cors         <- cors %||% 0
+        group_layout <- group_layout %||% "fishboost"
+        trial_fe     <- trial_fe %||% "none"
+        donor_fe     <- donor_fe %||% "none"
+        txd_fe       <- txd_fe %||% "none"
+        weight_fe    <- weight_fe %||% "none"
+        sim_new_data <- sim_new_data %||% "bici"
     }
 
     # Description
@@ -142,15 +144,15 @@ make_parameters <- function(
         "fb_12"        = c(29,   25,   1775,   71,    2,     5),
         "fb_1"         = c(14,   14,   875,    35,    1,     5),
         "fb_2"         = c(18,   14,   900,    36,    1,     5),
-        "fb_12_drop71" = c(29,   25,   1750,   70,    2,     5),
-        "fb_1_drop71"  = c(14,   14,   875,    35,    1,     5),
-        "fb_2_drop71"  = c(18,   14,   875,    35,    1,     5),
         "fb_12_rpw"    = c(28,   25,   1750,   70,    2,     5),
         "fb_1_rpw"     = c(14,   14,   875,    35,    1,     5),
         "fb_2_rpw"     = c(17,   14,   875,    35,    1,     5),
+        "fb_12_single" = c(28,   25,   1750,   1,     1,     5),
+        "fb_1_single"  = c(14,   14,   875,    1,     1,     5),
+        "fb_2_single"  = c(17,   14,   875,    1,     1,     5),
         "chris"        = c(100,  2000, 2000,   200,   1,     5),
         "small"        = c(3,    6,    12,     4,     1,     1),
-        "single"       = c(10,   20,   500,    1,     1,     5),
+        "single"       = c(10,   20,   1000,   1,     1,     5),
         "multiple"     = c(10,   20,   500,    20,    1,     5),
                          c(28,   25,   1750,   70,    2,     5)) |>
         as.integer() |>
@@ -192,13 +194,13 @@ make_parameters <- function(
     switch(model_type,
            "SEIDR" = {
                model_traits <- all_traits
-               timings <- c("Tinf", "Tinc", "Tsym", "Tdeath")
+               timings <- c("Tinf", "Tinc", "Tsign", "Tdeath")
            }, "SIDR" = {
                model_traits <- all_traits[c("s", "i", "d", "t")]
-               timings <- c("Tinf", "Tsym", "Tdeath")
+               timings <- c("Tinf", "Tsign", "Tdeath")
            }, "SEIR" = {
                model_traits <- all_traits[c("s", "i", "l", "t")]
-               timings <- c("Tinf", "Tsym", "Tdeath")
+               timings <- c("Tinf", "Tsign", "Tdeath")
            }, "SIR" = {
                model_traits <- all_traits[c("s", "i", "t")]
                timings <- c("Tinf", "Tdeath")
@@ -234,9 +236,11 @@ make_parameters <- function(
 
     ## Covariance matrices ----
 
-    out <- make_matrices(model_traits, use_traits, vars, cors)
-    Sigma_G <- Sigma_E <- out$Sigma
-    cov_G <- cov_E <- out$cov
+    out <- make_matrices(model_traits, use_traits, h2, vars, cors)
+    Sigma_G <- out$Sigma_G
+    Sigma_E <- out$Sigma_E
+    cov_G <- out$cov_G
+    cov_E <- out$cov_E
 
     # This should expand vars and cors to be the full matrix values, possibly
     # with replicates
@@ -268,7 +272,7 @@ make_parameters <- function(
     ### Latency period E->I ----
 
     # Calculated for an SEIDR model based on donors in trial 1 (+ 0.5)
-    # fitdist(Tsym + 0.5, "gamma")
+    # fitdist(Tsign + 0.5, "gamma")
     latent_period <- 10
     LP_shape <- 1 # 1.46 # 2.0 # 10.0
     LP_scale <- latent_period / LP_shape # 0.232 # LP_shape / latent_period
@@ -368,7 +372,6 @@ make_parameters <- function(
     nsample_per_gen <- max(3e-3 * nsample, 1)
 
     sample_states <- 0L # how many states (per chain) to sample
-    ie_output <- "true" # if ss > 0, include IE samples in extended_trace_combine.tsv
 
     # Should BICI use the PAS method (N chains for a single call) or regular MCMC?
     algorithm    <- "pas" # "mcmc"
@@ -510,8 +513,8 @@ make_parameters <- function(
     # Number of times to simulate in BICI
     nreps <- 50
 
-    # pass event times, pass the last N of timings (Tinf, Tinc, Tsym, Tdeath)
-    pass_events <- c("Tsym", "Tdeath") # pass time Tsym and Tdeath
+    # pass event times, pass the last N of timings (Tinf, Tinc, Tsign, Tdeath)
+    pass_events <- c("Tsign", "Tdeath") # pass time Tsign and Tdeath
 
     # time step between data
     time_step <- 0
@@ -520,11 +523,15 @@ make_parameters <- function(
 
     censor <- 1.0
 
+    # Selection
+    select_on <- "none"
+    select_top <- 0.2
+
     ## Fixes for FB data set
-    fix_donors <- c() # c("time", "no_Tsym_survivors", "set_to_R")
-    # All donors who fail to show symptoms by this point are demoted
+    fix_donors <- c() # c("time", "no_Tsign_survivors", "set_to_R")
+    # All donors who fail to show signs by this point are demoted
     t_demote <- c(20, 80)
-    # if Tsym == Tdeath, then bump Tsym back by 1/2
+    # if Tsign == Tdeath, then bump Tsign back by 1/2
     fix_eq_time <- TRUE
 
 
@@ -547,6 +554,10 @@ make_parameters <- function(
     # "posterior" = patch from posteriors given in "patch_xyz"
     traits_source <- c("pedigree", "grm", "posterior")[[1]]
 
+    trans_tree <- "off" # "on"
+
+    provide_ies <- str_detect(dataset, "sim")
+
     # show messages
     msgs <- TRUE
 
@@ -560,7 +571,8 @@ make_parameters <- function(
     params <- mget(
         # Inputs
         c("description", "dataset", "scenario", "name", "label", "replicate", "seed",
-          "model_type", "sim_new_data", "setup", "vars", "cors", "group_layout", "use_traits",
+          "model_type", "sim_new_data", "setup", "group_layout",
+          "h2", "vars", "cors", "use_traits",
           # Population parameters
           "ntrials", "nsires", "ndams", "nparents", "nprogeny", "ngroups", "ntotal",
           "dpsire", "ppdam", "group_size", "I0",
@@ -586,10 +598,11 @@ make_parameters <- function(
           "popn_format", "bici_cmd", "algorithm",
           "nchains", "nsample", "burnprop", "thinto", "nchains",
           "phi", "nsample_per_gen", "sample_states",
-          "ie_output", "time_step", "time_step_bici", "censor", "nreps",
+          "time_step", "time_step_bici", "censor", "nreps",
           "fix_donors", "t_demote", "fix_eq_time",
           "pass_events", "patch_dataset", "patch_name", "patch_type", "patch_state",
-          "use_weight", "use_grm", "traits_source",
+          "use_weight", "use_grm", "traits_source", "trans_tree", "provide_ies",
+          "select_on", "select_top",
           "msgs", "DEBUG"))
 
     params

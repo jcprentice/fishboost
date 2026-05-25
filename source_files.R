@@ -18,6 +18,7 @@
     source("make_traits_from_grm.R")
     source("make_traits_from_pedigree.R")
     source("set_groups.R")
+    source("apply_selection.R")
     source("apply_fixed_effects.R")
     source("simulate_epidemic.R")
     source("init_populations.R")

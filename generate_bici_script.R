@@ -9,6 +9,16 @@
 
 
 generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
+    if (FALSE) {
+        attach(params)
+        clean_dirs <- FALSE
+    }
+
+    if (clean_dirs) {
+        # Clean up old config files and generate fresh one
+        cleanup_bici_files(params)
+    }
+
 
     # Create missing directories
     params[str_ends(names(params), "_dir")] |>
@@ -18,13 +28,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
         walk(dir.create, recursive = TRUE)
 
     with(params, {
-        # attach(params)
         message(str_glue("Generating BICI script file '{data_dir}/{name}.bici' ..."))
-
-        if (clean_dirs) {
-            # Clean up old config files and generate fresh one
-            cleanup_bici_files(params)
-        }
 
         if (DEBUG) {
             # This turns off overwriting files while debugging
@@ -37,12 +41,6 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
                 message(str_glue("writeLines to '{..2}'"))
                 print(..1)
             }
-        }
-
-        out_dir <- str_glue("{data_dir}/{name}-out")
-        if (!dir.exists(out_dir)) {
-            message("- mkdir ", out_dir)
-            dir.create(out_dir)
         }
 
         # Begin BICI script ----
@@ -59,7 +57,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
         writeLines(c(str_glue("Dataset: {dataset} / {name}"),
                      str_glue("File written: {round_date(now())}"),
                      description),
-                   str_glue("{out_dir}/description.txt"))
+                   str_glue("{output_dir}/description.txt"))
 
 
         # Main setup ----
@@ -89,44 +87,35 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
                             seed = seed)
 
         # algorithm specific inference opts
-        alg <- if (algorithm == "pas") {
-            list(algorithm = "PAS-MCMC",
-                 update = as.integer(nsample),
-                 npart = as.integer(nchains),
-                 # "npart-per-core" = 1L,
-                 "gen-percent" = 2L,
-                 "param-output" = as.integer(min(nsample, thinto)),
-                 "state-output" = max(as.integer(min(nsample, sample_states)), 10L),
-                 "burnin-percent" = 100 * burnprop)
-
-        } else if (algorithm == "da") {
-            list(algorithm = "DA-MCMC",
-                 update = as.integer(nsample),
-                 nchain = as.integer(nchains),
-                 "chain-per-core" = as.integer(nchains),
-                 "param-output" = as.integer(min(nsample, thinto)),
-                 "state-output" = max(sample_states, 10L),
-                 "burnin-percent" = 100 * burnprop,
-                 anneal = "none")
-
-        } else if (algorithm == "abc") {
-            list(algorithm = "ABC",
-                 sample = 1000L,
-                 "acc-frac" = 0.1)
-
-        } else if (algorithm == "abc-smc") {
-            list(algorithm = "ABC-SMC",
-                 sample = 1000L,
-                 "acc-frac" = 0.5,
-                 gen = 5,
-                 "kernel-size" = 0.5)
-
-        } else if (algorithm == "pmcmc") {
-            list(algorithm = "PMCMC")
-
-        } else if (algorithm == "mfa") {
-            list(algorithm = "MFA")
-        }
+        alg <- switch(
+            algorithm,
+            "pas" = list(algorithm = "PAS-MCMC",
+                         update = as.integer(nsample),
+                         npart = as.integer(nchains),
+                         # "npart-per-core" = 1L,
+                         "gen-percent" = 2L,
+                         "param-output" = as.integer(min(nsample, thinto)),
+                         "state-output" = max(as.integer(min(nsample, sample_states)), 10L),
+                         "burnin-percent" = 100 * burnprop),
+            "da" = list(algorithm = "DA-MCMC",
+                        update = as.integer(nsample),
+                        nchain = as.integer(nchains),
+                        "chain-per-core" = as.integer(nchains),
+                        "param-output" = as.integer(min(nsample, thinto)),
+                        "state-output" = max(sample_states, 10L),
+                        "burnin-percent" = 100 * burnprop,
+                        anneal = "none"),
+            "abc" = list(algorithm = "ABC",
+                         sample = 1000L,
+                         "acc-frac" = 0.1),
+            "abc-smc" = list(algorithm = "ABC-SMC",
+                             sample = 1000L,
+                             "acc-frac" = 0.5,
+                             gen = 5,
+                             "kernel-size" = 0.5),
+            "pmcmc" = list(algorithm = "PMCMC"),
+            "mfa" = list(algorithm = "MFA")
+        )
 
         x$inference <- c(x$inference, alg, compress = "never")
 
@@ -164,10 +153,8 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
 
         x$species <- list(node = "species",
                           name = "Fish",
-                          type = "individual")
-
-        if (FALSE) x$species[["tree-span"]] <- "on"
-
+                          type = "individual",
+                          "trans-tree" = trans_tree)
 
         ## Compartments ----
 
@@ -285,7 +272,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
         data.table(name = groups,
                    expand.grid(x = 10 * seq(0, N - 1),
                                y = 10 * seq(0, N - 1))[seq_along(groups), ]) |>
-            fwrite(file = str_glue("{out_dir}/comp-group.tsv"),
+            fwrite(file = str_glue("{output_dir}/comp-group.tsv"),
                    sep = "\t", quote = TRUE)
 
 
@@ -302,12 +289,12 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
                                  Trial = str_c("Tr", trial),
                                  Donor = fifelse(donor == 0, "Rec", "Don"),
                                  DS = compartments[1 + donor])] |>
-            fwrite(file = str_glue("{out_dir}/add-ind.tsv"),
+            fwrite(file = str_glue("{output_dir}/add-ind.tsv"),
                    sep = "\t", quote = TRUE)
 
         popn[sdp == "progeny", .(ID = id,
                                  t = tmax[str_c("t", trial)])] |>
-            fwrite(file = str_glue("{out_dir}/remove-ind.tsv"),
+            fwrite(file = str_glue("{output_dir}/remove-ind.tsv"),
                    sep = "\t", quote = TRUE)
 
         if (sim_new_data != "bici") {
@@ -319,7 +306,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
                                     file = "comp-data-DS.tsv")
 
                 discretise_time_bici(popn, params) |>
-                    fwrite(file = str_glue("{out_dir}/comp-data-DS.tsv"),
+                    fwrite(file = str_glue("{output_dir}/comp-data-DS.tsv"),
                            sep = "\t", quote = TRUE)
 
             } else if (popn_format == "times") {
@@ -350,7 +337,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
                     } else {
                         data[!is.na(get(ti)), .(ID = id, t = get(ti))]
                     }
-                    fwrite(out, file = str_glue("{out_dir}/{file_str}"), sep = "\t", quote = TRUE)
+                    fwrite(out, file = str_glue("{output_dir}/{file_str}"), sep = "\t", quote = TRUE)
                 })
 
                 rm(data)
@@ -382,15 +369,15 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
 
         x$sire <- list(node = "ind-group-data", name = "sire", file = "sire.tsv")
         popn[sdp == "sire", .(ID = id)] |>
-            fwrite(file = str_glue("{out_dir}/sire.tsv"), sep = "\t", quote = TRUE)
+            fwrite(file = str_glue("{output_dir}/sire.tsv"), sep = "\t", quote = TRUE)
 
         x$dam <- list(node = "ind-group-data", name = "dam", file = "dam.tsv")
         popn[sdp == "dam", .(ID = id)] |>
-            fwrite(file = str_glue("{out_dir}/dam.tsv"), sep = "\t", quote = TRUE)
+            fwrite(file = str_glue("{output_dir}/dam.tsv"), sep = "\t", quote = TRUE)
 
         x$progeny <- list(node = "ind-group-data", name = "progeny", file = "progeny.tsv")
         popn[sdp == "progeny", .(ID = id)] |>
-            fwrite(file = str_glue("{out_dir}/progeny.tsv"), sep = "\t", quote = TRUE)
+            fwrite(file = str_glue("{output_dir}/progeny.tsv"), sep = "\t", quote = TRUE)
 
 
         ## Additive genetic effects ----
@@ -431,7 +418,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
                 popn[, .(ID = as.character(id),
                          sire = fifelse(is.na(sire), ".", as.character(sire), "."),
                          dam  = fifelse(is.na(dam),  ".", as.character(dam),  "."))] |>
-                    fwrite(file = str_glue("{out_dir}/pedigree.tsv"),
+                    fwrite(file = str_glue("{output_dir}/pedigree.tsv"),
                            sep = "\t", quote = TRUE)
 
             } else if (str_starts(use_grm, "A")) {
@@ -440,12 +427,12 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
                 xgrm <- list("A-sparse" = "A-matrix.tsv",
                              "ind-list" = "ind-list.tsv")
                 popn[, .(Individual = id)] |>
-                    fwrite(str_glue("{out_dir}/ind-list.tsv"),
+                    fwrite(str_glue("{output_dir}/ind-list.tsv"),
                            sep = "\t", quote = TRUE)
 
                 if (min(GRM$i) == 1) GRM[, `:=`(i = i - 1, j = j - 1)]
 
-                fwrite(GRM, file = str_glue("{out_dir}/A-matrix.tsv"), sep = "\t")
+                fwrite(GRM, file = str_glue("{output_dir}/A-matrix.tsv"), sep = "\t")
 
             } else {
                 # Write the pre-computed H matrix
@@ -455,7 +442,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
 
                 xgrm <- if (str_detect(use_grm, "nz")) {
                     popn[, .(Individual = id)] |>
-                        fwrite(str_glue("{out_dir}/ind-list.tsv"),
+                        fwrite(str_glue("{output_dir}/ind-list.tsv"),
                                sep = "\t", quote = TRUE)
                     list("A-sparse" = H_mat,
                          "ind-list" = "ind-list.tsv")
@@ -466,7 +453,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
                 }
 
                 # Force relative soft link
-                system(str_glue("{g}ln -sfr fb_data/{H_mat} {out_dir}/{H_mat}",
+                system(str_glue("{g}ln -sfr fb_data/{H_mat} {output_dir}/{H_mat}",
                                 # Use GNU ln not BSD ln
                                 g = if (Sys.info()[["sysname"]] == "Darwin")
                                     "g" else ""))
@@ -481,7 +468,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
         }
 
         ## True BVs ----
-        if (bici_cmd == "inf" && str_detect(dataset, "sim")) {
+        if (provide_ies) {
             traits_to_fit <- model_traits[intersect(str_chars(use_traits),
                                                     str_chars(link_traits))]
             ie_names <- expand.grid(traits_to_fit, c("g", "e")) |>
@@ -489,15 +476,26 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
             ie_vars <- expand.grid(str_1st(traits_to_fit),
                                    c("g", "e")) |> apply(1, str_flatten)
 
-            if (FALSE) {
+            if (TRUE) {
                 # All in one file `ie-data.tsv`
                 walk(seq_along(ie_names), \(i) {
                     ie_name <- ie_names[[i]]
                     ie_var <- ie_vars[[i]]
 
+                    # FIXME: check that this doesn't break anything
+                    if (ie_name %notin% names(popn)) {
+                        popn[, (ie_name) := 0]
+                    }
+
+                    node_str <- if (sim_new_data == "bici") {
+                        "set-ind-effect-sim"
+                    } else {
+                        "ind-effect-data"
+                    }
+
                     # ind_effect-data name="sus_g" ie="sg" file="ie-data.tsv" cols="ID,sg"
                     x[[str_glue("ie_{ie_var}")]] <<- list(
-                        node = "ind-effect-data",
+                        node = node_str,
                         name = ie_name,
                         ie = ie_var,
                         file = "ie-data.tsv",
@@ -505,8 +503,9 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
                 })
 
                 popn[, .SD, .SDcols = c("id", ie_names)] |>
+                    _[, names(.SD) := map(.SD, exp), .SDcols = ie_names] |>
                     setnames(c("id", ie_names), c("ID", ie_vars)) |>
-                    fwrite(file = str_glue("{out_dir}/ie-data.tsv"),
+                    fwrite(file = str_glue("{output_dir}/ie-data.tsv"),
                            sep = "\t")
             } else {
                 # Split between files `ie-sg-data.tsv`
@@ -524,7 +523,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
 
                     popn[, .(ID = id,
                              Value = if (ie_name %in% names(popn)) get(ie_name) else 0)] |>
-                        fwrite(file = str_glue("{out_dir}/{fstr}"),
+                        fwrite(file = str_glue("{output_dir}/{fstr}"),
                                sep = "\t")
                 })
             }
@@ -611,13 +610,13 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
             pop2 <- popn[sdp == "progeny", .(ID = id, value = log_recentre(weight)), trial]
             walk(1:2, \(i) {
                 pop2[, .(ID, value = fifelse(trial == i, value, 0))] |>
-                    fwrite(str_glue("{out_dir}/fe-weight{i}.tsv"),
+                    fwrite(str_glue("{output_dir}/fe-weight{i}.tsv"),
                            sep = "\t", quote = TRUE)
             })
             rm(pop2)
         } else {
             popn[sdp == "progeny", .(ID = id, value = log_recentre(weight))] |>
-                fwrite(str_glue("{out_dir}/fe-weight.tsv"),
+                fwrite(str_glue("{output_dir}/fe-weight.tsv"),
                        sep = "\t", quote = TRUE)
         }
 
@@ -678,11 +677,11 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
                                             v1 = val1, v2 = val2))]
 
             data.table(b = trials, Value = bp$Value) |>
-                fwrite(str_glue("{out_dir}/value-beta.tsv"),
+                fwrite(str_glue("{output_dir}/value-beta.tsv"),
                        sep = "\t", quote = TRUE)
 
             data.table(b = trials, Prior = bp$Prior) |>
-                fwrite(str_glue("{out_dir}/prior-beta.tsv"),
+                fwrite(str_glue("{output_dir}/prior-beta.tsv"),
                        sep = "\t", quote = TRUE)
 
 
@@ -695,7 +694,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
 
                 Value <- priors[parameter == str_glue("{sp}_shape"), true_val]
                 data.table(tab, Value) |>
-                    fwrite(str_glue("{out_dir}/value-{sp}^shape.tsv"),
+                    fwrite(str_glue("{output_dir}/value-{sp}^shape.tsv"),
                            sep = "\t", quote = TRUE)
             })
 
@@ -713,11 +712,11 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
 
 
                 data.table(tab, Value = prior$Value) |>
-                    fwrite(str_glue("{out_dir}/value-{pp}.tsv"),
+                    fwrite(str_glue("{output_dir}/value-{pp}.tsv"),
                            sep = "\t", quote = TRUE)
 
                 data.table(tab, Prior = prior$Prior) |>
-                    fwrite(str_glue("{out_dir}/prior-{pp}.tsv"),
+                    fwrite(str_glue("{output_dir}/prior-{pp}.tsv"),
                            sep = "\t", quote = TRUE)
             })
         }
@@ -760,7 +759,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
             XG[lower.tri(XG)] <- "."
 
             as.data.table(XG) |>
-                fwrite(str_glue("{out_dir}/value-cov-gen.tsv"),
+                fwrite(str_glue("{output_dir}/value-cov-gen.tsv"),
                        sep = "\t", quote = TRUE)
 
             x$prior_cov_E <- list(
@@ -775,7 +774,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
             XE[lower.tri(XE)] <- "."
 
             as.data.table(XE) |>
-                fwrite(str_glue("{out_dir}/value-cov-env.tsv"),
+                fwrite(str_glue("{output_dir}/value-cov-env.tsv"),
                        sep = "\t", quote = TRUE)
         }
 

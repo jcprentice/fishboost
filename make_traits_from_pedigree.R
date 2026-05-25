@@ -1,7 +1,7 @@
 library(MASS)
 
 # This is a faster version using arrays and no loops
-make_traits_from_pedigree <- function(pedigree, params) {
+make_traits_from_pedigree <- function(popn, params) {
     message("Making trait values from pedigree ...")
 
     # Extract parameters
@@ -12,30 +12,30 @@ make_traits_from_pedigree <- function(pedigree, params) {
                                                names(model_traits))]
         cov_G        <- params$cov_G[traitnames, traitnames]
         cov_E        <- params$cov_E[traitnames, traitnames]
-        n_traits     <- str_length(use_traits)
+        n_traits     <- use_traits |> str_chars() |> unique() |> length()
         use_weight   <- params$use_weight
     }
 
     # Keep track of traits we haven't used, for those the genotypic value will
     # be set to 0 and the phenotypic value will be set to 1.
-    missing_traits <- setdiff(model_traits, traitnames)
+    unused_traits <- setdiff(model_traits, traitnames)
 
     # Skip everything if n_traits == 0 (otherwise things break)
     if (n_traits == 0) {
-        popn <- copy(pedigree)
-        missing_traits_GV <- str_c(missing_traits, "_g")
-        missing_traits_EV <- str_c(missing_traits, "_e")
-        # popn[, trial := 1L] # what is this doing here?
-        popn[, (missing_traits_GV) := 0]
-        popn[, (missing_traits_EV) := 0]
-        popn[, (missing_traits) := 1]
-        return(popn)
+        popn2 <- copy(popn)
+        missing_traits_GV <- str_c(unused_traits, "_g")
+        missing_traits_EV <- str_c(unused_traits, "_e")
+        # popn2[, trial := 1L] # what is this doing here?
+        popn2[, (missing_traits_GV) := 0]
+        popn2[, (missing_traits_EV) := 0]
+        popn2[, (unused_traits) := 1]
+        return(popn2)
     }
 
     # Safer to get these values directly from pedigree
-    nparents <- pedigree[sdp != "progeny", .N]
-    nprogeny <- pedigree[sdp == "progeny", .N]
-    ntotal <- nrow(pedigree)
+    nparents <- popn[sdp != "progeny", .N]
+    nprogeny <- popn[sdp == "progeny", .N]
+    ntotal <- nrow(popn)
 
     # Create names of trait variants
     traits_g <- str_c(traitnames, "_g")
@@ -58,21 +58,21 @@ make_traits_from_pedigree <- function(pedigree, params) {
     parent_GVs <- mvrnorm(nparents, rep(0, n_traits), cov_G)
 
     # Get the parent IDs for the progeny in a convenient form
-    sire_dam <- as.matrix(pedigree[, .(sire, dam)])
+    sire_dam <- as.matrix(popn[, .(sire, dam)])
 
     # Get mean parent GV
-    progeny_ids <- pedigree[sdp == "progeny", id]
+    progeny_ids <- popn[sdp == "progeny", id]
 
     sire_vals <- parent_GVs[sire_dam[progeny_ids, 1], ]
     dam_vals  <- parent_GVs[sire_dam[progeny_ids, 2], ]
 
     # Correct for missing values in pedigree
-    na_sire_ids <- pedigree[sdp == "progeny" & is.na(sire), id - nparents]
+    na_sire_ids <- popn[sdp == "progeny" & is.na(sire), id - nparents]
     if (length(na_sire_ids) > 0) {
         sire_vals[na_sire_ids, ] <- mvrnorm(length(na_sire_ids), rep(0, n_traits), cov_G)
     }
 
-    na_dam_ids <- pedigree[sdp == "progeny" & is.na(dam), id - nparents]
+    na_dam_ids <- popn[sdp == "progeny" & is.na(dam), id - nparents]
     if (length(na_dam_ids) > 0) {
         dam_vals[na_dam_ids, ] <- mvrnorm(length(na_dam_ids), rep(0, n_traits), cov_G)
     }
@@ -97,26 +97,26 @@ make_traits_from_pedigree <- function(pedigree, params) {
 
     # We need to shift the traits by the mean in order for the exp() values to
     # have mean 1.
-    GVs <- GVs - diag(cov_G) / 2
-    EVs <- EVs - diag(cov_E) / 2
+    GVs <- GVs - (diag(cov_G) / 2)[col(GVs)]
+    EVs <- EVs - (diag(cov_E) / 2)[col(GVs)]
 
     phenotypes <- exp(GVs + EVs)
     colnames(phenotypes) <- traitnames
 
     # Combine pedigree, GVs, and phenotypes, to get traits
-    popn <- cbind(pedigree, GVs, EVs, phenotypes)
+    popn2 <- cbind(popn, GVs, EVs, phenotypes)
 
     # we need these so the models run, but they don't do anything
-    if (length(missing_traits) > 0) {
-        popn[, (missing_traits) := 1]
+    if (length(unused_traits) > 0) {
+        popn2[, (unused_traits) := 1]
     }
 
     # parents don't need phenotypes
-    popn[sdp != "progeny", (model_traits) := NA]
+    popn2[sdp != "progeny", (model_traits) := NA]
 
-    setcolorder(popn, c("id", "sire", "dam", "sdp", "group", "trial", "donor", "weight", "GE",
+    setcolorder(popn2, c("id", "sire", "dam", "sdp", "group", "trial", "donor", "weight", "GE",
                         traits_g, traits_e, model_traits),
                 skip_absent = FALSE)
 
-    popn
+    popn2
 }

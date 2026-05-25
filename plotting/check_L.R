@@ -37,7 +37,7 @@ check_L <- function(dataset = "fb-final", scen = 1) {
 
     plt <- ggplot(x2) +
         geom_line(aes(x = State, y = value, colour = chain)) +
-        facet_wrap(. ~ variable, scales = "free_y", ncol = 1)
+        facet_wrap(vars(variable), scales = "free_y", ncol = 1)
 
     plt
 }

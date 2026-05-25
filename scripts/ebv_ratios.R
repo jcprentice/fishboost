@@ -31,7 +31,7 @@ ggplot(dt, aes(x = log10(ratio), fill = trait)) +
                linetype = "dashed") +
     labs(x = "Ratio",
          y = "Density") +
-    facet_wrap(~ trait,
+    facet_wrap(vars(trait),
                nrow = 1,
                labeller = labeller(
                    trait = c(sus = "Susceptibility",

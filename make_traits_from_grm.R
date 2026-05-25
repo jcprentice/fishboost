@@ -6,7 +6,7 @@
 
 make_traits_from_grm <- function(popn, params) {
     message("Making trait values from GRM ...")
-    
+
     {
         cov_G        <- params$cov_G
         cov_E        <- params$cov_E
@@ -16,15 +16,15 @@ make_traits_from_grm <- function(popn, params) {
         use_grm      <- params$use_grm
         setup        <- params$setup
     }
-    
+
     message(str_glue("- using '{use_grm}'"))
-    
+
     GRM <- if (str_starts(use_grm, "A")) {
         make_grm(popn, "A")
     } else if (str_starts(use_grm, "H")) {
         # just want Hx_inv, not _nz
         fread(str_glue("fb_data/{x}_inv_{y}.tsv",
-                       x = str_split_i(use_grm, "_", 1), 
+                       x = str_split_i(use_grm, "_", 1),
                        y = str_remove(setup, "fb_")),
               header = TRUE) |>
             as.matrix() |>
@@ -32,57 +32,57 @@ make_traits_from_grm <- function(popn, params) {
     } else {
         stop("- Cannot find GRM!")
     }
-    
+
     # This should stop a failure at chol(KGG) if a diagonal element is 0
     # diag(cov_G) <- pmax(diag(cov_G), 1e-6)
     # diag(cov_E) <- pmax(diag(cov_E), 1e-6)
-    
+
     traits <- model_traits[str_detect(use_traits, names(model_traits))]
     n_used_traits <- length(traits)
     unused_traits <- setdiff(model_traits, traits)
     traitnames_GV <- str_c(traits, "_g")
     traitnames_EV <- str_c(traits, "_e")
-    
-    
+
+
     # Generate genetic values (GVs)
     KGG <- kronecker(GRM, cov_G[traits, traits])
-    
+
     # Note that R's Cholesky fn gives a U matrix, whereas the wikipedia
     # algorithm wants an L matrix
     L <- chol(KGG)
-    
+
     ntotal <- nrow(popn)
     z <- rnorm(ntotal * n_used_traits)
     traits_GV <- matrix(z %*% L,
                         nrow = ntotal, ncol = n_used_traits,
                         byrow = TRUE,
                         dimnames = list(NULL, traitnames_GV))
-    
+
     # Generate environmental values
     # much easier as these don't need to account for relatedness
     traits_EV <- mvrnorm(ntotal, rep(0, n_used_traits), cov_E[traits, traits])
-    
+
     # don't destroy original popn
     popn2 <- copy(popn)
-    
+
     # trait = exp(genetic + environment components)
     popn2[, (traitnames_GV)] <- as.data.table(traits_GV)
     popn2[, (traitnames_EV)] <- as.data.table(traits_EV)
-    
+
     # We need to shift the traits down by var/2 in order for the exp() values to
     # have mean 1.
     popn[, names(.SD) := map(.SD, ~ {.x - var(.x, na.rm = TRUE) / 2}),
-         .SDcols = c(traitnames_GV, traitnames_EV)]
-    
+         .SDcols = patterns("_[ge]")]
+
     popn2[, (traits)] <- as.data.table(exp(traits_GV + traits_EV))
-    
+
     # we need these so the models run, but they don't do anything
     if (length(unused_traits) > 0) {
         popn2[, (unused_traits) := 1]
     }
-    
+
     # parents don't need phenotypes
     popn2[sdp != "progeny", (model_traits) := NA]
-    
+
     popn2
 }

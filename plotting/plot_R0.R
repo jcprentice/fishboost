@@ -129,7 +129,8 @@ plot_R0 <- function(dataset = "fb-final",
         labs(x = bquote(R[0]),
              y = "Density",
              title = bquote("Posterior distribution for" ~ R[0])) +
-        # facet_wrap(. ~ selection, nrow = 2,
+        # facet_wrap(vars(selection),
+        #            nrow = 2,
         #            labeller = label_both) +
         theme_classic() +
         theme(legend.position.inside = c(0.8, 0.8))
@@ -150,7 +151,8 @@ plot_R0 <- function(dataset = "fb-final",
             scale_x_continuous(trans = "log10",
                                breaks = trans_breaks("log10", \(x) 10^x),
                                labels = trans_format("log10", math_format(10^.x))) +
-            facet_wrap(. ~ selection, nrow = 2,
+            facet_wrap(vars(selection),
+                       nrow = 2,
                        labeller = label_both) +
             theme(legend.position = "none")
 

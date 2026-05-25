@@ -2,7 +2,7 @@
     library(data.table)
     library(stringr)
     library(purrr)
-    
+
     source("rename_pars.R")
 }
 
@@ -33,10 +33,10 @@ mtraces <- map(scens, \(i) {
                    h2_tt = cov_G_tt / (cov_G_tt + cov_E_tt))]
     }) |>
         rbindlist(idcol = "chain")
-    
+
     traces[, str_subset(names(traces), "Group|L_|latent_period|Prior|Posterior|Number|log") := NULL]
     traces[, state := seq.int(0L, .N - 1L)]
-    
+
     melt(traces, id.vars = c("chain", "state"))
 }) |>
     rbindlist(idcol = "scen", fill = TRUE)
@@ -54,9 +54,9 @@ walk(vars, \(v) {
     plt <- ggplot(mtraces[variable == v]) +
         geom_line(aes(x = state, y = value, colour = as.factor(chain))) +
         labs(title = str_glue("Parameter: {v}"), colour = "Chain") +
-        facet_wrap(. ~ scenario_name, nrow = 2) +
+        facet_wrap(vars(scenario_name), nrow = 2) +
         theme(legend.position = "none")
-    
+
     ggsave(str_glue("datasets/{dataset}/gfx/{dataset}-trace-{v}.png"),
            plt, width = 12, height = 9)
 })

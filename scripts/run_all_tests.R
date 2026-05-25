@@ -11,18 +11,19 @@
     source("scripts/plot_ebvs2.R")
     source("scripts/pars_errorbars.R")
     source("scripts/pars_bias.R")
-    source("plotting/plot_chains.R")
-    source("plotting/plot_correlations.R")
     source("scripts/tornadoes.R")
     source("scripts/km_plots.R")
     source("scripts/model_fit_dev.R")
+    source("plotting/plot_chains.R")
+    source("plotting/plot_correlations.R")
+    source("pred_accs.R")
 }
 
 run_all_tests <- function(dataset = "fb-test",
                           km = FALSE) {
     if (FALSE) {
         dataset <- "fb-test"
-        dataset <- "sim-test-inf2"
+        dataset <- "sim-test-inf1"
         km <- FALSE
     }
 
@@ -51,13 +52,15 @@ run_all_tests <- function(dataset = "fb-test",
 
     if (str_detect(dataset, "sim")) {
         walk2(scens, reps, possibly(~ plot_ebvs(dataset, .x, .y)))
+        walk2(scens, reps, possibly(~ pred_accs_plot(dataset, .x, .y, parents_only = TRUE)))
+        walk2(scens, reps, possibly(~ pred_accs_plot(dataset, .x, .y, parents_only = FALSE)))
         pars_bias(dataset)
         tornadoes(dataset)
     }
 
     if (km) {
         opts <- list(n_plots = 50, post = "sample")
-        plotopts <- c("keep_small_groups", "extreme_sires", "drop_donors",
+        plotopts <- c("keep_small_groups", "extremes", "drop_donors",
                       "mean", "ribbon", "fb_only", "t1", "t2")
 
         km_plots(dataset, scens, simulate_new_data = "no", opts = opts,
@@ -87,4 +90,6 @@ if (FALSE) {
     run_all_tests("fb-qtest")
     run_all_tests("fb-qtest-1e5")
     run_all_tests("fb-qtest-5e5")
+    run_all_tests("sim-test-inf1")
+    run_all_tests("sim-test-inf2")
 }

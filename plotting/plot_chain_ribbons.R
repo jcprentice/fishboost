@@ -56,7 +56,7 @@ plot_chain_ribbons <- function(dataset = "fb-test", scen = 1, use_hpdi = TRUE) {
         labs(x = "Chain",
              y = "Value") +
         theme(legend.position = "none") +
-        facet_wrap(. ~ variable,
+        facet_wrap(vars(variable),
                    scales = "free")
 
     plt

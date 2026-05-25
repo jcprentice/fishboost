@@ -172,12 +172,12 @@ log_recentre <- function(x, digits = -1L) {
 }
 
 # Get part of description (used in param_generators)
-get_part <- function(x, y) {
+get_part <- function(x, y, z = 2) {
     x |>
         str_squish() |>
         str_split_1(", ") |>
         str_subset(y) |>
-        str_split_i(" ", 2)
+        str_split_i(" ", z)
 }
 
 get_lpart <- function(x, y) {

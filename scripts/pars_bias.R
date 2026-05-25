@@ -9,22 +9,22 @@
     source("fes_to_vals.R")
 }
 
-pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "") {
+pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_grid = TRUE) {
     if (FALSE) {
         dataset <- "fb-test"; scens <- 0; st_str = ""; alt <- ""
-        dataset <- "sim-test-inf"; scens <- 0; st_str <- "Validating BICI"; alt <- ""
+        dataset <- "sim-test-inf1"; scens <- 0; st_str <- "Validating BICI"; alt <- ""
+        as_grid <- TRUE
     }
 
     {
         base_dir <- str_glue("datasets/{dataset}")
-        data_dir <- str_glue("{base_dir}/data")
         res_dir  <- str_glue("{base_dir}/results")
         gfx_dir  <- str_glue("{base_dir}/gfx")
 
-        if (!dir.exists(gfx_dir)) {
-            message("- mkdir ", gfx_dir)
-            dir.create(gfx_dir)
-        }
+        c(res_dir, gfx_dir) |>
+            discard(dir.exists) |>
+            walk(~ message(" - mkdir ", .x)) |>
+            walk(dir.create)
     }
 
 
@@ -52,7 +52,11 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "") {
         rf <- str_glue("{res_dir}/{.x}.rds")
         pe <- readRDS(rf)$parameter_estimates
         pe[!str_starts(parameter, "G_|Group"),
-           .(parameter, bias = (median - true_val) / sd, convergence)]
+           .(parameter,
+             bias1 = mean - true_val,
+             bias2 = (median - true_val) / sd,
+             bias3 = median / true_val - 1,
+             convergence)]
     }) |>
         rbindlist(idcol = "scen", fill = TRUE)
 
@@ -64,26 +68,30 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "") {
     pars <- x[, unique(parameter)]
     tidy_pars <- setNames(rename_pars(pars), pars)
 
-    setorder(x, parameter, bias)
+    setorder(x, parameter, bias2)
 
     plts <- map(pars, \(par) {
         # i <- 1; par <- pars[[i]]
-        x1 <- x[parameter == par]
-        mu_x1 <- x1[, .(mu = median(bias)), scen]
+        x1 <- x[parameter == par, .(scen, bias = bias2, convergence)]
+        mu_x1 <- x1[, .(mu = mean(bias)), scen]
         mu_x1[, scen := as.integer(scen)]
 
         ggplot(x1, aes(x = scen, y = bias, colour = convergence)) +
+            geom_boxplot(fill = "tomato",
+                         colour = "black",
+                         staplewidth = 0.5,
+                         width = 0.3) +
             geom_segment(data = mu_x1,
                          aes(x = scen - 0.4, xend = scen + 0.4,
                              y = mu, yend = mu),
                       colour = "blue",
                       linewidth = 0.5) +
-            geom_point() +
+            # geom_point() +
             geom_hline(yintercept = 0, linetype = "dashed") +
             scale_colour_manual(breaks = c("", "*", "**", "***"),
                                 values = c("blue3", "green4", "yellow3", "red2")) +
             scale_x_discrete(drop = FALSE) +
-            # scale_y_discrete(limits = ~ range(.x, y_rng)) +
+            # scale_y_discrete(limits = ~ range(.x, 0, max_bias)) +
             expand_limits(y = 0) +
             labs(x = "Scenario",
                  y = "Bias",
@@ -101,57 +109,65 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "") {
 
     plts$empty <- ggplot() + theme_classic()
 
-    sildt1 <- c("s", "i", "l", "d", "t")
-    sildt2 <- str_c(sildt1, sildt1)
-    any_non_empty <- function(x) any(x != "empty")
+    if (as_grid) {
 
-    cov_pars <- c(str_c("cov_G_", sildt2),
-                  "r_G_si", "r_G_st", "empty", "empty", "r_G_it",
-                  str_c("cov_E_", sildt2),
-                  str_c("cov_P_", sildt2))
+        sildt1 <- c("s", "i", "l", "d", "t")
+        sildt2 <- str_c(sildt1, sildt1)
+        any_non_empty <- function(x) any(x != "empty")
 
-    model_pars <- c(
-        "sigma",  "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
-        "infrat", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
-        "sigma",  "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
-        "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec"
-    ) |>
-        str_replace_all(c("LP" = "latent_period",
-                          "DP" = "detection_period",
-                          "RP" = "removal_period"))
+        cov_pars <- c(str_c("cov_G_", sildt2),
+                      "r_G_si", "r_G_st", "empty", "empty", "r_G_it",
+                      str_c("cov_E_", sildt2),
+                      str_c("cov_P_", sildt2))
 
-    # Remove repeated sigma and infrat
-    beta_in <- str_subset(pars, "beta")
-    if (beta_in[[1]] == "beta_Tr2") {
-        model_pars[c(1, 6)] <- "empty"
+        model_pars <- c(
+            "sigma",  "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
+            "infrat", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
+            "sigma",  "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
+            "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec"
+        ) |>
+            str_replace_all(c("LP" = "latent_period",
+                              "DP" = "detection_period",
+                              "RP" = "removal_period"))
+
+        # Remove repeated sigma and infrat
+        beta_in <- str_subset(pars, "beta")
+        if (beta_in[[1]] == "beta_Tr2") {
+            model_pars[c(1, 6)] <- "empty"
+        } else {
+            model_pars[c(11, 16)] <- "empty"
+        }
+
+        fes <- expand.grid(sildt1,
+                           c("trial", "donor", "txd", "weight", "weight1", "weight2")) |>
+            rev() |> apply(1, str_flatten, "_")
+
+        plt_names <- c(cov_pars, model_pars, fes)
+
+        # Some entries like "trial_s" might be missing
+        plt_names[plt_names %notin% pars] <- "empty"
+
+        # This clips any rows or columns that are entirely empty
+        plt_mat <- matrix(plt_names, nrow = 5)
+        plt_mat <- plt_mat[
+            which(apply(plt_mat, 1, any_non_empty)),
+            which(apply(plt_mat, 2, any_non_empty))
+        ]
+        plt_names <- c(plt_mat)
+
+        pltlst <- with(plts, mget(plt_names))
+
+        plt <- plot_grid(title_plt,
+                         plot_grid(plotlist = pltlst,
+                                   ncol = nrow(plt_mat),
+                                   align = "v"),
+                         ncol = 1, rel_heights = c(0.06, 1))
     } else {
-        model_pars[c(11, 16)] <- "empty"
+        plt <- plot_grid(title_plt,
+                         plot_grid(plotlist = plts,
+                                   align = "v"),
+                         ncol = 1, rel_heights = c(0.06, 1))
     }
-
-    fes <- expand.grid(sildt1,
-                       c("trial", "donor", "txd", "weight", "weight1", "weight2")) |>
-        rev() |> apply(1, str_flatten, "_")
-
-    plt_names <- c(cov_pars, model_pars, fes)
-
-    # Some entries like "trial_s" might be missing
-    plt_names[plt_names %notin% pars] <- "empty"
-
-    # This clips any rows or columns that are entirely empty
-    plt_mat <- matrix(plt_names, nrow = 5)
-    plt_mat <- plt_mat[
-        which(apply(plt_mat, 1, any_non_empty)),
-        which(apply(plt_mat, 2, any_non_empty))
-    ]
-    plt_names <- c(plt_mat)
-
-    pltlst <- with(plts, mget(plt_names))
-
-    plt <- plot_grid(title_plt,
-                     plot_grid(plotlist = pltlst,
-                               ncol = nrow(plt_mat),
-                               align = "v"),
-                     ncol = 1, rel_heights = c(0.06, 1))
 
     if (str_length(alt) > 0) alt <- str_c("-", alt)
     plt_str <- str_glue("{gfx_dir}/{dataset}-all_bias{alt}")

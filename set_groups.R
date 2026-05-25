@@ -25,8 +25,14 @@ set_groups <- function(popn, params) {
 
     # Set trial
     if (str_starts(setup, "fb")) {
-        fb_data <- readRDS(str_glue("fb_data/{setup}.rds"))
-        dt[, trial := fb_data[dt$id, trial]]
+        f <- str_glue("fb_data/{setup}.rds")
+        if (file.exists(f)) {
+            fb_data <- readRDS(f)
+            dt[, trial := fb_data[dt$id, trial]]
+        } else {
+            message("- no fb file, setting trial = 1")
+            dt[, trial := 1]
+        }
     } else {
         dt[, trial := 1L]
     }
@@ -48,22 +54,28 @@ set_groups <- function(popn, params) {
            }, stop("Unrecognised group_layout!")
     )
 
-    # Assign I0 initial infectives to each group
-    dt[, donor := {
-        x = integer(.N)
-        x[1:min(I0, .N)] = 1L
-        x
-    }, by = group]
+    # Assign I0 initial infectives to each group, either first or randomly
+    switch(group_layout,
+           "random" = {
+               dt[, donor := {
+                   x <- rep(0, .N)
+                   x[sample(.N, min(I0, .N))] <- 1L
+                   x
+               }, group]
+           }, {
+               dt[, donor := {
+                   x <- rep(0, .N)
+                   x[seq(min(I0, .N))] <- 1L
+                   x
+               }, group]
+           }
+    )
 
     # Handle group effect
     # note: group_effect is a multiplier, so x1 means no effect
-    if (group_effect >= 0) {
-        # also need to handle the case where groups are not of equal size
-        if (msgs) message("- group_effect = ", group_effect)
-        dt[, GE := exp(rnorm(1L, 0, group_effect)), by = group]
-    } else {
-        dt[, GE := 1]
-    }
+    if (msgs) message("- group_effect = ", group_effect)
+
+    dt[, GE := exp(rnorm(1L, 0, max(group_effect, 0))), group]
 
     # Copy popn to popn2 by merging on "id" and excluding columns in common
     # (which will be overwritten from dt)
