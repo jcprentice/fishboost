@@ -19,7 +19,7 @@ fix_fb_data <- function(popn, params) {
     t_demote <- t_demote %||% c(Inf, Inf)
     fix_eq_time <- fix_eq_time %||% FALSE
     if ("use_parasites" %in% params && params$use_parasites != "") {
-        fix_donors <- "no_Tsym_survivors"
+        fix_donors <- "no_Tsign_survivors"
     }
 
     popn2 <- copy(popn)
@@ -28,23 +28,23 @@ fix_fb_data <- function(popn, params) {
     message("- Fixing Tdeath >= Tmax ...")
     popn2[Tdeath >= tmax[str_glue("t{trial}")], Tdeath := NA]
 
-    # Fix Tsym = Tdeath by putting Tsym down 1/2 a day
+    # Fix Tsign = Tdeath by putting Tsign down 1/2 a day
     if (fix_eq_time) {
-        message("- Fixing Tsym = Tdeath ...")
-        popn2[Tsym == Tdeath, Tsym := Tsym - 0.5]
+        message("- Fixing Tsign = Tdeath ...")
+        popn2[Tsign == Tdeath, Tsign := Tsign - 0.5]
     }
 
 
     if ("time" %in% fix_donors) {
-        message("- Demoting donors with Tsym > ", str_flatten_comma(t_demote))
-        popn2[donor == 1 & Tsym > t_demote[trial], `:=`(donor = 0, Tinf = NA)]
+        message("- Demoting donors with Tsign > ", str_flatten_comma(t_demote))
+        popn2[donor == 1 & Tsign > t_demote[trial], `:=`(donor = 0, Tinf = NA)]
     }
 
     new_val <- if ("set_to_R" %in% fix_donors) length(compartments) -1 else 0
 
-    if ("no_Tsym_survivors" %in% fix_donors) {
-        message("- Demoting surviving donors with no symptoms ...")
-        popn2[donor == 1 & is.na(Tsym) & is.na(Tdeath),
+    if ("no_Tsign_survivors" %in% fix_donors) {
+        message("- Demoting surviving donors with no signs ...")
+        popn2[donor == 1 & is.na(Tsign) & is.na(Tdeath),
               `:=`(donor = new_val, Tinf = NA)]
     }
 

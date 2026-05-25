@@ -29,7 +29,7 @@ protocol <- rbind(
     data.table(d = "FB Trial 1+2, FEs ILDT, Weight Nested SILDT"), # 6
     data.table(d = "FB Trial 1+2, IEs ILDT, No FEs"), # 7
     data.table(d = "FB Trial 1+2, IEs ILDT, FEs ILDT, Weight Nested SILDT"), # 12
-    
+
     fill = TRUE
 )
 
@@ -54,7 +54,6 @@ protocol[, `:=`(sim_new_data = "r",
                 expand_priors = 5,
                 RP_dist = "gamma",
                 sample_states = fifelse(goal == "convergence", 100, 0),
-                ie_output = "false",
                 time_step = 1)]
 
 # expand_priors must be moved to before any other priors, or be overwritten
@@ -100,7 +99,7 @@ params$sim_link_shapes <- "ldt"
 params$link_trial <- "sildt"
 params$link_donor <- "sildt"
 params$link_shapes <- "ldt"
-params$pass_events <- "Tsym,Tdeath"
+params$pass_events <- "Tsign,Tdeath"
 params$seed <- if (goal == "convergence") 0 else -1
 params$nchains <- if (goal == "convergence") 16 else 4
 params$phi <- 1.0

@@ -29,7 +29,7 @@ timings_hist <- function(dataset = "sim-test1",
         if ("Tinf_sire" %in% names(x)) {
             x[src == "fb", Tinf := Tinf_sire]
         }
-        x1 <- melt(x, measure.vars = c("Tinf", "Tsym", "RP"),
+        x1 <- melt(x, measure.vars = c("Tinf", "Tsign", "RP"),
                   variable.name = "var")
         x1[, src2 := str_c(trial, "_", donor)]
         x1
@@ -61,7 +61,7 @@ timings_hist <- function(dataset = "sim-test1",
 
         data1 <- data_i[(var == "Tinf" & value < 160) |
                             (var == "RP" & value < 50) |
-                            (var == "Tsym" & value < 160)]
+                            (var == "Tsign" & value < 160)]
 
         ggplot(data1, aes(x = value)) +
             geom_histogram(aes(y = after_stat(density),
@@ -91,9 +91,9 @@ timings_hist <- function(dataset = "sim-test1",
                         scales = "free",
                         independent = "y",
                         labeller = labeller(
-                            var = c(Tinf = "Time of infection",
-                                    Tsym = "Time to first symptoms",
-                                    RP   = "Period from symptoms to death"),
+                            var = c(Tinf  = "Time of infection",
+                                    Tsign = "Time to first signs",
+                                    RP    = "Period from signs to death"),
                             # src = c(fb = "Data", sim = "Simulation")))
                             src2 = labels))
     })

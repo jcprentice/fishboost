@@ -8,7 +8,7 @@ x[, c("sdp", "weight") := NULL]
 x[trial == 1 & Tdeath == 104, Tdeath := NA]
 x[trial == 2 & Tdeath == 160, Tdeath := NA]
 
-val = "Tsym"
+val = "Tsign"
 print(str_glue("Using {val} times:"))
 cat("\n")
 

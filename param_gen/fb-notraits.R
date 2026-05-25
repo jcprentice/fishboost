@@ -41,7 +41,7 @@ common <- list(setup = "fb_12",
                weight_fe = "sildt",
                weight_is_nested = TRUE,
                use_traits = "",
-               fix_donors = "no_Tsym_survivors",
+               fix_donors = "no_Tsign_survivors",
                use_weight = "log",
                # use_grm = "",
                group_effect = 0.1,
@@ -49,8 +49,7 @@ common <- list(setup = "fb_12",
                prior__latent_period__val2 = 10,
                expand_priors = 5,
                RP_dist = "gamma",
-               sample_states = 100,
-               ie_output = "true") |>
+               sample_states = 100) |>
     safe_merge(common2)
 
 # Labels

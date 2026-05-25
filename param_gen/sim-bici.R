@@ -50,8 +50,7 @@ common <- list(sim_new_data = "summary_sim",
                bici_cmd = "inf",
                censor = 0.8,
                nsample = 1e5,
-               sample_states = 1e2,
-               ie_output = "true") |>
+               sample_states = 1e2) |>
     safe_merge(common2)
 
 # Labels

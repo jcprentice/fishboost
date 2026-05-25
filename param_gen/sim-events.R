@@ -21,20 +21,20 @@ dataset <- str_glue("sim-events{x}",
 protocol <- rbind(
     data.table(description = "Sim FB1, basic SEIDR, 4 events",
                setup = "fb_1",
-               pass_events = "Tinf,Tlat,Tsym,Tdeath"),
-    
+               pass_events = "Tinf,Tlat,Tsign,Tdeath"),
+
     data.table(description = "Sim FB1, basic SEIDR, 3 events",
                setup = "fb_1",
-               pass_events = "Tlat,Tsym,Tdeath"),
-    
+               pass_events = "Tlat,Tsign,Tdeath"),
+
     data.table(description = "Sim FB1, basic SEIDR, 2 events",
                setup = "fb_1",
-               pass_events = "Tsym,Tdeath"),
-    
+               pass_events = "Tsign,Tdeath"),
+
     data.table(description = "Sim FB1+2, basic SEIDR, 2 events",
                setup = "fb_12",
-               pass_events = "Tsym,Tdeath"),
-    
+               pass_events = "Tsign,Tdeath"),
+
     fill = TRUE
 )
 
@@ -75,7 +75,7 @@ params$sim_link_shapes <- "ldt"
 params$link_trial <- "sildt"
 params$link_donor <- "sildt"
 params$link_shapes <- "ldt"
-params$pass_events <- "Tsym,Tdeath"
+params$pass_events <- "Tsign,Tdeath"
 params$seed <- if (goal == "convergence") 0 else -1
 params$nchains <- if (goal == "convergence") 16 else 4
 nsample <- 1e6L

@@ -3,7 +3,7 @@ library(ggplot2)
 library(viridisLite)
 
 plot_model <- function(popn, params) {
-    if (all(c("Tinf", "Tinc", "Tsym", "Tdeath") %notin% names(popn))) {
+    if (all(c("Tinf", "Tinc", "Tsign", "Tdeath") %notin% names(popn))) {
         return(NULL)
     }
 

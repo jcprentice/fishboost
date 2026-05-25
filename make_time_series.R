@@ -15,10 +15,10 @@ make_time_series_seidr <- function(popn, params) {
     # tmax <- params$tmax
     tmax <- max(popn$Tdeath, na.rm = TRUE)
 
-    popn2 <- popn[sdp == "progeny", .(Tinf, Tinc, Tsym, Tdeath)]
-    popn2[is.na(Tsym), Tsym := Tdeath]
-    popn2[is.na(Tinc), Tinc := Tsym]
-    popn2[is.na(Tinf), Tinf := Tinc]
+    popn2 <- popn[sdp == "progeny", .(Tinf, Tinc, Tsign, Tdeath)]
+    popn2[is.na(Tsign), Tsign := Tdeath]
+    popn2[is.na(Tinc),  Tinc  := Tsign]
+    popn2[is.na(Tinf),  Tinf  := Tinc]
 
     N <- popn2[, .N]
 
@@ -27,7 +27,7 @@ make_time_series_seidr <- function(popn, params) {
                    time = 0.0),
         data.table(event = "infection",  time = popn2$Tinf[popn2$Tinf > 0]),
         data.table(event = "incubation", time = popn2$Tinc),
-        data.table(event = "detection",  time = popn2$Tsym),
+        data.table(event = "detection",  time = popn2$Tsign),
         data.table(event = "removal",    time = popn2$Tdeath),
         data.table(event = "end", time = tmax))
 
@@ -61,9 +61,9 @@ make_time_series_sidr <- function(popn, params) {
     # tmax <- params$tmax
     tmax <- max(popn$Tdeath, na.rm = TRUE)
 
-    popn2 <- popn[sdp == "progeny", .(Tinf, Tsym, Tdeath)]
-    popn2[is.na(Tsym), Tsym := Tdeath]
-    popn2[is.na(Tinf), Tinf := Tsym]
+    popn2 <- popn[sdp == "progeny", .(Tinf, Tsign, Tdeath)]
+    popn2[is.na(Tsign), Tsign := Tdeath]
+    popn2[is.na(Tinf), Tinf := Tsign]
 
     N <- popn2[, .N]
 
@@ -71,7 +71,7 @@ make_time_series_sidr <- function(popn, params) {
         data.table(event = factor("start", c("start", "infection", "detection", "removal", "end")),
                    time = 0.0),
         data.table(event = "infection", time = popn2$Tinf[popn2$Tinf > 0]),
-        data.table(event = "detection", time = popn2$Tsym),
+        data.table(event = "detection", time = popn2$Tsign),
         data.table(event = "removal",   time = popn2$Tdeath),
         data.table(event = "end",       time = tmax))
 
@@ -103,9 +103,9 @@ make_time_series_seir <- function(popn, params) {
     # tmax <- params$tmax
     tmax <- max(popn$Tdeath, na.rm = TRUE)
 
-    popn2 <- popn[sdp == "progeny", .(Tinf, Tsym, Tdeath)]
-    popn2[is.na(Tsym), Tsym := Tdeath]
-    popn2[is.na(Tinf), Tinf := Tsym]
+    popn2 <- popn[sdp == "progeny", .(Tinf, Tsign, Tdeath)]
+    popn2[is.na(Tsign), Tsign := Tdeath]
+    popn2[is.na(Tinf), Tinf := Tsign]
 
     N <- popn2[, .N]
 
@@ -113,7 +113,7 @@ make_time_series_seir <- function(popn, params) {
         data.table(event = factor("start", c("start", "infection", "incubation", "removal", "end")),
                    time = 0.0),
         data.table(event = "infection",  time = popn2$Tinf[popn2$Tinf > 0]),
-        data.table(event = "incubation", time = popn2$Tsym),
+        data.table(event = "incubation", time = popn2$Tsign),
         data.table(event = "removal",    time = popn2$Tdeath),
         data.table(event = "end",        time = tmax))
 

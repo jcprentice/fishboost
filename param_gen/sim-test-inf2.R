@@ -18,12 +18,13 @@ dataset <- "sim-test-inf2"
 
 # Variable parameters ----
 protocol <- rbind(
-    # Basic models for Trial 1
-    data.table(d = "FB_1_rpw, GEV SIT,   Weight SIT,   Fit d7"), # 1
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d8"), # 2
-    # Basic models for both Trials
-    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit d9"), # 3
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d10"), # 4
+    # Misspecified models
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d5, (Overfitting SITTT to none)"),    # 1
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d6, (Overfitting SITTT to ST)"),      # 2
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d7, (Underfitting SITTT to SILDT)"),  # 3
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d8, (Underfitting SITTT to Cors=0)"), # 4
+    data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit d1, (Underfitting none to SIT)"),     # 5
+    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d1, (Testing h2=0)"),                 # 6
 
     fill = TRUE
 )
@@ -66,13 +67,12 @@ common <- list(sim_new_data = "summary_sim",
                patch_dataset = "sim-test",
                patch_type = "sampled",
                bici_cmd = "inf",
-               fix_donors = "no_Tsym_survivors",
+               fix_donors = "no_Tsign_survivors",
                censor = 0.8,
-               nsample = 5e6,
-               nchains = 8,
+               nsample = 2e6,
+               nchains = 16,
                sample_states = 100,
-               time_step_bici = 1,
-               ie_output = "true") |>
+               time_step_bici = 1) |>
     safe_merge(common2)
 
 # Labels
@@ -83,7 +83,7 @@ protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
     setnames("d", "description")
 
 ## Add replicates ----
-n_replicates <- 20
+n_replicates <- 10
 protocol[, scenario := .I]
 protocol <- protocol[rep(1:.N, each = n_replicates)]
 protocol[, replicate := 1:.N, scenario]

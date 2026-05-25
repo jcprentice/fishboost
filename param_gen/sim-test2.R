@@ -68,8 +68,7 @@ common <- list(sim_new_data = "bici",
                prior__txd_d__val2 = 4,
                censor = 0.8,
                nsample = 1e5,
-               sample_states = 1e3,
-               ie_output = "true") |>
+               sample_states = 1e3) |>
     safe_merge(common2)
 
 # Labels

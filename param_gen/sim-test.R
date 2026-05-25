@@ -19,28 +19,16 @@ dataset <- "sim-test"
 # Variable parameters ----
 protocol <- rbind(
     # Basic models
-    data.table(d = "FB_1_rpw, GEV SIT,   Weight SIT,   Fit s1, GRM pedigree"), # 1
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit s2, GRM pedigree"), # 2
-    data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit s2, GRM pedigree"), # 3
-    data.table(d = "FB_1_rpw, GEV ST,    Weight SITTT, Fit s2, GRM pedigree"), # 4
-    data.table(d = "FB_1_rpw, GEV SILDT, Weight SITTT, Fit s2, GRM pedigree"), # 5
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit s2, Cors 0, GRM pedigree"), # 6
+    data.table(d = "FB_1_rpw,  GEV SIT,   Weight SIT,   Fit s1, GRM pedigree"), # 1
+    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SITTT, Fit s2, GRM pedigree"), # 2
+    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit s7, GRM pedigree"), # 3
+    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit s8, GRM pedigree"), # 4
 
-    data.table(d = "FB_1_rpw, GEV SIT,   Weight SIT,   Fit s1, GRM HG_inv"), # 7
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit s2, GRM HG_inv"), # 8
-
-    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit s7, GRM HG_inv"), # 9
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit s8, GRM HG_inv"), # 10
-
-    # data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit s9, GRM pedigree"),  # 9
-    # data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit s11, GRM pedigree"), # 10
-    # data.table(d = "FB_12_rpw, GEV none,  Weight SITTT, Fit s11, GRM pedigree"), # 11
-    # data.table(d = "FB_12_rpw, GEV ST,    Weight SITTT, Fit s11, GRM pedigree"), # 12
-    # data.table(d = "FB_12_rpw, GEV SILDT, Weight SITTT, Fit s11, GRM pedigree"), # 13
-    # data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit s11, Cors 0, GRM pedigree"), # 14
-    #
-    # data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit s1, GRM HG_inv"), # 15
-    # data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit s3, GRM HG_inv"), # 16
+    data.table(d = "FB_1_rpw, GEV none,   Weight SITTT, Fit s2, GRM pedigree"), # 5
+    data.table(d = "FB_1_rpw, GEV ST,     Weight SITTT, Fit s2, GRM pedigree"), # 6
+    data.table(d = "FB_1_rpw, GEV SILDT,  Weight SITTT, Fit s2, GRM pedigree"), # 7
+    data.table(d = "FB_1_rpw, GEV SITTT,  Weight SITTT, Fit s2, Cors 0, GRM pedigree"), # 8
+    data.table(d = "FB_1_rpw, GEV SITTT,  Weight SITTT, Fit s2, h2 0, GRM pedigree"), # 9
 
     fill = TRUE
 )
@@ -55,6 +43,8 @@ protocol[, GEV := get_part(d, "GEV") |> str_to_lower(), .I]
 protocol[, use_traits := GEV]
 protocol[GEV == "sittt", `:=`(use_traits = "sildt", link_traits = "sittt")]
 protocol[, GEV := NULL]
+protocol[str_detect(d, "h2"), h2 := get_part(d, "h2") |> as.numeric(), .I]
+protocol[str_detect(d, "h2"), override_h2 := TRUE]
 
 # Handle fit
 protocol[, patch_name := get_part(d, "Fit") |>
@@ -78,7 +68,7 @@ protocol[str_detect(d, "GEV SILDT"), `:=`(vars = list(list(default = 0.5)),
 
 # Skip patches when we want 0 variance
 protocol[str_detect(d, "GEV ST"), skip_patches := "_[GE]_.?i.?"]
-protocol[str_detect(d, "GEV none"), skip_patches := "cov,cor"]
+protocol[str_detect(d, "GEV none"), skip_patches := "ies"]
 
 
 
@@ -111,8 +101,7 @@ common <- list(sim_new_data = "bici",
                nsample = 1e4,
                sample_states = 100,
                nreps = 20,
-               time_step_bici = 0.2,
-               ie_output = "true") |>
+               time_step_bici = 0.2) |>
     safe_merge(common2)
 
 common$nchains <- 1

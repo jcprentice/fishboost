@@ -23,7 +23,7 @@ model_SIDR <- function(popn, params) {
 
     Y <- map(Xgroups, \(X) {
         # This is a priority queue for the next event
-        ni_events <- X[, .(.I, Tsym, Tdeath)] |>
+        ni_events <- X[, .(.I, Tsign, Tdeath)] |>
             melt(id.vars = "I", variable.name = "event", value.name = "time") |>
             setorder(time, na.last = TRUE)
         ni_events[, event := NULL]
@@ -75,7 +75,7 @@ model_SIDR <- function(popn, params) {
                 next_gen <- X$generation[[infd_by]] + 1L
 
                 sidr_path <- generate_sidr_path(epi_time, X, id_next_event, params)
-                set(X, id_next_event, c("status", "Tinf", "Tsym", "Tdeath"), sidr_path)
+                set(X, id_next_event, c("status", "Tinf", "Tsign", "Tdeath"), sidr_path)
 
                 ni_events[I == id_next_event, time := as.numeric(sidr_path[-(1:2)])]
 
@@ -99,7 +99,7 @@ model_SIDR <- function(popn, params) {
                     set(X, id_next_event, "status", "R")
                 } else {
                     message("status = ", status)
-                    print(X[, .(group, donor, status, Tinf, Tsym, Tdeath, group_inf, inf_rate)])
+                    print(X[, .(group, donor, status, Tinf, Tsign, Tdeath, group_inf, inf_rate)])
                     stop("selected ID ", id_next_event, "... unexpected event!")
                     break
                 }
@@ -110,7 +110,7 @@ model_SIDR <- function(popn, params) {
             setorder(ni_events, time, na.last = TRUE)
 
             if (DEBUG == 2) {
-                print(X[, .(group, donor, status, Tinf, Tsym, Tdeath, group_inf, inf_rate)])
+                print(X[, .(group, donor, status, Tinf, Tsign, Tdeath, group_inf, inf_rate)])
             }
         }
         X
@@ -138,9 +138,9 @@ model_SIDR <- function(popn, params) {
 generate_sidr_path <- function(epi_time, X, id, params) {
     with(params, {
         Tinf   <- epi_time
-        Tsym   <- Tinf + rgamma(1L, DP_shape, scale = DP_scale * X$det[[id]])
-        Tdeath <- Tsym + rgamma(1L, RP_shape, scale = RP_scale * X$tol[[id]])
+        Tsign  <- Tinf  + rgamma(1L, DP_shape, scale = DP_scale * X$det[[id]])
+        Tdeath <- Tsign + rgamma(1L, RP_shape, scale = RP_scale * X$tol[[id]])
 
-        list("I", Tinf, Tsym, Tdeath)
+        list("I", Tinf, Tsign, Tdeath)
     })
 }

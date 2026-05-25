@@ -32,13 +32,13 @@ generate_km_data_sire <- function(dataset = "fb-final",
 
         # We only need a subset of the fb_data
         popn <- res$popn
-        popn[, `:=`(RP = Tdeath - Tsym, src = "fb")]
+        popn[, `:=`(RP = Tdeath - Tsign, src = "fb")]
         popn[Tdeath == c(104, 160)[trial], Tdeath := NA]
         # popn <- fix_fb_data(popn)
 
         if ("parasites" %notin% names(popn)) {
             # parasites might be missing if we simulated
-            popn[, parasites := !is.na(Tinf) | !is.na(Tsym) | !is.na(Tdeath)]
+            popn[, parasites := !is.na(Tinf) | !is.na(Tsign) | !is.na(Tdeath)]
         }
         popn[donor == 1 & parasites == FALSE & is.na(Tdeath),
              `:=`(donor = 0, Tinf = NA)]
@@ -105,8 +105,8 @@ generate_km_data_sire <- function(dataset = "fb-final",
 
             popn <- simulate_epidemic(popn, params)
             popn[sdp == "progeny", .(sire, trial, donor, group,
-                                     Tinf, Tsym, Tdeath,
-                                     RP = Tdeath - Tsym, src = "sim")]
+                                     Tinf, Tsign, Tdeath,
+                                     RP = Tdeath - Tsign, src = "sim")]
         })
     }) |>
         unlist(recursive = FALSE)

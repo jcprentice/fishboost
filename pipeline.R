@@ -24,7 +24,7 @@ run_from_script <- length(cmd_args) > 0
     params <- make_parameters(
         model_type = "SEIDR", # "SIR", "SEIR", "SIDR", or "SEIDR"
         dataset = "testing",
-        name = "scen-1-1",
+        name = "scen-2-1",
         setup = "fb_12_rpw", # chris, small, fb_12, fb_1, fb_2, single
         use_traits = "all", # "all", "none", "sit", "si" etc.
         vars = 0.5, # c(0.5, 1.5, 0, 0, 0.5)
@@ -35,8 +35,11 @@ run_from_script <- length(cmd_args) > 0
         txd_fe = "ildt",
         weight_fe = "sildt",
         weight_is_nested = TRUE,
-        sim_new_data = "r"
+        sim_new_data = "bici"
     )
+
+    params$select_on <- "inf"
+    params$select_top <- 0.2
 
     # Temporary override of some parameters
     # params$group_effect <- 0.3
@@ -47,16 +50,16 @@ run_from_script <- length(cmd_args) > 0
         params$nsample <- 1e2L
     }
     params$sample_states <- 100L
-    params$ie_output <- "true"
-    params$pass_events <- c("Tsym", "Tdeath")
+    params$pass_events <- c("Tsign", "Tdeath")
     # params$link_traits <- "sittt"
     # params$sim_link_donor <- "sittt"
     # params$link_donor <- "sittt"
     params$time_step <- 1
     params$censor <- 0.8
     params$use_weight <- "log"
-    params$use_grm <- "HG_inv"
+    params$use_grm <- "pedigree" # "HG_inv"
     params$weight_is_nested <- TRUE
+    params$trans_tree <- "on"
     # params$fix_donors <- c(params$fix_donors, "set_to_R")
 
     # Tidy up LP, DP, RP, including rate, shape, and priors
@@ -87,11 +90,12 @@ if (params$sim_new_data != "no") {
         set_groups(params) |> # Set groups, trial, donors, and group effect
         set_traits(params) |>
         set_weights(params) |>
+        apply_selection(params) |>
         apply_fixed_effects(params)
 } else {
     popn <- readRDS(str_glue("fb_data/{params$setup}.rds"))
 
-    params$fix_donors <- "no_Tsym_survivors" # c("time", "no_Tsym_survivors")
+    params$fix_donors <- "no_Tsign_survivors" # c("time", "no_Tsign_survivors")
 
     # Create a GRM or A matrix
     GRM <- make_grm(popn, params$use_grm)
@@ -134,7 +138,7 @@ plt <- plot_model(popn, params)
 
 ## Generate directories and config files ----
 
-bici_txt <- generate_bici_script(popn, params)
+bici_txt <- generate_bici_script(popn, params, clean_dirs = FALSE)
 
 
 ## Run BICI ----
@@ -200,6 +204,6 @@ bici_txt <- generate_bici_script(popn, params)
         saveRDS(file = str_glue("{results_dir}/{name}.rds"))
 
     # Generate summary_{inf,sim,ps}.rds summary file
-    flatten_bici_states(params)
+    etc <- flatten_bici_states(params)
 }
 

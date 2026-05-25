@@ -22,7 +22,7 @@ protocol <- rbind(
     data.table(d = "Sim FB1, SEIDR, censor 1.0, Traits SIT (pos), Donor ITTT"),
     data.table(d = "Sim FB1, SEIDR, censor 0.8, Traits SIT (pos), Donor ITTT"),
     data.table(d = "Sim FB1, SEIDR, censor 0.6, Traits SIT (pos), Donor ITTT"),
-    
+
     fill = TRUE
 )
 
@@ -74,7 +74,7 @@ params$sim_link_shapes <- "ldt"
 params$link_trial <- "sildt"
 params$link_donor <- "sildt"
 params$link_shapes <- "ldt"
-params$pass_events <- "Tsym,Tdeath"
+params$pass_events <- "Tsign,Tdeath"
 params$seed <- if (goal == "convergence") 0 else -1
 params$nchains <- if (goal == "convergence") 16 else 4
 params$phi <- 1.0

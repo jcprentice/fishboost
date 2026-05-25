@@ -22,27 +22,27 @@ model_fit_auc <- function(dataset = "fb-final") {
     ttest <- 1
     tmax <- c(104, 160) * ttest
 
-    # Extract AUC for each id, sire, trial / Tsym, RP
+    # Extract AUC for each id, sire, trial / Tsign, RP
     AUC <- map(km_data, \(x) {
         # x <- km_data[[1]]
         x1 <- x$data[!is.na(sire), .(id, sire = as.factor(sire),
-                                     trial = as.factor(trial), Tsym, Tdeath)] |>
+                                     trial = as.factor(trial), Tsign, Tdeath)] |>
             setorder(id, sire, trial)
 
         # TODO: Sensitivity Analysis on the cutoff point
         if (!is.na(ttest)) {
-            x1[, `:=`(Tsym   = fifelse(Tsym   < tmax[trial], Tsym,   tmax[trial]),
+            x1[, `:=`(Tsign  = fifelse(Tsign  < tmax[trial], Tsign,  tmax[trial]),
                       Tdeath = fifelse(Tdeath < tmax[trial], Tdeath, tmax[trial]))]
         }
-        x1[, `:=`(RP = Tdeath - Tsym, Tdeath = NULL)]
-        x1[, `:=`(Tsym = sort(Tsym, na.last = TRUE),
+        x1[, `:=`(RP = Tdeath - Tsign, Tdeath = NULL)]
+        x1[, `:=`(Tsign = sort(Tsign, na.last = TRUE),
                   RP = sort(RP, na.last = TRUE),
                   survival = seq(1, 0, length = .N)),
            .(id, sire, trial)]
 
         # Note: mean(x) != sum(x) / N, when x contains NAs. We want to get the
         # AUC from a curve that starts at (0,1) and steps down with each event.
-        x1[, .(Tsym = sum(diff(c(0, Tsym)) * survival, na.rm = TRUE),
+        x1[, .(Tsign = sum(diff(c(0, Tsign)) * survival, na.rm = TRUE),
                RP = sum(diff(c(0, RP)) * survival, na.rm = TRUE)),
            .(id, sire, trial)]
     })
@@ -51,7 +51,7 @@ model_fit_auc <- function(dataset = "fb-final") {
     # experiment value, the Y value is each simulation value.
     AUC_long <- map(AUC, \(x) {
         # x <- AUC[[1]]
-        x1 <- melt(x, measure.vars = c("Tsym", "RP"), value.name = "sim")
+        x1 <- melt(x, measure.vars = c("Tsign", "RP"), value.name = "sim")
 
         x2 <- x1[, obs := sim[[.N]], .(sire, trial, variable)][id != id[[.N]]]
 
@@ -68,21 +68,21 @@ model_fit_auc <- function(dataset = "fb-final") {
 
         fit <- AUC_long_all[, {
             tmp1 <- cor.test(sim, obs)
-            tmp2 <- cor.test(sim[variable == "Tsym"], obs[variable == "Tsym"])
-            tmp3 <- cor.test(sim[variable == "RP"],   obs[variable == "RP"])
-            list(all_est  = tmp1$estimate, all_low  = tmp1$conf.int[[1]], all_high  = tmp1$conf.int[[2]],
-                 Tsym_est = tmp2$estimate, Tsym_low = tmp2$conf.int[[1]], Tsym_high = tmp2$conf.int[[2]],
-                 RP_est   = tmp3$estimate, RP_low   = tmp3$conf.int[[1]], RP_high   = tmp3$conf.int[[2]])},
+            tmp2 <- cor.test(sim[variable == "Tsign"], obs[variable == "Tsign"])
+            tmp3 <- cor.test(sim[variable == "RP"],    obs[variable == "RP"])
+            list(all_est   = tmp1$estimate, all_low   = tmp1$conf.int[[1]], all_high   = tmp1$conf.int[[2]],
+                 Tsign_est = tmp2$estimate, Tsign_low = tmp2$conf.int[[1]], Tsign_high = tmp2$conf.int[[2]],
+                 RP_est    = tmp3$estimate, RP_low    = tmp3$conf.int[[1]], RP_high    = tmp3$conf.int[[2]])},
             scenario]
         # fit <- AUC_long_all[, .(cor = cor(sim, obs),
-        #                         cor_Tsym = cor(sim[variable == "Tsym"], obs[variable == "Tsym"]),
+        #                         cor_Tsign = cor(sim[variable == "Tsign"], obs[variable == "Tsign"]),
         #                         cor_RP = cor(sim[variable == "RP"], obs[variable == "RP"])),
         #                     scenario]
         (fit[, map(.SD, \(x) if (is.numeric(x)) round(100*x, 1) else x)]
             [, .(scenario,
-                 all  = str_c(all_est,  " (", all_low,  ", ", all_high,  ")"),
-                 Tsym = str_c(Tsym_est, " (", Tsym_low, ", ", Tsym_high, ")"),
-                 RP   = str_c(RP_est,   " (", RP_low,   ", ", RP_high,   ")"))])
+                 all   = str_c(all_est,   " (", all_low,   ", ", all_high,   ")"),
+                 Tsign = str_c(Tsign_est, " (", Tsign_low, ", ", Tsign_high, ")"),
+                 RP    = str_c(RP_est,    " (", RP_low,    ", ", RP_high,    ")"))])
     }
 
 
@@ -91,7 +91,7 @@ model_fit_auc <- function(dataset = "fb-final") {
                             measure.vars = measure(variable, range, sep = "_")) |>
         dcast(scenario + variable ~ range)
     fit_long[, `:=`(scenario = ordered(scenario, levels = str_sort(unique(scenario), numeric = TRUE)),
-                    variable = factor(variable, levels = c("all", "Tsym", "RP")))]
+                    variable = factor(variable, levels = c("all", "Tsign", "RP")))]
     setorder(fit_long, scenario, variable)
 
     fit_plt <- ggplot(fit_long,
@@ -105,8 +105,8 @@ model_fit_auc <- function(dataset = "fb-final") {
                    position = position_dodge(0.2)) +
         expand_limits(y = c(-0.3, 1)) +
         scale_colour_discrete("Measurements",
-                              breaks = c("all", "Tsym", "RP"),
-                              labels = c("Combined", "Tsym", "RP")) +
+                              breaks = c("all", "Tsign", "RP"),
+                              labels = c("Combined", "Tsign", "RP")) +
         labs(x = "Scenario",
              y = "Correlation",
              title = "Correlation (with 95% CI) between true and simulated family AUCs",
@@ -141,11 +141,11 @@ model_fit_auc <- function(dataset = "fb-final") {
                  y = "AUC (simulation)",
                  title = str_glue("Scenario {label}")) +
             expand_limits(x = 0, y = 0) +
-            facet_wrap(~ variable,
+            facet_wrap(vars(variable),
                        scales = "free",
                        labeller = labeller(variable = c(
-                           "Tsym" = "Time to first symptoms",
-                           "RP" = "Time from symptoms to death"))) +
+                           "Tsign" = "Time to first signs",
+                           "RP" = "Time from signs to death"))) +
             theme_bw()
     })
 

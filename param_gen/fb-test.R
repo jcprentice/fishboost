@@ -82,10 +82,9 @@ common <- list(use_grm = "HG_inv",
                `prior__detection_period_Tr2,Don__val1` = 50,
                `prior__detection_period_Tr2,Rec__val2` = 5,
                `prior__removal_period_Tr2,Don__val1` = 10,
-               fix_donors = "no_Tsym_survivors",
+               fix_donors = "no_Tsign_survivors",
                nsample = if (str_detect(dataset, "q")) 5e5 else 2e6,
-               sample_states = if (str_detect(dataset, "q")) 1e2 else 1e3,
-               ie_output = "true") |>
+               sample_states = if (str_detect(dataset, "q")) 1e2 else 1e3) |>
     safe_merge(common2)
 
 # Labels

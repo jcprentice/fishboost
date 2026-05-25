@@ -44,7 +44,7 @@ summary_to_km <- function(dataset = "fb-test", scens = 0, opts, bici_cmd = "post
 
         etc <- readRDS(ef)$popn[sdp == "progeny",
                                 .(id = state, sire, trial, donor, group,
-                                  Tinf, Tsym, Tdeath, RP = Tdeath - Tsym,
+                                  Tinf, Tsign, Tdeath, RP = Tdeath - Tsign,
                                   src = "sim")]
         n <- last(etc$id)
         res <- readRDS(rf)
@@ -52,7 +52,7 @@ summary_to_km <- function(dataset = "fb-test", scens = 0, opts, bici_cmd = "post
         data <- rbind(etc,
                       res$popn[sdp == "progeny",
                                .(id = n + 1L, sire, trial, donor, group,
-                                 Tinf, Tsym, Tdeath, RP = Tdeath - Tsym,
+                                 Tinf, Tsign, Tdeath, RP = Tdeath - Tsign,
                                  src = "fb")])
 
         list(data = data, params = res$params, opts = opts)

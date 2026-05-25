@@ -34,9 +34,9 @@ get_auc <- function(dataset = "fb-final",
         # x <- km_data[[1]]
 
         # Make a copy of the data and add in rows representing t=0, sort times
-        x1 <- x$data[, .(Tsym = c(0, sort(Tsym, na.last = TRUE)),
-                         RP   = c(0, sort(RP,   na.last = TRUE)),
-                         src = src[c(1, 1:.N)]),
+        x1 <- x$data[, .(Tsign = c(0, sort(Tsign, na.last = TRUE)),
+                         RP    = c(0, sort(RP,   na.last = TRUE)),
+                         src   = src[c(1, 1:.N)]),
                      mget(c("id", gps))] |>
             setorderv(c("id", gps))
 
@@ -50,7 +50,7 @@ get_auc <- function(dataset = "fb-final",
         x1[, survival := seq(1, 0, length.out = .N), gp]
 
         # Melt so we can use facet_wrap
-        x2 <- x1 |> melt(measure.vars = c("Tsym", "RP"))
+        x2 <- x1 |> melt(measure.vars = c("Tsign", "RP"))
 
         # Censor the data as with the FB data
         tmax <- c(104, 160) # data[src == "fb", ceiling(max(Tdeath, na.rm = TRUE)), trial][, V1]
@@ -97,9 +97,9 @@ get_auc_donor <- function(dataset = "fb-final",
         data <- x$data
 
         # Make a copy of the data and add in rows representing t=0, sort times
-        x1 <- data[, .(Tsym = c(0, sort(Tsym, na.last = TRUE)),
-                       RP   = c(0, sort(RP,   na.last = TRUE)),
-                       src = src[c(1, 1:.N)]),
+        x1 <- data[, .(Tsign = c(0, sort(Tsign, na.last = TRUE)),
+                       RP    = c(0, sort(RP,   na.last = TRUE)),
+                       src   = src[c(1, 1:.N)]),
                    .(id, donor, trial)]
 
         setkey(x1, id, donor, trial)
@@ -111,7 +111,7 @@ get_auc_donor <- function(dataset = "fb-final",
         x1[, survival := seq(1, 0, length.out = .N), gp]
 
         # Melt so we can use facet_wrap
-        x2 <- x1 |> melt(measure.vars = c("Tsym", "RP"))
+        x2 <- x1 |> melt(measure.vars = c("Tsign", "RP"))
 
         # Censor the data as with the FB data
         tmax <- c(104, 160)
@@ -151,9 +151,9 @@ get_auc_sire <- function(dataset = "fb-final",
         data <- x$data
 
         # Make a copy of the data and add in rows representing t=0, sort times
-        x1 <- data[, .(Tsym = c(0, sort(Tsym, na.last = TRUE)),
-                       RP   = c(0, sort(RP,   na.last = TRUE)),
-                       src = src[c(1, 1:.N)]),
+        x1 <- data[, .(Tsign = c(0, sort(Tsign, na.last = TRUE)),
+                       RP    = c(0, sort(RP,   na.last = TRUE)),
+                       src   = src[c(1, 1:.N)]),
                    .(id, sire, trial)]
 
         setkey(x1, id, sire, trial)
@@ -166,7 +166,7 @@ get_auc_sire <- function(dataset = "fb-final",
 
         # Melt so we can use facet_wrap
         x2 <- melt(x1,
-                   measure.vars = c("Tsym", "RP"))
+                   measure.vars = c("Tsign", "RP"))
 
         # Censor the data as with the FB data
         tmax <- c(104, 160)
@@ -240,8 +240,8 @@ plt_donor <- auc_ |>
                            "1_1" = "Trial 1 Seeder",
                            "2_0" = "Trial 2 Contact",
                            "2_1" = "Trial 2 Seeder"),
-                    variable = c("Tsym" = "Time to symptoms",
-                                 "RP" = "Time from symptoms to death")))
+                    variable = c("Tsign" = "Time to signs",
+                                 "RP" = "Time from signs to death")))
 plt_donor
 
 ggsave(str_glue("datasets/{dataset}/gfx/auc_donor.png"),
@@ -266,8 +266,8 @@ plt_sire <- auc_sire |>
                 labeller = labeller(
                     trial = c("1" = "Trial 1",
                               "2" = "Trial 2"),
-                    variable = c("Tsym" = "Time to symptoms",
-                                 "RP" = "Time from symptoms to death")))
+                    variable = c("Tsign" = "Time to signs",
+                                 "RP" = "Time from signs to death")))
 plt_sire
 
 ggsave(str_glue("datasets/{dataset}/gfx/auc_sire.png"),

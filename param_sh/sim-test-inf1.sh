@@ -5,15 +5,15 @@
 #  use the current working directory: -cwd
 #  runtime limit of 5 minutes: -l h_rt
 #  memory limit of 1 Gbyte: -l h_vmem
-#$ -N sim-test-inf
-#$ -pe sharedmem 8
-#$ -t 1-100
+#$ -N sim-ti1
+#$ -pe sharedmem 16
+#$ -t 1-80
 #$ -R y
 #$ -P roslin_wilson
 #$ -cwd
 #$ -o out
 #$ -e out
-#$ -l h_rt=48:00:00     # <-- ** make sure this is correct!!! **
+#$ -l h_rt=400:00:00     # <-- ** make sure this is correct!!! **
 
 # Initialise the environment modules
 . /etc/profile.d/modules.sh
@@ -24,5 +24,5 @@ module load openmpi/5.0.7
 unset R_HOME
 
 # Run the program
-Rscript batch.R sim-test-inf $SGE_TASK_ID # 2
+Rscript batch.R sim-test-inf1 $SGE_TASK_ID
 

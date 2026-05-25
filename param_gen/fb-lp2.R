@@ -69,8 +69,8 @@ source("param_gen/common2.R")
 common <- list(sim_new_data = "no",
                setup = "fb_12",
                # prior__latent_period__type = "fix",
-               fix_donors = "no_Tsym_survivors",
-               # fix_donors = "time,no_Tsym_survivors",
+               fix_donors = "no_Tsign_survivors",
+               # fix_donors = "time,no_Tsign_survivors",
                # t_demote = "10,80",
                trial_fe = "ildt",
                donor_fe = "ildt",
@@ -82,8 +82,7 @@ common <- list(sim_new_data = "no",
                # expand_priors = 4,
                RP_dist = "gamma",
                # nsample = 1e7,
-               sample_states = 100,
-               ie_output = "true") |>
+               sample_states = 100) |>
     safe_merge(common2)
 
 # Labels

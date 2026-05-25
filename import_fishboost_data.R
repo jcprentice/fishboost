@@ -12,9 +12,9 @@
 #
 # Note that we only know the time individuals become infectious, if there is a
 # latent incubation period, then we are dealing with an SEIR model, and so we
-# actually know "Tsym", not "Tinf". We'll assume these are the same unless we
-# know better (e.g. "donor" individuals that show symptoms several days after
-# the experiment begins should have Tinf = 0).
+# actually know "Tsign", not "Tinf". We'll assume these are the same unless we
+# know better (e.g. "donor" individuals that show signs several days after the
+# experiment begins should have Tinf = 0).
 #
 # I have been using R's data.table package for performance reasons, but this can
 # be easily converted into a data frame or a tibble if preferred.
@@ -46,8 +46,8 @@ import_fishboost_data <- function() {
         4,  "Box", "group",
         9,  "Weight start (g)", "weight",
         8,  "Donor (D) / Receptor (R)", "donor",
-        # 11, "Description of sympthoms", "symptoms",
-        12, "Day of first symptoms", "Tsym",
+        # 11, "Description of sympthoms", "signs",
+        12, "Day of first symptoms", "Tsign",
         13, "Day of death", "Tdeath",
         14, "Parasites", "parasites",
         35, "Days onset symptoms (susceptibility)", "sus",
@@ -102,7 +102,7 @@ import_fishboost_data <- function() {
     # The following columns all contain NA's, therefore are incorrectly
     # interpreted as character vectors. Need to convert to numeric.
     fb[, names(.SD) := map(.SD, ~ as.numeric(fifelse(. == "NA", "", .x))),
-       .SDcols = c("Tsym", "Tdeath", "sus", "res", "tol")]
+       .SDcols = c("Tsign", "Tdeath", "sus", "res", "tol")]
 
 
     # Fix dates ----
@@ -116,8 +116,8 @@ import_fishboost_data <- function() {
     # 2, 2015-01-16, 2015-06-25
     trial_dates <- c(as.Date("2014-10-02"), as.Date("2015-01-16"))
 
-    # Convert Tsym and Tdeath from dates to days since start of trial.
-    fb[, `:=`(Tsym   = as.numeric(as.Date(Tsym,   date0) - trial_dates[trial]),
+    # Convert Tsign and Tdeath from dates to days since start of trial.
+    fb[, `:=`(Tsign  = as.numeric(as.Date(Tsign,  date0) - trial_dates[trial]),
               Tdeath = as.numeric(as.Date(Tdeath, date0) - trial_dates[trial]))]
 
 
@@ -128,43 +128,43 @@ import_fishboost_data <- function() {
     ids_noted_in_masterfile <- c(70, 158, 368, 466, 569, 619, 658)
 
     # Test for ourselves which dates are switched:
-    ids_dates_switched <- fb[Tdeath < Tsym, id]
+    ids_dates_switched <- fb[Tdeath < Tsign, id]
     # check this matches:
     setequal(ids_dates_switched, ids_noted_in_masterfile)
     setdiff(ids_dates_switched, ids_noted_in_masterfile)
     # This shows us that ID 229 also needs fixing
 
-    # To correct this, swap "Tsym" / "Tdeath", "res" / "sus", and negate "tol"
-    fb[id %in% ids_dates_switched, `:=`(Tsym = Tdeath, Tdeath = Tsym)]
-    fb[id %in% ids_dates_switched, `:=`(sus = Tsym, res = Tdeath, tol = Tdeath - Tsym)]
+    # To correct this, swap "Tsign" / "Tdeath", "res" / "sus", and negate "tol"
+    fb[id %in% ids_dates_switched, `:=`(Tsign = Tdeath, Tdeath = Tsign)]
+    fb[id %in% ids_dates_switched, `:=`(sus = Tsign, res = Tdeath, tol = Tdeath - Tsign)]
 
 
     # Individual 858 is reported to have started showing signs *before* the
     # start of the experiment, while 158 and 229 show signs at t = 0. We fix
-    # this by assuming symptoms were shown at t = 1.
-    fb[id %in% c(158, 229, 858), `:=`(Tsym = 1, sus = 1, tol = res - 1)]
+    # this by assuming signs were shown at t = 1.
+    fb[id %in% c(158, 229, 858), `:=`(Tsign = 1, sus = 1, tol = res - 1)]
 
 
 
 
-    # "Tsym" and "Tdeath" should equal "sus" and "res". We need to double check
+    # "Tsign" and "Tdeath" should equal "sus" and "res". We need to double check
     # that is always the case, and fix it where it isn't.
-    fb[, `:=`(check_Tsym = Tsym - sus,
+    fb[, `:=`(check_Tsign = Tsign - sus,
               check_Tdeath = Tdeath - res)]
-    inconsistent_ids <- fb[check_Tsym != 0 | check_Tdeath != 0, id]
+    inconsistent_ids <- fb[check_Tsign != 0 | check_Tdeath != 0, id]
     fb[id %in% inconsistent_ids]
 
     # This identifies some date inconsistencies for IDs 50, 901, 1189, and 1744.
-    # Check those entries in the Masterfile, assume Tsym / Tdeath take
+    # Check those entries in the Masterfile, assume Tsign / Tdeath take
     # precedence unless it's clearly otherwise
-    fb[id %in% inconsistent_ids, `:=`(sus = Tsym, res = Tdeath, tol = Tdeath - Tsym)]
-    fb[, c("check_Tsym", "check_Tdeath") := NULL]
+    fb[id %in% inconsistent_ids, `:=`(sus = Tsign, res = Tdeath, tol = Tdeath - Tsign)]
+    fb[, c("check_Tsign", "check_Tdeath") := NULL]
 
 
     ## Introduce Tinf ----
 
     # Note: we know that the Donors were infected at the start of the
-    # experiment, since Tsym is (almost) never 0, that suggests there is an
+    # experiment, since Tsign is (almost) never 0, that suggests there is an
     # incubation period, and Tinf occurs earlier.
 
     fb[donor == 1, Tinf := 0]
@@ -218,7 +218,7 @@ import_fishboost_data <- function() {
 
     fb_data <- rbind(fb_sires, fb_dams,
                      fb[, .(id, sire, dam, sdp, trial, group, weight, donor,
-                              Tinf, Tsym, Tdeath, parasites)],
+                              Tinf, Tsign, Tdeath, parasites)],
                      fill = TRUE)
 
     # need to fix column order again

@@ -43,10 +43,10 @@ protocol[str_detect(d, "FEs ILDT"),
          `:=`(trial_fe = "ildt", donor_fe = "ildt", txd_fe = "ildt",
               weight_fe = "sildt")]
 
-# All should have no Tsym survivors, but also check more stringent version
+# All should have no Tsign survivors, but also check more stringent version
 protocol[, fix_donors := fcase(str_detect(d, "leave donors"), "",
-                               str_detect(d, "strict donors"), "no_Tsym_survivors,time",
-                               default = "no_Tsym_survivors")]
+                               str_detect(d, "strict donors"), "no_Tsign_survivors,time",
+                               default = "no_Tsign_survivors")]
 
 # Common options ----
 source("param_gen/common2.R")
@@ -70,9 +70,8 @@ common <- list(use_traits = "sit",
                prior__txd_l__val2 = 8,
                prior__txd_d__val1 = -4,
                prior__txd_d__val2 = 4,
-               nsample = 1e4,
-               # sample_states = 100,
-               ie_output = "true") |>
+               nsample = 1e4
+               # sample_states = 100) |>
     safe_merge(common2)
 
 # Labels

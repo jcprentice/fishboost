@@ -60,8 +60,7 @@ common <- list(group_effect = 1.0,
                prior__txd_d__val1 = -4,
                prior__txd_d__val2 = 4,
                nsample = 1e5,
-               sample_states = 1e2,
-               ie_output = "true") |>
+               sample_states = 1e2) |>
     safe_merge(common2)
 
 # Labels

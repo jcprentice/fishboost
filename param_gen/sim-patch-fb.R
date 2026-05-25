@@ -23,17 +23,17 @@ protocol <- rbind(
     data.table(description = "Sim FB1, fb-parasites4-1, FEs ILDT",
                setup = "fb_1",
                patch_name = "scen-1-1"),
-    
+
     data.table(description = "Sim FB1, fb-parasites4-2, FEs ILDT",
                setup = "fb_2",
                patch_name = "scen-2-1"),
-    
+
     data.table(description = "Sim FB1+2, fb-parasites4-3, FEs ILDT",
                setup = "fb_12",
                trial_fe = "ildt",
                txd_fe = "ildt",
                patch_name = "scen-3-1"),
-    
+
     fill = TRUE
 )
 
@@ -80,7 +80,7 @@ params$sim_link_shapes <- "ldt"
 params$link_trial <- "sildt"
 params$link_donor <- "sildt"
 params$link_shapes <- "ldt"
-params$pass_events <- "Tsym,Tdeath"
+params$pass_events <- "Tsign,Tdeath"
 params$seed <- if (goal == "convergence") 0 else -1
 params$nchains <- if (goal == "convergence") 16 else 4
 params$phi <- 1.0

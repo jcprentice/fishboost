@@ -8,13 +8,13 @@
     source("rename_pars.R")
 }
 
-# Take the BICI state files and create an `etc.rds` file that contains all the
+# Take the BICI state files and create an `summary.rds` file that contains all the
 # parameters and traits in a data.table for easy access.
 
 # bici_cmd: where do the output of BICI's simulations come from?
-# "inf": look for all 'state_<n>.txt' files, and save to 'etc.rds'
-# "sim": look for all 'state_<n>.txt' files, and save to 'etc-sim.rds'
-# "post-sim": look for a single 'state.txt' file and save to 'etc-ps.rds'
+# "inf": look for all 'state_<n>.txt' files, and save to 'summary-inf.rds'
+# "sim": look for all 'state_<n>.txt' files, and save to 'summary-sim.rds'
+# "post-sim": look for a single 'state.txt' file and save to 'summary-ps.rds'
 
 flatten_bici_states <- function(params) {
     if (FALSE) {
@@ -50,13 +50,13 @@ flatten_bici_states <- function(params) {
     }
 
     # Read first file to get positions of each state contained within
-    lines <- readLines(files[[1]])
+    lines <- readLines(files[[1L]])
 
     # The top of the file contains the map of name:id. Transitions and IEs both
     # give `name`, where we want `id`, so just sub in `ids` where appropriate.
     idsect <- str_which(lines, "[{}]")
-    ids <- lines[seq(idsect[[1]] + 1, idsect[[2]] - 1)] |>
-        str_subset("#|Time|timepoint|index", negate = TRUE) |>
+    ids <- lines[seq(idsect[[1]] + 4, idsect[[2]] - 1)] |>
+        # str_subset("#|Time|timepoint|index", negate = TRUE) |>
         str_squish() |>
         str_split_i(":", 2) |>
         as.integer()
@@ -75,7 +75,7 @@ flatten_bici_states <- function(params) {
     # This will read all the lines between headers n and n+1
     get_section <- function(lines, headers, name) {
         n <- str_which(lines[headers], name)
-        lines[seq(headers[[n]] + 1, headers[[n + 1]] - 1)]
+        lines[seq(headers[[n]] + 1L, headers[[n + 1]] - 1L)]
     }
 
     parts <- c("parameters", "popn")
@@ -83,12 +83,17 @@ flatten_bici_states <- function(params) {
     t_start <- as.integer(now())
 
     out2 <- map(files, \(f) {
-        # f <- files[[1]]
+        if (FALSE) {
+            f <- files[[1]]
+        }
 
         lines <- readLines(f)
 
         out1 <- map(seq_len(nstates), \(i) {
-            # i <- 1
+            if (FALSE) {
+                i <- 1
+            }
+
             lines1 <- lines[seq(state_lines[[i]] + 2,
                                 state_lines[[i + 1]] - 2)]
 
@@ -105,15 +110,19 @@ flatten_bici_states <- function(params) {
                            length(p_lines) + 1L)
 
             parameters <- map(seq_len(length(p_headers) - 1), \(j) {
-                # j <- 1
+                if (FALSE) {
+                    j <- 1
+                }
+
                 phj  <- p_headers[[j]]
                 phj1 <- p_headers[[j + 1]]
 
                 par <- p_lines[phj] |> str_split_i("\"", 2)
 
                 if (phj1 - phj > 1) {
-                    p_tab <- fread(text = p_lines[seq(phj, phj1 - 1)] |>
-                                       str_replace_all("\\.,", ","))
+                    p_tab <- p_lines[seq(phj, phj1 - 1)] |>
+                        str_replace_all("\\.,", ",") |>
+                        fread(text = _)
                     if (str_detect(par, "Omega")) {
                         GE <- str_split_i(par, "\\^", 2) |> str_1st() |> str_to_upper()
                         m <- t(p_tab)
@@ -128,7 +137,7 @@ flatten_bici_states <- function(params) {
                     } else if ("g" %in% names(p_tab)) {
                         p_tab[, parameter := str_c(par, "_", g)]
                     } else if ("c" %in% names(p_tab)) {
-                        p_tab[, parameter := str_c(par, "_", b, "," ,c)]
+                        p_tab[, parameter := str_c(par, "_", b, "," , c)]
                     } else {
                         p_tab[, parameter := str_c(par, "_", b)]
                     }
@@ -161,24 +170,29 @@ flatten_bici_states <- function(params) {
                 str_split_i(ev, ":", 2) |> as.numeric()
             }
 
-            transitions <- fread(text = t_lines)[, .(id = ids, events)]
+            transitions <- fread(text = t_lines)[, .(index, events)]
+
             iwalk(transitions$events, \(event, j) {
-                # j <- 1; event <- transitions$events[[j]]
+                if (FALSE) {
+                    j <- 6
+                    event <- transitions$events[[j]]
+                }
+
                 events <- str_split_1(event, " ")
                 switch(params$model_type,
                        "SEIDR" = {
-                           set(transitions, j, c("Tinf", "Tinc", "Tsym", "Tdeath"),
+                           set(transitions, j, c("Tinf", "Tinc", "Tsign", "Tdeath"),
                                list(Tinf = get_event(events, "S->E"),
                                     Tinc = get_event(events, "E->I"),
-                                    Tsym = get_event(events, "I->D"),
+                                    Tsign = get_event(events, "I->D"),
                                     Tdeath = get_event(events, "D->R")))
                        }, "SIDR" = {
-                           set(transitions, j, c("Tinf", "Tsym", "Tdeath"),
+                           set(transitions, j, c("Tinf", "Tsign", "Tdeath"),
                                list(Tinf = get_event(events, "S->I"),
-                                    Tsym = get_event(events, "I->D"),
+                                    Tsign = get_event(events, "I->D"),
                                     Tdeath = get_event(events, "D->R")))
                        }, "SEIR" = {
-                           set(transitions, j, c("Tinf", "Tsym", "Tdeath"),
+                           set(transitions, j, c("Tinf", "Tsign", "Tdeath"),
                                list(Tinf = get_event(events, "S->E"),
                                     Tinc = get_event(events, "E->I"),
                                     Tdeath = get_event(events, "I->R")))
@@ -188,10 +202,40 @@ flatten_bici_states <- function(params) {
                                     Tdeath = get_event(events, "I->R")))
                        }
                 )
-            })
-            transitions[, events := NULL]
-            popn <- merge(base_popn, transitions, by = "id", all = TRUE)
 
+                if (str_detect(events[[1]], "ENT_INF")) {
+                    set(transitions, j, c("infected_by", "generation"), list(0L, 1L))
+                } else if (length(events) > 1) {
+                    inf_by <- str_extract(events[[2]], "\\[(.*)\\]", group = 1)
+                    if (inf_by %notin% c(NA, "")) {
+                        set(transitions, j, "infected_by", as.integer(inf_by))
+                    }
+                }
+            })
+
+            # This is typically 15
+            max_secondaries <- with(params, group_size - I0)
+
+            get_gen <- function(id, g = 1L) {
+                # message(strrep(" ", g), id)
+                inf_by <- transitions[index == id, infected_by]
+                if (g > max_secondaries) stop("impossible!")
+                else if (is.na(inf_by)) NA_integer_
+                else if (inf_by == 0) g
+                else get_gen(inf_by, g + 1L)
+            }
+
+            if ("infected_by" %in% names(transitions)) {
+                transitions[, generation := get_gen(index), .I]
+                transitions[, events := NULL]
+                transitions[, index := ids[index + 1L]]
+                transitions[infected_by != 0, infected_by := ids[infected_by + 1L]]
+            }
+
+            setnames(transitions, "index", "id")
+            # setorder(transitions, id)
+
+            popn <- merge(base_popn, transitions, by = "id", all = TRUE)
 
             if (params$use_traits %notin% c("none", "", NA)) {
                 i_lines <- get_section(lines1, headers, "INDIVIDUALS") |>
@@ -208,9 +252,9 @@ flatten_bici_states <- function(params) {
                              skip_absent = TRUE) |>
                     setorder(id)
 
-                # inf returns LN dist'd IEs, need to rescale them
+                # BICI returns IEs on the exponential scale, need to reduce them
                 if (ies[, min(.SD) > 0, .SDcols = -1]) {
-                    ies[, names(.SD) := map(.SD, ~ log(.x) + var(log(.x)) / 2), .SDcols = -1]
+                    ies[, names(.SD) := map(.SD, log), .SDcols = -1]
                 }
             } else {
                 cols <- names(res$popn) |>
@@ -228,7 +272,8 @@ flatten_bici_states <- function(params) {
 
             popn <- merge(popn, ies, by = "id", all = TRUE)
 
-            cat(".", file = stderr())
+
+            cat(if (i %% 10 == 0) i else ".", file = stderr())
 
             mget(parts)
         })
@@ -252,7 +297,7 @@ flatten_bici_states <- function(params) {
     })
 
 
-    f <- str_glue("{out_dir}/etc{x}.rds",
+    f <- str_glue("{out_dir}/summary{x}.rds",
                   x = switch(bici_cmd,
                              "inf" = "_inf",
                              "sim" = "_sim",

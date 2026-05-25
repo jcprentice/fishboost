@@ -13,7 +13,7 @@ common2 <- list(
     use_weight = "log", weight_is_nested = TRUE,
     cov_prior = list(type = "default", vals = c()),
     single_prior = "inverse",
-    pass_events = "Tsym,Tdeath", time_step = 1,
+    pass_events = "Tsign,Tdeath", time_step = 1,
     # seed = if (goal == "convergence") 0 else -1,
     nchains = if (goal == "convergence") 16 else 4,
     nsample = 1e6, burnprop = 0.2, thinto = 1e4,

@@ -21,19 +21,19 @@ dataset <- "sim-final"
 protocol <- rbind(
     data.table(description = "FB Trial 1+2, FEs ILDT, Weight nested", # 1
                patch_name = "scen-1-1"),
-    
+
     data.table(description = "FB Trial 1+2, FEs ILDT, Weight nested, GRM", # 2
                patch_name = "scen-2-1",
                nsample = 1e6L, burnin = 2e5L, thin = 1e2L, nsample_per_gen = 2500L,
                use_grm = "Hinv"),
-    
+
     # data.table(description = "FB Trial 1+2, FEs ILDT, Weight nested, GRM", # 12
     #            use_grm = "Hinv",
     #            nsample = 5e6,
     #            burnin = 1e6,
     #            thin = 5e2,
     #            nsample_per_gen = 1.25e3),
-    
+
     fill = TRUE
 )
 
@@ -49,7 +49,7 @@ protocol[, `:=`(sim_new_data = "r",
                 weight_fe = "sildt",
                 weight_is_nested = TRUE,
                 use_traits = "sit",
-                fix_donors = "no_Tsym_survivors",
+                fix_donors = "no_Tsign_survivors",
                 use_weight = "log",
                 # use_grm = "",
                 group_effect = 0.1,
@@ -58,7 +58,6 @@ protocol[, `:=`(sim_new_data = "r",
                 expand_priors = 5,
                 RP_dist = "gamma",
                 sample_states = 0,
-                ie_output = "true",
                 time_step = 1)]
 
 # expand_priors must be moved to before any other priors
@@ -103,7 +102,7 @@ params$sim_link_shapes <- "ldt"
 params$link_trial <- "sildt"
 params$link_donor <- "sildt"
 params$link_shapes <- "ldt"
-params$pass_events <- "Tsym,Tdeath"
+params$pass_events <- "Tsign,Tdeath"
 params$seed <- if (goal == "convergence") 0 else -1
 params$nchains <- if (goal == "convergence") 16 else 4
 params$phi <- 1.0

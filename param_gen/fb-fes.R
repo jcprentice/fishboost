@@ -47,7 +47,7 @@ protocol[, weight_is_nested := str_detect(d, "Weight nested")]
 source("param_gen/common2.R")
 
 common <- list(use_traits = "sit",
-               fix_donors = "no_Tsym_survivors",
+               fix_donors = "no_Tsign_survivors",
                use_weight = "log",
                # use_grm = "",
                group_effect = 0.1,
@@ -57,8 +57,7 @@ common <- list(use_traits = "sit",
                RP_dist = "gamma",
                nsample = 1e6,
                burnprop = 0.2,
-               sample_states = 100,
-               ie_output = "true") |>
+               sample_states = 100) |>
     safe_merge(common2)
 
 # Labels

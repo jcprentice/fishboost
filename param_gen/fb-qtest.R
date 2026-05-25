@@ -74,10 +74,9 @@ common <- list(use_grm = "HG_inv",
                `prior__detection_period_Tr2,Don__val1` = 50,
                `prior__detection_period_Tr2,Rec__val2` = 10,
                `prior__removal_period_Tr2,Don__val1` = 10,
-               fix_donors = "no_Tsym_survivors",
+               fix_donors = "no_Tsign_survivors",
                nsample = 2e5,
-               sample_states = 1e2,
-               ie_output = "true") |>
+               sample_states = 1e2) |>
     safe_merge(common2)
 
 # Labels

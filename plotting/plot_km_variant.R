@@ -6,11 +6,11 @@
 }
 
 plot_km_variant <- function(data_list,
-                            KM_measure = "Tsym",
+                            KM_measure = "Tsign",
                             KM_var = "sire",
                             trials = 12) {
-    
-    # data_list <- km_data[[1]]; KM_measure <- "Tsym"; KM_var <- "sire"; trials <- 12
+
+    # data_list <- km_data[[1]]; KM_measure <- "Tsign"; KM_var <- "sire"; trials <- 12
 
     # Extract parts from data_list
     params       <- data_list$params
@@ -55,16 +55,16 @@ plot_km_variant <- function(data_list,
     wt_str <- if (apply_gammas) "gamma" else "exponential"
 
     KMm_str <- switch(KM_measure,
-                      "Tsym" = "Time to symptoms",
+                      "Tsign"  = "Time to signs",
                       "Tdeath" = "Time to death",
-                      "RP" = "Survival after symptoms",
+                      "RP"     = "Survival after signs",
                       "Measure")
     KMv_str <- switch(KM_var,
                       "sire" = "family",
                       "group" = "tank",
                       "group")
     KM_xlim <- switch(KM_measure,
-                      "Tsym" = 300,
+                      "Tsign" = 300,
                       "Tdeath" = 300,
                       "RP" = 150,
                       max(data_t0$KM))

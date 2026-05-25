@@ -58,7 +58,7 @@ generate_km_data_bici <- function(dataset = "fb-test",
 
     data <- data[sdp == "progeny"]
     data[, sdp := NULL]
-    data[, RP := Tdeath - Tsym]
+    data[, RP := Tdeath - Tsign]
     setcolorder(data, "RP", after = "Tdeath")
 
     list(data = data,

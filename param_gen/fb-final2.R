@@ -54,7 +54,7 @@ protocol[, nsample_per_gen := pmax(3e-3 * nsample, 1)]
 
 # Fix Seeders
 protocol[str_detect(d, "Fix Seeders"),
-         `:=`(fix_donors = "time,no_Tsym_survivors", t_demote = 10, fix_eq_time = TRUE)]
+         `:=`(fix_donors = "time,no_Tsign_survivors", t_demote = 10, fix_eq_time = TRUE)]
 
 
 # Common options ----
@@ -72,8 +72,7 @@ common <- list(setup = "fb_12",
                prior__latent_period__type = "fix",
                prior__latent_period__val2 = 5,
                RP_dist = "gamma",
-               sample_states = 100,
-               ie_output = "true") |>
+               sample_states = 100) |>
     safe_merge(common2)
 
 # Labels

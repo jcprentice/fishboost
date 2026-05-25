@@ -9,9 +9,9 @@ plot_km <- function() {
         sdp == "progeny", .(trial = factor(trial),
                             # this ensures groups are properly separated
                             group = factor(sprintf("%02d_%02d", trial, sire)),
-                            Tsym,
-                            RP = Tdeath - Tsym)] |>
-        melt(measure.vars = c("Tsym", "RP"),
+                            Tsign,
+                            RP = Tdeath - Tsign)] |>
+        melt(measure.vars = c("Tsign", "RP"),
              variable.name = "var",
              value.name = "time") |>
         setorder(group)
@@ -41,11 +41,11 @@ plot_km <- function() {
         labs(x = "Time (days)",
              y = "Proportion",
              title = NULL) +
-        facet_wrap(. ~ var,
+        facet_wrap(vars(var),
                    nrow = 1,
                    labeller = labeller(
-                       var = c(Tsym = "Proportion of family with no symptoms vs time",
-                               RP   = "Proportion of family surviving vs time"))) +
+                       var = c(Tsign = "Proportion of family with no signs vs time",
+                               RP    = "Proportion of family surviving vs time"))) +
         theme_bw() +
         easy_all_text_size(16) +
         theme(panel.background = element_blank(),

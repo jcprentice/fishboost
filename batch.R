@@ -20,7 +20,7 @@ if (run_from_script) {
     pname <- cmd_args[[1]]
     row_no <- as.integer(cmd_args[[2]])
 } else {
-    pname <- "sim-r0"
+    pname <- "sim-test-inf1"
     row_no <- 1L
 }
 
@@ -214,7 +214,7 @@ if (params$sim_new_data %in% c("r", "bici")) {
     params$tmax <- c(t1 = 104, t2 = 160)
 
     # FB only has the last 2 events
-    params$pass_events <- c("Tsym", "Tdeath")
+    params$pass_events <- c("Tsign", "Tdeath")
 } else {
     rf <- with(params, str_glue("datasets/{patch_dataset}/data/",
                                 "{patch_name}-out/{sim_new_data}.rds"))
@@ -332,7 +332,7 @@ bici_txt <- generate_bici_script(popn, params)
         saveRDS(file = str_glue("{results_dir}/{name}.rds"))
 
     # Generate summary_{inf,sim,ps}.rds summary file
-    flatten_bici_states(params)
+    etc <- flatten_bici_states(params)
 }
 
 message("Finished!")

@@ -10,53 +10,26 @@
 
 # Are we testing convergence or coverage?
 # (Coverage only makes sense with simulated data.)
-n <- 1
+n <- 2
 goal <- c("convergence", "coverage")[[n]]
 message("Goal = ", goal)
 
-dataset <- "sim-var"
+dataset <- "sim-r0"
 
 # Variable parameters ----
 protocol <- rbind(
     # Basic models
-    data.table(d = "FB_1_rpw, GEV none, Cors 0"), # 1
-    data.table(d = "FB_1_rpw, GEV S,    Cors 0"), # 2
-    data.table(d = "FB_1_rpw, GEV I,    Cors 0"), # 3
-    data.table(d = "FB_1_rpw, GEV T,    Cors 0"), # 4
-    data.table(d = "FB_1_rpw, GEV SI,   Cors 0"), # 5
-    data.table(d = "FB_1_rpw, GEV ST,   Cors 0"), # 6
-    data.table(d = "FB_1_rpw, GEV IT,   Cors 0"), # 7
-    data.table(d = "FB_1_rpw, GEV SIT,  Cors 0"), # 8
-
-    data.table(d = "FB_1_rpw, GEV none, Cors 0.3"), # 9
-    data.table(d = "FB_1_rpw, GEV S,    Cors 0.3"), # 10
-    data.table(d = "FB_1_rpw, GEV I,    Cors 0.3"), # 11
-    data.table(d = "FB_1_rpw, GEV T,    Cors 0.3"), # 12
-    data.table(d = "FB_1_rpw, GEV SI,   Cors 0.3"), # 13
-    data.table(d = "FB_1_rpw, GEV ST,   Cors 0.3"), # 14
-    data.table(d = "FB_1_rpw, GEV IT,   Cors 0.3"), # 15
-    data.table(d = "FB_1_rpw, GEV SIT,  Cors 0.3"), # 16
+    data.table(d = "FB_1_rpw, GEV SIT, Weight SIT, Fit s1"),                 # 1
+    data.table(d = "FB_1_rpw, GEV SIT, Weight SIT, Fit s1, Select sus 0.2"), # 2
+    data.table(d = "FB_1_rpw, GEV SIT, Weight SIT, Fit s1, Select inf 0.2"), # 3
+    data.table(d = "FB_1_rpw, GEV SIT, Weight SIT, Fit s1, Select tol 0.2"), # 4
+    data.table(d = "FB_1_rpw, GEV SIT, Weight SIT, Fit s1, Select r0 0.2"),  # 5
 
     fill = TRUE
 )
 
-# Setup
-protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
-
-# Handle Genetic & Environmental Variance (GEV)
-protocol[, GEV := get_part(d, "GEV") |> str_to_lower(), .I]
-protocol[, use_traits := GEV]
-protocol[GEV == "sittt", `:=`(use_traits = "sildt", link_traits = "sittt")]
-protocol[, GEV := NULL]
-
-# Handle GRM
-protocol[, traits_source := "pedigree"]
-
-
-# Vars and Cors
-protocol[, `:=`(vars = list(list(default = 0.5)),
-                cors = list(list(default = 0)))]
-protocol[str_detect(d, "Cors 0.3"), cors := list(list(default = 0.3))]
+protocol[, `:=`(select_on = get_part(d, "Select", 2),
+                select_top = get_part(d, "Select", 3) |> as.numeric()), .I]
 
 
 
@@ -64,27 +37,27 @@ protocol[str_detect(d, "Cors 0.3"), cors := list(list(default = 0.3))]
 source("param_gen/common2.R")
 
 common <- list(sim_new_data = "bici",
+               setup = "fb_12_single",
+               use_grm = "pedigree",
+               trans_tree = "on",
+               traits_source = "pedigree",
                model_type = "SEIDR",
-               use_grm = "pedigree", # "HG_inv",
-               # setup = "fb_12_rpw",
+               use_traits = "sit",
+               link_traits = "sildt",
                inf_model = 4L,
                traits_source = "none",
                use_weight = "log",
                weight_fe = "sit",
                weight_is_nested = TRUE,
-               # expand_priors = 4,
-               group_effect = 0.05,
+               group_effect = -1,
                patch_dataset = "fb-test",
                patch_name = "scen-1-1",
                patch_type = "median",
                patch_state = FALSE,
-               skip_patches = "cov",
-               # skip_patches = "beta", # "cov,base,beta",
-               # cors <- c(si = -0.3, sl = 0.2, sd = 0.2, st = -0.3, il = 0.2,
-               #           id =  0.2, it = 0.3, ld = 0.2, lt =  0.2, dt =  0.2),
-               # latent_periods = 10,
-               # detection_periods = 20,
-               # removal_periods = 10,
+               I0 = 1,
+               # prior__beta_Tr1__true_val = 3,
+               # prior__beta_Tr2__true_val = 3,
+               # skip_patches = "beta",
                trial_fe = "ildt",
                donor_fe = "ildt",
                txd_fe = "ildt",
@@ -92,7 +65,7 @@ common <- list(sim_new_data = "bici",
                censor = 0.8,
                nsample = 1e4,
                sample_states = 100,
-               nreps = 20,
+               nreps = 50,
                time_step_bici = 0.2) |>
     safe_merge(common2)
 
@@ -107,7 +80,7 @@ protocol[, d := str_c(str_squish(d), ", ", goal)] |>
 
 
 ## Add replicates ----
-n_replicates <- if (goal == "convergence") 1 else 20
+n_replicates <- if (goal == "convergence") 1 else 50
 protocol[, scenario := .I]
 protocol <- protocol[rep(1:.N, each = n_replicates)]
 protocol[, replicate := 1:.N, scenario]
@@ -128,3 +101,4 @@ message(str_glue("Protocol file '{dataset}' has:",
 saveRDS(list(protocol = protocol,
              common = common),
         file = str_glue("param_sets/{dataset}.rds"))
+

@@ -59,9 +59,8 @@ common <- list(weight_is_nested = TRUE,
                prior__txd_d__val1 = -4,
                prior__txd_d__val2 = 4,
                RP_dist = "gamma",
-               nsample = 1e5,
-               # sample_states = 100,
-               ie_output = "true") |>
+               nsample = 1e5
+               # sample_states = 100) |>
     safe_merge(common2)
 
 # Labels

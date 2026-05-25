@@ -20,7 +20,7 @@ basic_km <- function(popn, params) {
     }
 
 
-    cols <- intersect(c("sire", "trial", "donor", "Tinf", "Tsym", "Tdeath"),
+    cols <- intersect(c("sire", "trial", "donor", "Tinf", "Tsign", "Tdeath"),
                       names(popn))
 
     x <- popn[sdp == "progeny", ..cols]
@@ -29,23 +29,23 @@ basic_km <- function(popn, params) {
     x <- x[N >= 10]
     x[, N := NULL]
 
-    if ("Tsym" %notin% names(x)) {
-        x[, Tsym := Tinf]
+    if ("Tsign" %notin% names(x)) {
+        x[, Tsign := Tinf]
     }
 
-    x[, RP := Tdeath - Tsym]
-    x[is.na(Tsym), Tsym := Tdeath]
+    x[, RP := Tdeath - Tsign]
+    x[is.na(Tsign), Tsign := Tdeath]
 
     sv_curve <- function(x) c(0, sort(x, na.last = TRUE))
 
     x1 <- x[, .(donor = fifelse(any(donor == 1), "donor", "recip"),
-                Tsym  = sv_curve(Tsym),
+                Tsign = sv_curve(Tsign),
                 RP    = sv_curve(RP)),
             .(sire, trial)]
     x1[, grp := .GRP, .(sire, trial)]
     x1[, survival := seq(1, 0, length.out = .N), grp]
 
-    x2 <- melt(x1, measure.vars = c("Tsym", "RP"),
+    x2 <- melt(x1, measure.vars = c("Tsign", "RP"),
                value.name = "time")
 
     plt <- ggplot(x2, aes(x = time, y = survival, colour = donor, group = grp)) +
@@ -61,9 +61,9 @@ basic_km <- function(popn, params) {
                    cols = vars(variable),
                    scales = "free_x",
                    labeller = labeller(
-                       variable = c(Tinf = "Proportion of family uninfected vs time",
-                                    Tsym = "Proportion of family with no symptoms vs time",
-                                    RP   = "Proportion of family surviving vs time"),
+                       variable = c(Tinf  = "Time of infection",
+                                    Tsign = "Time to first signs",
+                                    RP    = "Period from signs to death"),
                        trial = c("1" = "Trial 1",
                                  "2" = "Trial 2"))) +
         theme_bw() +

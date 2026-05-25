@@ -24,13 +24,13 @@ protocol <- rbind(
                setup = "fb_1",
                donor_fe = "idr",
                weight_fe = "sidr"),
-    
+
     data.table(description = "FB Trial 2, FEs IDR, Weight", # 6
                patch_name = "scen-6-1",
                setup = "fb_2",
                donor_fe = "idr",
                weight_fe = "sidr"),
-    
+
     data.table(description = "FB Trial 1+2, FEs IDR, Weight", # 7
                patch_name = "scen-7-1",
                setup = "fb_12",
@@ -39,7 +39,7 @@ protocol <- rbind(
                txd_fe = "idr",
                weight_fe = "sidr",
                weight_is_nested = FALSE),
-    
+
     data.table(description = "FB Trial 1+2, FEs IDR, Weight nested", # 8
                patch_name = "scen-8-1",
                setup = "fb_12",
@@ -48,7 +48,7 @@ protocol <- rbind(
                txd_fe = "idr",
                weight_fe = "sidr",
                weight_is_nested = TRUE),
-    
+
     data.table(description = "FB Trial 1+2, FEs IDR, Weight nested", # 8
                patch_name = "scen-8-1",
                setup = "fb_12",
@@ -58,7 +58,7 @@ protocol <- rbind(
                weight_fe = "sidr",
                weight_is_nested = TRUE,
                censor = 0.8),
-    
+
     data.table(description = "FB Trial 1+2, FEs IDR, Weight nested", # 8
                patch_name = "scen-8-1",
                setup = "fb_12",
@@ -68,7 +68,7 @@ protocol <- rbind(
                weight_fe = "sidr",
                weight_is_nested = TRUE,
                censor = 0.6),
-    
+
     fill = TRUE
 )
 
@@ -79,7 +79,7 @@ protocol[, `:=`(patch_dataset = "fb-fes3",
                 traits_source = "posterior"
                 patch_type = "mean",
                 use_traits = "sit",
-                fix_donors = "no_Tsym_survivors",
+                fix_donors = "no_Tsign_survivors",
                 use_weight = "log",
                 use_grm = "",
                 group_effect = 0.1,
@@ -88,7 +88,6 @@ protocol[, `:=`(patch_dataset = "fb-fes3",
                 expand_priors = 3,
                 RP_dist = "gamma",
                 sample_states = 100,
-                ie_output = "true",
                 time_step = 1)]
 
 # expand_priors must be moved to before any other priors
@@ -135,7 +134,7 @@ params$sim_link_shapes <- "ldt"
 params$link_trial <- "sildt"
 params$link_donor <- "sildt"
 params$link_shapes <- "ldt"
-params$pass_events <- "Tsym,Tdeath"
+params$pass_events <- "Tsign,Tdeath"
 params$seed <- if (goal == "convergence") 0 else -1
 params$nchains <- if (goal == "convergence") 16 else 4
 params$phi <- 1.0

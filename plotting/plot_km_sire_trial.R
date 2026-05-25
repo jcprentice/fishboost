@@ -14,7 +14,7 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
         data     <- copy(km_data[[i]]$data)
         params   <- km_data[[i]]$params
         opts     <- km_data[[i]]$opts
-        plotopts <- c("keep_small_groups", "extreme_sires", "drop_donors",
+        plotopts <- c("keep_small_groups", "extremes", "drop_donors",
                       "mean", "fb_only", "ribbon", "t1", "t2")[c(4, 6)]
         DEBUG    <- TRUE
     } else {
@@ -67,12 +67,12 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
 
     tmax <- params$tmax
 
-    # If Tsym is missing but Tdeath is not, then let Tsym = Tdeath, otherwise
+    # If Tsign is missing but Tdeath is not, then let Tsign = Tdeath, otherwise
     # set to tmax + 1 (lines should extend past the edge of the figure)
-    data[is.na(Tsym), Tsym := fifelse(!is.na(Tdeath), Tdeath, tmax[trial] + 1)]
-    # RP can be extended from Tsym to tmax + 1 if Tdeath is missing
-    data[, RP := Tdeath - Tsym]
-    data[is.na(RP), RP := tmax[trial] - Tsym]
+    data[is.na(Tsign), Tsign := fifelse(!is.na(Tdeath), Tdeath, tmax[trial] + 1)]
+    # RP can be extended from Tsign to tmax + 1 if Tdeath is missing
+    data[, RP := Tdeath - Tsign]
+    data[is.na(RP), RP := tmax[trial] - Tsign]
     data[, RP := pmax(RP, 0)]
 
     if ("drop_donors" %in% plotopts) {
@@ -87,10 +87,10 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
     data_t0 <- data[!is.na(sire),
                     .(donor = fifelse(any(donor == 1), 1, 0),
                       survival = seq(1, 0, length.out = .N + 1),
-                      Tinf = sv_curve(Tinf),
-                      Tsym = sv_curve(Tsym),
-                      RP   = sv_curve(RP),
-                      src = c(first(src), src)),
+                      Tinf  = sv_curve(Tinf),
+                      Tsign = sv_curve(Tsign),
+                      RP    = sv_curve(RP),
+                      src   = c(first(src), src)),
                     .(id, sire, trial)] |>
         setorder(id, sire, trial)
 
@@ -104,13 +104,13 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
         data_t0[, gp := .GRP, .(id, sire, trial, donor)]
     }
 
-    if ("extreme_sires" %in% plotopts) {
-        if (DEBUG) message("- Keeping only extreme sires")
-        foo <- data_t0[id == last(id), .(sire, trial, donor, Tsym)]
+    if ("extremes" %in% plotopts) {
+        if (DEBUG) message("- Keeping only extremes")
+        foo <- data_t0[id == last(id), .(sire, trial, donor, Tsign)]
         # Filter out any sires with fewer than 5 non-NA values
-        foo[, p := .N - sum(is.na(Tsym)), .(sire, trial)]
+        foo[, p := .N - sum(is.na(Tsign)), .(sire, trial)]
         foo <- foo[p > 5]
-        foo1 <- foo[, .(mu = mean(Tsym, na.rm = TRUE)),
+        foo1 <- foo[, .(mu = mean(Tsign, na.rm = TRUE)),
                     .(sire, trial, donor)] |>
             setorder(trial, sire, mu)
         # foo1[, donor := fifelse(sire %in% donor_sires, 1L, 0L)]
@@ -125,7 +125,7 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
 
     # Melt so we can use facet_wrap
     data_t1 <- melt(data_t0,
-                    measure.vars = c("Tinf", "Tsym", "RP"),
+                    measure.vars = c("Tinf", "Tsign", "RP"),
                     value.name = "time") |>
         setcolorder("survival", after = "time")
 
@@ -141,7 +141,7 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
     },
     .(id, sire, trial, donor, src, gp, variable)]
 
-    data_t2[variable == "Tsym" | (variable == "RP" & src == "sim"),
+    data_t2[variable == "Tsign" | (variable == "RP" & src == "sim"),
             survival := nafill(survival, type = "locf")]
     data_t2[, tmp := seq(.N), id]
     ids_to_keep <- data_t2[src == "fb" & !is.na(survival), tmp]
@@ -153,7 +153,7 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
     # Apply means and HDI
     if ("mean" %in% plotopts) {
         if (DEBUG) message("- Reducing to mean of simulated curves")
-        data_t2a <- if ("extreme_sires" %in% plotopts) {
+        data_t2a <- if ("extremes" %in% plotopts) {
             data_t2[, .(es = first(es),
                         survival = mean(survival),
                         hdi1 = hdi(survival)[["lower"]],
@@ -210,7 +210,7 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
         "sim_r",    "Simulation Contact",      "#A6CEE3"
     )
 
-    if ("extreme_sires" %notin% plotopts) {
+    if ("extremes" %notin% plotopts) {
         scm[, labels := str_remove(labels, " high| low")]
     }
 
@@ -246,15 +246,15 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
              #linewidth = "Source",
              x = "Time (days)",
              y = "Proportion",
-             title = str_glue("KM by family (sires), {opts$post}"),
+             title = str_glue("KM by sire family, {opts$post}"),
              subtitle = str_glue("{params$dataset}/{params$label}: {description}")) +
         facet_grid(cols = vars(variable),
                    rows = vars(trial),
                    scales = "free_x",
                    labeller = labeller(
-                       variable = c(Tinf = "Proportion of family uninfected vs time",
-                                    Tsym = "Proportion of family with no symptoms vs time",
-                                    RP   = "Proportion of family surviving vs time"),
+                       variable = c(Tinf  = "Time to infection",
+                                    Tsign = "Time to visual signs",
+                                    RP    = "Time from visual signs to death"),
                        trial = c("1" = "Trial 1",
                                  "2" = "Trial 2"))) +
         theme_bw() +
