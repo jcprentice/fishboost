@@ -46,7 +46,7 @@ plot_km_sire_trial <- function(data_list, plotopts = NULL) {
         str_flatten_comma()
 
     # Choose between actual Tinfs and SIRE's inferred values for FB data
-    if ("use_sire_Tinfs" %in% plotopts && "Tinf_sire" %in% names(data)) {
+    if ("use_inferred_Tinfs" %in% plotopts && "Tinf_sire" %in% names(data)) {
         if (DEBUG) message("- Using sire Tinfs")
         # data[src == "fb", Tinf := Tinf_sire]
         Tinf_names <- str_c("Tinf_sire_", seq_len(opts$n_plots))

@@ -19,7 +19,7 @@ km_plots <- function(dataset = "fb-test",
                                  post = "sample"),
                      plotopts = c("keep_small_groups",
                                   "drop_donors",
-                                  "use_sire_Tinfs",
+                                  "use_inferred_Tinfs",
                                   "t1", "t2")[0]) {
 
     if (FALSE) {
