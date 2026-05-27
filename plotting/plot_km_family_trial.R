@@ -10,7 +10,7 @@ plot_km_family_trial <- function(data_list, plotopts = NULL) {
 
     if (FALSE) {
         km_data  <- readRDS("datasets/fb-test/meta/km_data_ps.rds")
-        i        <- 7
+        i        <- 2
         data     <- copy(km_data[[i]]$data)
         params   <- km_data[[i]]$params
         opts     <- km_data[[i]]$opts
@@ -25,7 +25,7 @@ plot_km_family_trial <- function(data_list, plotopts = NULL) {
     }
 
     if ("mean" %notin% plotopts) {
-        plotops <- setdiff(plotopts, "ribbon")
+        plotopts <- setdiff(plotopts, "ribbon")
     }
 
     if ("fb_only" %in% plotopts) {
@@ -33,45 +33,45 @@ plot_km_family_trial <- function(data_list, plotopts = NULL) {
         data <- data[src == "fb"]
     }
 
-    data[, family := .GRP, .(sire, dam)]
-    data <- data[family %notin% c(22, 24, 44)]
+    # Set families
+    data[, family := .GRP, .(sire, dam, trial)] |>
+        setcolorder("family", after = "id")
+
+    # Choose between actual Tinfs and inferred values for FB data
+    if ("use_inferred_Tinfs" %in% plotopts && "Tinf_sire" %in% names(data)) {
+        if (DEBUG) message("- Using sire Tinfs")
+        # data[src == "fb", Tinf := Tinf_sire]
+        median_Tinfs <- get_median_Tinfs(params)
+
+        if (length(median_Tinfs) == data[src == "fb", .N]) {
+            data[src == "fb", Tinf := median_Tinfs]
+        }
+    }
+
+    # Drop small families unless specified otherwise
+    if ("keep_small_groups" %notin% plotopts) {
+        small_groups <- data[id == last(id), .N, family][N < 10, family]
+        data <- data[family %notin% small_groups]
+    } else {
+        if (DEBUG) message("- Keeping small groups")
+    }
 
     # Donor families are any families
     data[, donor := fifelse(any(donor == 1L), 1L, 0L), .(family, trial)]
 
-    description <- params$description |>
-        str_split_1(", ") |>
-        str_subset("convergence|coverage|pedigree|GRM", negate = TRUE) |>
-        str_replace_all(c("inf_model 1" = "inf: I = D",
-                          "inf_model 2" = "inf: I = 0.1*D",
-                          "inf_model 3" = "inf: Don = 0.1*Rec",
-                          "inf_model 4" = "inf: Don = r*Rec")) |>
-        str_flatten_comma()
-
-    # Choose between actual Tinfs and SIRE's inferred values for FB data
-    if ("use_sire_Tinfs" %in% plotopts && "Tinf_sire" %in% names(data)) {
-        if (DEBUG) message("- Using sire Tinfs")
-        # data[src == "fb", Tinf := Tinf_sire]
-        Tinf_names <- str_c("Tinf_sire_", seq_len(opts$n_plots))
-        fb_Tinfs <- with(params, get_Tinfs(dataset, scenario, replicate, opts$n_plots)) |>
-            as.data.table() |>
-            setnames(Tinf_names)
-
-        fb_Tinfs <- cbind(data[src == "fb", -c("Tinf")],
-                          fb_Tinfs[55:1829])
-    }
-
     # Filter by trial
     if ("t1" %in% plotopts && "t2" %notin% plotopts) {
+        if (DEBUG) message(" - Keeping Trial 1 only")
         data <- data[trial == 1]
     } else if ("t1" %notin% plotopts && "t2" %in% plotopts) {
+        if (DEBUG) message(" - Keeping Trial 2 only")
         data <- data[trial == 2]
     }
 
     tmax <- params$tmax
 
     # If Tsign is missing but Tdeath is not, then let Tsign = Tdeath, otherwise
-    # set to tmax + 1 (lines should extend past the edge of the figure)
+    # set to tmax + 10 (lines should extend past the edge of the figure)
     data[is.na(Tsign), Tsign := fifelse(!is.na(Tdeath), Tdeath, tmax[trial] + 1)]
     # RP can be extended from Tsign to tmax + 1 if Tdeath is missing
     data[, RP := Tdeath - Tsign]
@@ -92,20 +92,12 @@ plot_km_family_trial <- function(data_list, plotopts = NULL) {
                       survival = seq(1, 0, length.out = .N + 1),
                       Tinf  = sv_curve(Tinf),
                       Tsign = sv_curve(Tsign),
-                      RP    = sv_curve(RP),
-                      src   = c(first(src), src)),
-                    .(id, family, trial)] |>
+                      RP    = sv_curve(RP)),
+                    .(id, src, family, trial)] |>
         setorder(id, family, trial)
 
     # Create a column to group by
     data_t0[, gp := .GRP, .(id, family, trial, donor)]
-
-    if ("keep_small_groups" %notin% plotopts) {
-        if (DEBUG) message("- Dropping small groups")
-        small_groups <- data_t0[, .(N = .N), gp][N < 10, gp]
-        data_t0 <- data_t0[gp %notin% small_groups]
-        data_t0[, gp := .GRP, .(id, family, trial, donor)]
-    }
 
     if ("extremes" %in% plotopts) {
         if (DEBUG) message("- Keeping only extremes")
@@ -213,12 +205,24 @@ plot_km_family_trial <- function(data_list, plotopts = NULL) {
         "sim_r",    "Simulation Contact",      "#A6CEE3"
     )
 
+    # scm <- rowwiseDT(
+    #     breaks=, labels=,          values=,
+    #     "fb_d",  "Seeder family",  "#33A02C",
+    #     "fb_r",  "Contact family", "#1F78B4"
+    # )
+
     if ("extremes" %notin% plotopts) {
         scm[, labels := str_remove(labels, " high| low")]
     }
 
     slw <- if ("mean" %in% plotopts) 0.7 else 0.2
     slt <- if ("mean" %in% plotopts) "dashed" else "solid"
+
+    description <- params$description |>
+        str_split_1(", ") |>
+        str_subset("convergence|coverage|pedigree|GRM", negate = TRUE) |>
+        str_flatten_comma()
+
 
     # Plot
     plt <- ggplot() +
