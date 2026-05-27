@@ -1,6 +1,8 @@
-library(data.table)
-library(stringr)
-library(ggplot2)
+{
+    library(data.table)
+    library(stringr)
+    library(ggplot2)
+}
 
 #' Generate a basic KM plot from a single data.table
 #'
@@ -20,12 +22,16 @@ basic_km <- function(popn, params) {
     }
 
 
-    cols <- intersect(c("sire", "trial", "donor", "Tinf", "Tsign", "Tdeath"),
+    cols <- intersect(c("sire", "dam", "trial", "donor", "Tinf", "Tsign", "Tdeath"),
                       names(popn))
 
     x <- popn[sdp == "progeny", ..cols]
 
-    x[, N := .N, .(trial, sire)]
+    x[, family := .GRP, .(sire, dam, trial)] |>
+        setcolorder("family")
+
+    # Drop small families
+    x[, N := .N, family]
     x <- x[N >= 10]
     x[, N := NULL]
 
@@ -33,28 +39,43 @@ basic_km <- function(popn, params) {
         x[, Tsign := Tinf]
     }
 
+    # If Tsign is missing but Tdeath is not, then let Tsign = Tdeath, otherwise
+    # set to tmax + 1 (lines should extend past the edge of the figure)
+    x[is.na(Tsign), Tsign := fifelse(!is.na(Tdeath), Tdeath, tmax[trial] + 1)]
+    # RP can be extended from Tsign to tmax + 1 if Tdeath is missing
     x[, RP := Tdeath - Tsign]
-    x[is.na(Tsign), Tsign := Tdeath]
+    x[is.na(RP), RP := tmax[trial] - Tsign]
+    x[, RP := pmax(RP, 0)]
 
     sv_curve <- function(x) c(0, sort(x, na.last = TRUE))
 
     x1 <- x[, .(donor = fifelse(any(donor == 1), "donor", "recip"),
+                survival = seq(1, 0, length.out = .N + 1),
                 Tsign = sv_curve(Tsign),
                 RP    = sv_curve(RP)),
-            .(sire, trial)]
-    x1[, grp := .GRP, .(sire, trial)]
-    x1[, survival := seq(1, 0, length.out = .N), grp]
+            .(family, trial)] |>
+        melt(measure.vars = c("Tsign", "RP"),
+             value.name = "time")
 
-    x2 <- melt(x1, measure.vars = c("Tsign", "RP"),
-               value.name = "time")
+    # Resample at t = 0,1,...,tmax
+    x2 <- x1[, {
+        times <- seq(0, tmax[trial[[1]]])
+        list(time = times,
+             survival = approx(time, survival, times,
+                               method = "constant",
+                               ties = list("ordered", max))$y)
+    },
+    .(family, trial, donor, variable)]
 
-    plt <- ggplot(x2, aes(x = time, y = survival, colour = donor, group = grp)) +
+    plt <- ggplot(x2,
+                  aes(x = time, y = survival,
+                      colour = donor, group = family)) +
         geom_line() +
-        geom_point(size = 0.5) +
+        # geom_point(size = 0.5) +
         scale_colour_manual("Inoculated",
                             breaks = c("donor", "recip"),
                             labels = c("Yes", "No"),
-                            values = c("#FF7F00", "#1F78B4")) +
+                            values = c("#33A02C", "#1F78B4")) +
         labs(x = "Time (days)",
              y = "Survival") +
         facet_grid(rows = vars(trial),
@@ -63,7 +84,7 @@ basic_km <- function(popn, params) {
                    labeller = labeller(
                        variable = c(Tinf  = "Time of infection",
                                     Tsign = "Time to first signs",
-                                    RP    = "Period from signs to death"),
+                                    RP    = "Time from first signs to death"),
                        trial = c("1" = "Trial 1",
                                  "2" = "Trial 2"))) +
         theme_bw() +
