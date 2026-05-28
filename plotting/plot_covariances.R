@@ -72,6 +72,17 @@ plot_covariances <- function(dataset = "fb-test",
         setNames(pars) |>
         as.list()
 
+    # Priors
+    priors <- if (file.exists(res_file)) {
+        copy(params$priors)
+    } else {
+         data.table(parameter = pars,
+                    true_val = NA_real_,
+                    type = NA_character_,
+                    val1 = NA_real_,
+                    val2 = NA_real_)
+    }
+
     # x2 is x in tidy format
     x2 <- x |>
         melt(measure.vars = pars,
@@ -81,9 +92,10 @@ plot_covariances <- function(dataset = "fb-test",
     # x3 is parameter / median (currently unused)
     x3 <- x2[, .(median = median(val)), parameter]
 
-
     plts <- map(pars, \(par) {
-        # par <- pars[[1]]
+        if (FALSE) {
+            i <- 1; par <- pars[[i]]
+        }
         param2 <- pars2[[par]]
 
         xp_val <- x2[parameter == par, val]
@@ -91,7 +103,6 @@ plot_covariances <- function(dataset = "fb-test",
         dens <- density(xp_val, adjust = 0.5, cut = 0)
         dd <- with(dens, data.table(x, y))
 
-        sig_figs <- 3
         mx <- median(xp_val)
         if (ci == "hpdi") {
             hpdi <- hdi(xp_val, credMass = 0.95)
@@ -103,23 +114,27 @@ plot_covariances <- function(dataset = "fb-test",
             uq <- quantile(xp_val, 0.975)
         }
 
+        sig_figs <- 3
         if (par == "cov_G_ii") {
             # rng <- qnorm(c(0.1, 0.9), 0, sqrt(mx)) |> diff() |> exp()
             rng <- sigma2f(sigma = mx, mu = 0, q = 0.9)
-            rng_str <- str_c(" x", signif(rng, 3))
-            print(str_glue("G cov(inf) = {signif(mx, 3)} ({signif(lq, 3)}, {signif(uq, 3)}), {rng_str}"))
+            rng_str <- str_c(" x", signif(rng, sig_figs))
+            print(str_glue("G cov(inf) = {signif(mx, 3)} ",
+                           "({signif(lq, sig_figs)}, {signif(uq, sig_figs)}), ",
+                           "{rng_str}"))
         }
 
         h2_str <- ""
         if (str_starts(par, "h2")) {
-            message(str_glue("{par} in ({signif(lq, 3)}, {signif(uq, 3)})"))
+            message(str_glue("{par} in ({signif(lq, sig_figs)}, ",
+                             "{signif(uq, sig_figs)})"))
             h2 <- x[, mean(get(par))]
             # h2_str <- str_glue(", h<sup>2</sup>={signif(h2, 2)}")
         }
 
 
         if (str_starts(par, "cov")) {
-            x_min <- 0; x_max <- 1.1 * uq
+            x_min <- 0; x_max <- max(xp_val)
         } else if (str_starts(par, "h2")) {
             x_min <- 0; x_max <- 1
         } else if (str_starts(par, "r_")) {
@@ -128,12 +143,30 @@ plot_covariances <- function(dataset = "fb-test",
             stop(str_glue("Bad parameter '{par}'"))
         }
 
+        if (par %in% priors$parameter) {
+            prior <- data.table(x = seq(x_min, x_max, length.out = 101))
+            prior_type <- priors[parameter == par, type]
+            if (str_detect(par, "cov_")) {
+                prior[, y := dnorm(x, 0, 2) * 2]
+            } else if (str_detect(par, "r_")) {
+                prior[, y := dbeta((x + 1) / 2, 1.2, 1.2) / 2]
+            } else if (str_detect(par, "h2_")) {
+                prior[, y := NA_real_]
+            }
+            prior[, y := y / sum(c(0, diff(x)) * y, na.rm = TRUE)]
+        } else {
+            prior <- data.table(x = numeric(0), y = numeric(0))
+        }
+
 
         ggplot() +
             geom_line(data = dd, aes(x = x, y = y)) +
             geom_area(data = subset(dd, lq < x & x < uq),
                       aes(x = x, y = y),
                       fill = "tomato", colour = NA) +
+            geom_line(data = prior, aes(x = x, y = y),
+                      colour = "black",
+                      linetype = "dashed") +
             geom_vline(xintercept = mx, linewidth = 1, colour = "blue") +
             coord_cartesian(xlim = c(x_min, x_max)) +
             labs(x = "Value",
