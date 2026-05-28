@@ -37,16 +37,16 @@ pars <- list(
 stoch_seir <- function(X0, times, pars) {
     # Stochastic SEIR model with demography and time dependent parameter
     # using Gillespie SSA algorithm
-    
+
     compartments <- names(X0)
-    
+
     # Storing all the population data in a matrix is very efficient, can convert
     # to data.frame or tibble later
     X <- matrix(NA_integer_,
                 nrow = length(times),
                 ncol = length(compartments),
                 dimnames = list(NULL, compartments))
-    
+
     ## Matrix of events ----
     event_mat <- matrix(
         #  S   E   I   R
@@ -64,27 +64,27 @@ stoch_seir <- function(X0, times, pars) {
         dimnames = list(c("birth", "death_S", "death_E", "death_I", "death_R",
                           "infection", "incubation", "recovery"),
                         compartments))
-    
+
     # Meta variables
     x <- unlist(X0)
     t <- first(times)
     t_end <- last(times)
-    
+
     X[1L, compartments] <- x
     rec <- 2L
-    
+
     # Main loop ----
-    
+
     while (TRUE) {
         ## Calculate event rates ----
         event_rates <- with(c(as.list(x), pars), {
             N <- sum(x)
-            
+
             # Culling of infectives at c/day when t in a culling interval
             c1 <- t >= culls[c(TRUE, FALSE)]
             c2 <- t <  culls[c(FALSE, TRUE)]
             ct <- if (any(c1 & c2)) c else 0
-            
+
             c(birth   = mu * N * (1 - N / N0),
               death_S = mu * S,
               death_E = mu * E,
@@ -95,13 +95,13 @@ stoch_seir <- function(X0, times, pars) {
               incubation = eta * E,
               recovery   = gamma * I)
         })
-        
+
         ## Check for negative event rates ----
         if (any(event_rates < 0)) {
             print(event_rates)
             stop("Negative event detected!")
         }
-        
+
         ## Calculate dx/dt ----
         # In case we implement the tau leaping algorithm
         # dX <- with(as.list(event_rates),
@@ -109,7 +109,7 @@ stoch_seir <- function(X0, times, pars) {
         #              dE = - death_E + infection - incubation,
         #              dI = - death_I + incubation - recovery,
         #              dR = - death_R + recovery))
-        
+
         ## Calculate dt and select random event ----
         total_event_rate <- sum(event_rates)
         dt <- if (total_event_rate > 0) {
@@ -119,21 +119,21 @@ stoch_seir <- function(X0, times, pars) {
         }
         event <- sample(names(event_rates), 1L,
                         prob = event_rates)
-        
+
         ## Update model ----
         x <- x + event_mat[event, ]
         t <- t + dt
-        
+
         ## Record data ----
         while (rec <= length(times) && t > times[rec]) {
             X[rec, ] <- x
             rec <- rec + 1L
         }
-        
+
         # Test for end of simulation
         if (t > t_end) break
     }
-    
+
     # Combine times and compartments into data.frame (remove # for tibble)
     data.frame(time = times, X) # |> tibble()
 }
