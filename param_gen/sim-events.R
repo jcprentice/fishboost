@@ -10,117 +10,91 @@
 
 # Are we testing convergence or coverage?
 # (Coverage only makes sense with simulated data.)
-n <- 1
+n <- 2
 goal <- c("convergence", "coverage")[[n]]
 message("Goal = ", goal)
 
-dataset <- str_glue("sim-events{x}",
-                     x = if (goal == "convergence") 1 else 2)
+dataset <- "sim-events"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(description = "Sim FB1, basic SEIDR, 4 events",
-               setup = "fb_1",
-               pass_events = "Tinf,Tlat,Tsign,Tdeath"),
-
-    data.table(description = "Sim FB1, basic SEIDR, 3 events",
-               setup = "fb_1",
-               pass_events = "Tlat,Tsign,Tdeath"),
-
-    data.table(description = "Sim FB1, basic SEIDR, 2 events",
-               setup = "fb_1",
-               pass_events = "Tsign,Tdeath"),
-
-    data.table(description = "Sim FB1+2, basic SEIDR, 2 events",
-               setup = "fb_12",
-               pass_events = "Tsign,Tdeath"),
+    data.table(d = "FB_1_rpw, Events 1, Fit d2"), # 1
+    data.table(d = "FB_1_rpw, Events 2, Fit d2"), # 2
+    data.table(d = "FB_1_rpw, Events 3, Fit d2"), # 2
+    data.table(d = "FB_1_rpw, Events 4, Fit d2"), # 3
 
     fill = TRUE
 )
 
+# Setup
+protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
+
+# Handle events
+protocol[, pass_events := fcase(
+    str_detect(d, "Events 1"), "Tdeath",
+    str_detect(d, "Events 2"), "Tsign,Tdeath",
+    str_detect(d, "Events 3"), "Tinf,Tsign,Tdeath",
+    str_detect(d, "Events 4"), "Tinf,Tinc,Tsign,Tdeath"
+)]
+
+# Common options ----
+source("param_gen/common2.R")
+
+common <- list(sim_new_data = "summary_sim",
+               use_traits = "sildt",
+               link_traits = "sittt",
+               use_grm = "HG_inv", # "pedigree",
+               inf_model = 4L,
+               traits_source = "posterior", # should this be GRM?
+               use_weight = "log",
+               weight_fe = "sittt",
+               weight_is_nested = TRUE,
+               cov_prior = list(type = "default", vals = c()),
+               single_prior = "inverse",
+               # expand_priors = 4,
+               group_effect = 0.05,
+               patch_dataset = "sim-test",
+               patch_name = "scen-2-1",
+               patch_type = "sampled",
+               bici_cmd = "inf",
+               fix_donors = "no_Tsign_survivors",
+               censor = 0.8,
+               nsample = 2e5,
+               nchains = 16,
+               sample_states = 100,
+               time_step_bici = 1) |>
+    safe_merge(common2)
 
 # Labels
-protocol[, label := str_c("s1", letters[1:.N])]
-
+protocol[, label := str_c("s", 1:.N)]
 
 # Append "coverage" or "convergence" to description
-protocol[, description := str_c(description, ", ", goal)]
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
 
 ## Add replicates ----
-n_replicates <- if (goal == "convergence") 1L else 20L
+n_replicates <- 20
 protocol[, scenario := .I]
 protocol <- protocol[rep(1:.N, each = n_replicates)]
 protocol[, replicate := 1:.N, scenario]
 protocol[, dataset := dataset]
-
-# Fixed parameters ----
-
-# Save params along with protocol so we know the defaults for all entries
-params <- make_parameters(model_type = "SEIDR",
-                          setup = "fb_1",
-                          use_traits = "",
-                          vars = 1.0,
-                          cors = 0,
-                          group_layout = "fishboost",
-                          group_effect = -1,
-                          sim_new_data = "r")
-
-params$trial_fe <- ""
-params$donor_fe <- ""
-params$group_effect <- -1
-params$link_traits <- "sittt"
-params$sim_link_trial <- "sildt"
-params$sim_link_donor <- "sildt"
-params$sim_link_shapes <- "ldt"
-params$link_trial <- "sildt"
-params$link_donor <- "sildt"
-params$link_shapes <- "ldt"
-params$pass_events <- "Tsign,Tdeath"
-params$seed <- if (goal == "convergence") 0 else -1
-params$nchains <- if (goal == "convergence") 16 else 4
-nsample <- 1e6L
-params$nsample <- as.integer(nsample)
-params$burnin <- as.integer(nsample / 5)
-params$thin <- as.integer(max(nsample / 1e4, 1))
-params$nsample_per_gen <- as.integer(max(nsample * 10 / 1e3))
-params$anneal <- "on"
-params$anneal_power <- 4
-
-# Add missing columns ----
-
-replace_NAs <- function(col) {
-    # Make sure columns exist and overwrite NA values with something useful
-    if (col %in% names(protocol)) {
-        protocol[is.na(get(col)), (col) := params[[col]]]
-    } else {
-        protocol[, (col) := params[[col]]]
-    }
-}
-
-missing_cols <- c("model_type", "dataset", "name", "use_traits", "vars", "cors",
-                  "sim_new_data", "setup", "group_effect", "donor_fe", "trial_fe",
-                  "weight_is_nested",
-                  "seed", "nsample_per_gen", "anneal", "anneal_power",
-                  "nsample", "burnin", "thin", "nchains")
-
-walk(missing_cols, replace_NAs)
-
-# Tidy up ----
-
-# Give default values for data name, setup, cors, group_layout, ...
 protocol[, name := str_c("scen-", scenario, "-", replicate)]
+protocol[, seed := replicate]
+
+# Set up patches
+protocol[, patch_state := replicate]
 
 # Prefer to have these columns in this order at the start
-cols <-  c("dataset", "description", "scenario", "replicate", "label",
-           "name", "sim_new_data", "model_type", "setup")
 setcolorder(protocol, intersect(cols, names(protocol)))
 
-message(str_glue("protocol file '{dataset}' has {nrow(protocol)} rows x {ncol(protocol)} cols"))
-
+message(str_glue("Protocol file '{dataset}' has:",
+                 "- {nrow(protocol)} scenarios",
+                 "- each with {ncol(protocol)} parameters",
+                 "- and a further {length(common)} common parameters",
+                 .sep = "\n"))
 
 # Save to file ----
 saveRDS(list(protocol = protocol,
-             params = params),
+             common = common),
         file = str_glue("param_sets/{dataset}.rds"))
 
-# fwrite(protocol, file = "protocol-sim.tsv", sep = "\t", quote = TRUE)
