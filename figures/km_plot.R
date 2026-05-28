@@ -12,7 +12,7 @@ scm <- rowwiseDT(
     "sim_r", "Simulation Contact", "#A6CEE3"
 )
 
-p1 <- ggplot(data_t3) +
+p1 <- ggplot(data_t3[src == "fb"]) +
     geom_line(aes(x = time, y = survival,
                   group = gp, colour = str,
                   linewidth = src, linetype = src)) +
@@ -47,5 +47,5 @@ p1 <- ggplot(data_t3) +
           strip.background = element_blank())
 p1
 
-ggsave("gfx/KM_trial_1.png", p1,
-       width = 17.8, height = 10, units = "cm")
+ggsave("gfx/KM_trials_12.png", p1,
+       width = 17.8, height = 17.8 * 9 / 16, units = "cm")
