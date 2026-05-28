@@ -11,6 +11,7 @@
 generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
     if (FALSE) {
         attach(params)
+        DEBUG <- TRUE
         clean_dirs <- FALSE
     }
 
