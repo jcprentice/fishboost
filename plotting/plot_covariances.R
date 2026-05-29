@@ -9,6 +9,7 @@
     library(cowplot)
 
     source("rename_pars.R")
+    source("make_matrices.R")
 }
 
 # This are for calculating top x% over bottom x%
@@ -27,13 +28,15 @@ plot_covariances <- function(dataset = "fb-test",
                              output = "png") {
 
     if (FALSE) {
-        dataset <- "fb-test"; scen <- 1; itn <- 1; ci <- "hpdi"; output <- "png"
+        dataset <- "fb-test"; scen <- 3; itn <- 1; ci <- "hpdi"; output <- "png"
     }
 
-    base_dir <- str_glue("datasets/{dataset}")
-    data_dir <- str_glue("{base_dir}/data")
-    res_dir  <- str_glue("{base_dir}/results")
-    gfx_dir  <- str_glue("{base_dir}/gfx")
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        data_dir <- str_glue("{base_dir}/data")
+        res_dir  <- str_glue("{base_dir}/results")
+        gfx_dir  <- str_glue("{base_dir}/gfx")
+    }
 
     title_plot_str <- str_glue("{dataset} / s{scen}")
 
@@ -49,15 +52,35 @@ plot_covariances <- function(dataset = "fb-test",
 
     trace_file <- str_glue("{data_dir}/scen-{scen}-{itn}-out/trace_combine.tsv")
     if (!file.exists(trace_file)) {
-        message("- No trace file, exiting.")
+        message("- No trace file, exiting")
         return(NULL)
     }
     x <- fread(trace_file)
     x[, str_subset(names(x), "_[GE]_", negate = TRUE) := NULL]
 
-    x[, `:=`(cov_P_ss = cov_G_ss + cov_E_ss,
-             cov_P_ii = cov_G_ii + cov_E_ii,
-             cov_P_tt = cov_G_tt + cov_E_tt)]
+    if (ncol(x) == 0) {
+        message(" - No GEVs in trace file, exiting")
+        return(NULL)
+    }
+
+    r_P <- x[, {
+        cov_G <- matrix(c(cov_G_ss, r_G_si, r_G_st,
+                          r_G_st, cov_G_ii, r_G_it,
+                          r_G_st, r_G_it, cov_G_tt), 3, 3)
+        cov_E <- matrix(c(cov_E_ss, r_E_si, r_E_st,
+                          r_E_st, cov_E_ii, r_E_it,
+                          r_E_st, r_E_it, cov_E_tt), 3, 3)
+        cov_P <- cov_G + cov_E
+        Sigma_P <- cov2sigma(cov_P)
+        list(cov_P_ss = Sigma_P[1, 1],
+             cov_P_ii = Sigma_P[2, 3],
+             cov_P_tt = Sigma_P[2, 3],
+             r_P_si = Sigma_P[1, 2],
+             r_P_st = Sigma_P[1, 3],
+             r_P_it = Sigma_P[2, 3])
+    }, .I][, -1]
+    x <- cbind(x, r_P)
+
     x[, `:=`(h2_ss = cov_G_ss / cov_P_ss,
              h2_ii = cov_G_ii / cov_P_ii,
              h2_tt = cov_G_tt / cov_P_tt)]
@@ -189,8 +212,8 @@ plot_covariances <- function(dataset = "fb-test",
                    "empty",    "empty",    "cov_G_tt")
     pltE_list <- str_replace(pltG_list, "G", "E")
     pltH_list <- str_replace(pltG_list, "cov_G_", "h2_")
-    pltP_list <- c("cov_P_ss", "empty",    "empty",
-                   "empty",    "cov_P_ii", "empty",
+    pltP_list <- c("cov_P_ss", "r_P_si",   "r_P_st",
+                   "empty",    "cov_P_ii", "r_P_it",
                    "empty",    "empty",    "cov_P_tt")
 
     pltG <- plot_grid(plotlist = plts[pltG_list])
