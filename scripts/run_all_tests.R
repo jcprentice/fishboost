@@ -46,7 +46,7 @@ run_all_tests <- function(dataset = "fb-test",
     pars_errorbars(dataset)
 
     if (str_detect(dataset, "fb")) {
-        c(plot_chains, get_posterior, get_covariances, plot_ebvs, plot_correlations) |>
+        c(plot_chains, get_posterior, plot_covariances, plot_ebvs, plot_correlations) |>
             walk(\(f) walk2(scens, reps, possibly(~ f(dataset, .x, .y))))
     }
 
