@@ -4,8 +4,15 @@ sigma2cov <- function(Sigma) {
     diag(D) <- sqrt(diag(Sigma))
     R <- Sigma
     diag(R) <- 1
-
     D %*% R %*% D
+}
+
+# Turn a cov matrix into a Sigma matrix
+cov2sigma <- function(x) {
+    D <- diag(x)
+    Sigma <- cov2cor(x)
+    diag(Sigma) <- D
+    Sigma
 }
 
 # Construct cov_mat and Sigma matrices using var and cor components
