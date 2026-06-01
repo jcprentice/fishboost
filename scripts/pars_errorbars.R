@@ -79,7 +79,7 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
 
     pars <- x[, unique(parameter)] # |>
         # str_subset("^G_|^Group", negate = TRUE)
-    tidy_pars <- setNames(rename_pars(pars), pars)
+    pretty_pars <- setNames(rename_pars(pars), pars)
 
     x1 <- merge(x[parameter %in% pars],
                 priors[parameter %in% pars, .(scen, parameter, type)],
@@ -154,7 +154,7 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
             coord_cartesian(ylim = range(0, ymin, ymax)) +
             labs(x = "Scenario",
                  y = "Value",
-                 title = tidy_pars[[par]]) +
+                 title = pretty_pars[[par]]) +
             theme_classic() +
             theme(legend.position = "none",
                   axis.text.x = element_text(size = 6,
@@ -185,8 +185,7 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
             "sigma",  "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
             "infrat", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
             "sigma",  "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
-            "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec"
-        ) |>
+            "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec") |>
             str_replace_all(c("LP" = "latent_period",
                               "DP" = "detection_period",
                               "RP" = "removal_period"))

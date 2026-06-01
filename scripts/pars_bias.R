@@ -66,7 +66,7 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
     x[, parameter := rename_bici_pars(parameter)]
 
     pars <- x[, unique(parameter)]
-    tidy_pars <- setNames(rename_pars(pars), pars)
+    pretty_pars <- setNames(pretty_names(pars), pars)
 
     setorder(x, parameter, bias2)
 
@@ -95,7 +95,7 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
             expand_limits(y = 0) +
             labs(x = "Scenario",
                  y = "Bias",
-                 title = tidy_pars[[par]]) +
+                 title = pretty_pars[[par]]) +
             theme_classic() +
             theme(legend.position = "none")
     }) |> setNames(pars)
@@ -124,8 +124,7 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
             "sigma",  "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
             "infrat", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
             "sigma",  "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
-            "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec"
-        ) |>
+            "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec") |>
             str_replace_all(c("LP" = "latent_period",
                               "DP" = "detection_period",
                               "RP" = "removal_period"))

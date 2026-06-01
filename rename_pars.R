@@ -37,7 +37,7 @@ rename_bici_pars <- function(pars) {
 #'
 #' @returns A new character vector of modified parameter names
 
-rename_pars <- function(pars) {
+pretty_names <- function(pars) {
     pars |> str_replace_all(
         c("latent_period" = "Latent Period (days)",
           "LP_shape" = "LP shape",
@@ -79,11 +79,14 @@ param_order <- c(
     "cov_G_ss", "cov_G_ii",  "cov_G_tt", "r_G_si", "r_G_st", "r_G_it",
     "cov_E_ss", "cov_E_ii",  "cov_E_tt", "r_E_si", "r_E_st", "r_E_it",
     "cov_P_ss", "cov_P_ii",  "cov_P_tt", "h2_ss", "h2_ii", "h2_tt",
-    "beta_Tr1", "beta_Tr2", "sigma",
+    "beta_Tr1", "beta_Tr2", "sigma", "infrat",
     "LP_Tr1,Don", "LP_Tr1,Rec", "LP_Tr2,Don", "LP_Tr2,Rec",
     "DP_Tr1,Don", "DP_Tr1,Rec", "DP_Tr2,Don", "DP_Tr2,Rec",
     "RP_Tr1,Don", "RP_Tr1,Rec", "RP_Tr2,Don", "RP_Tr2,Rec",
-    fes, "MVPSF")
+    fes, "MVPSF") |>
+    str_replace_all(c("LP" = "latent_period",
+                      "DP" = "detection_period",
+                      "RP" = "removal_period"))
 
-full_param_order <- rename_pars(param_order)
+full_param_order <- pretty_names(param_order)
 

@@ -4,18 +4,18 @@
     library(coda)
     library(xtable)
     library(stringr)
-    
+
     source("rename_pars.R")
 }
 
 
 gr_diagnostics <- function(dataset = "fb-final", scen = 1, itn = 0) {
-    
+
     # dataset <- "fb-final"; scen <- 1; itn <- 0
-    
+
     data_dir <- str_glue("datasets/{dataset}/data")
     res_dir  <- str_glue("datasets/{dataset}/results")
-    
+
     trace_files <- list.files(path = data_dir,
                               pattern = "trace",
                               recursive = TRUE,
@@ -24,39 +24,39 @@ gr_diagnostics <- function(dataset = "fb-final", scen = 1, itn = 0) {
         str_subset(str_glue("scen-{scen}-")) |>
         # Drop combine files for SIRE 2.2
         str_subset("combine", negate = TRUE)
-    
+
     # If doing coverage, then specify which itn to keep, or keep them all
     if (itn == 0) {
         trace_files <- trace_files |>
             str_subset(str_glue("-{itn}-out")) |>
             str_sort(numeric = TRUE)
     }
-    
+
     f <- str_glue("{res_dir}/scen-{scen}-{itn}.rds")
     # f <- list.files(res_dir, pattern = str_glue("scen-{scen}-"), full.names = TRUE)
-    
+
     # if (!file.exists(res[1])) {
     #     return(NULL)
     # }
     res <- readRDS(f[[1]])
     PEs <- res$parameter_estimates
     params <- res$params
-    
+
     fixed_pars <- params$priors[type == "Fixed", parameter]
     if (is_empty(fixed_pars)) fixed_pars <- "don't_match"
-    
+
     # Select columns to keep
     cols <- PEs$parameter |>
         str_subset("Group effect", negate = TRUE) |>
         # Remove columns with zero variance (e.g. "latent_period")
         str_subset(fixed_pars, negate = TRUE) # |>
         # str_subset("L_|state|Prior|Posterior|Number infected|log(phi)", negate = TRUE)
-    
-    
+
+
     thin <- with(params, if (exists("thinto")) nsample / thinto else thin)
     burnin <- with(params, if (exists("burnprop")) ceiling(nsample * burnprop) else burnin)
     bstart <- ceiling(burnin / thin + 1L)
-    
+
     x <- map(trace_files, fread)
     # In case we didn't finish, all chains have to be the same length
     max_rows <- map_int(x, nrow) |> min()
@@ -65,7 +65,7 @@ gr_diagnostics <- function(dataset = "fb-final", scen = 1, itn = 0) {
     y <- map(x, ~ as.data.table(.x[bstart:.N, ..cols])) |>
         rbindlist()
     rm(x)
-    
+
     list(ESS = effectiveSize(y),
          GRD = gelman.diag(l, autoburnin = FALSE))
 }
@@ -102,7 +102,7 @@ xl <- map(out, \(x) {
         setnames(c("Parameter", "pe", "GR95"))
     y[, pe := NULL]
     y[, ESS := format(ceiling(x$ESS), big.mark = ",")]
-    y[, Parameter := rename_pars(Parameter)]
+    y[, Parameter := pretty_names(Parameter)]
     rbind(y, data.table(Parameter = "MVPSF", GR95 = round(x$GRD$mpsrf, 2)), fill = TRUE)
 }) |> discard(is.null)
 
@@ -114,24 +114,24 @@ xl <- map(out, \(x) {
     xl_tab <- xl |>
         rbindlist(idcol = "scen") |>
         dcast(... ~ scen, value.var = c("ESS", "GR95"), drop = FALSE)
-    
+
     # Restore the preferred parameter order (see 'rename_pars.R')
     xl_tab[, ids := match(Parameter, full_param_order)]
     setorder(xl_tab, ids)
     xl_tab[, ids := NULL]
-    
+
     # Reorder by scenario, rather than variable
     cols <- expand.grid(c("ESS", "GR95"), str_c("s", scens)) |>
         apply(1, str_flatten, "_") |>
         intersect(names(xl_tab))
     setcolorder(xl_tab, c("Parameter", cols))
-    
+
     align_str <- str_flatten(c("ll", rep("rr", length(cols) / 2)))
-    
+
     xl_ltab <- print(xtable(xl_tab, align = align_str),
                      include.rownames = FALSE,
                      booktabs = TRUE)
-    
+
     print(xtable(xl_tab, align = align_str),
           include.rownames = FALSE,
           booktabs = TRUE,

@@ -28,7 +28,7 @@ plot_covariances <- function(dataset = "fb-test",
                              output = "png") {
 
     if (FALSE) {
-        dataset <- "fb-test"; scen <- 3; itn <- 1; ci <- "hpdi"; output <- "png"
+        dataset <- "fb-test"; scen <- 2; itn <- 1; ci <- "hpdi"; output <- "png"
     }
 
     {
@@ -73,8 +73,8 @@ plot_covariances <- function(dataset = "fb-test",
         cov_P <- cov_G + cov_E
         Sigma_P <- cov2sigma(cov_P)
         list(cov_P_ss = Sigma_P[1, 1],
-             cov_P_ii = Sigma_P[2, 3],
-             cov_P_tt = Sigma_P[2, 3],
+             cov_P_ii = Sigma_P[2, 2],
+             cov_P_tt = Sigma_P[3, 3],
              r_P_si = Sigma_P[1, 2],
              r_P_st = Sigma_P[1, 3],
              r_P_it = Sigma_P[2, 3])
@@ -89,7 +89,7 @@ plot_covariances <- function(dataset = "fb-test",
     pars <- names(x)
 
     # Names as wanted on figure
-    pars2 <- rename_pars(pars) |>
+    pars2 <- pretty_pars(pars) |>
         str_replace_all(c("h\\^2 " = "h<sup>2</sup>",
                           " ([G|E|P]) " = "<sub>\\1</sub>")) |>
         setNames(pars) |>
@@ -220,6 +220,7 @@ plot_covariances <- function(dataset = "fb-test",
     pltE <- plot_grid(plotlist = plts[pltE_list])
     pltP <- plot_grid(plotlist = plts[pltP_list])
     pltH <- plot_grid(plotlist = plts[pltH_list])
+    pltGE <- plot_grid(pltG, pltE, ncol = 2)
 
     title_plt <- ggplot() + labs(title = title_plot_str) + theme_classic()
 
@@ -227,8 +228,7 @@ plot_covariances <- function(dataset = "fb-test",
     pltE_cov <- plot_grid(title_plt, pltE, ncol = 1, rel_heights = c(0.08, 1))
     pltP_cov <- plot_grid(title_plt, pltP, ncol = 1, rel_heights = c(0.08, 1))
     pltH_cov <- plot_grid(title_plt, pltH, ncol = 1, rel_heights = c(0.08, 1))
-    pltGE_cov <- plot_grid(title_plt, plot_grid(pltG, pltE, ncol = 2),
-                           ncol = 1, rel_heights = c(0.08, 1))
+    pltGE_cov <- plot_grid(title_plt, pltGE, ncol = 1, rel_heights = c(0.08, 1))
     # pltG_cov <- pltG
     # pltE_cov <- pltE
     # pltP_cov <- pltP

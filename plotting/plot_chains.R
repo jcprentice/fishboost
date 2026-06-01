@@ -89,7 +89,7 @@ plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
             scale_y_continuous(limits = ~ range(.x, 0, yrng)) +
             labs(x = NULL,
                  y = "value",
-                 title = rename_pars(par)) +
+                 title = pretty_names(par)) +
             theme_classic() +
             theme(plot.title = element_text(size = 12),
                   plot.subtitle = element_text(size = 10),

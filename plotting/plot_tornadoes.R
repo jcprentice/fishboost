@@ -151,7 +151,7 @@ plot_tornadoes <- function(dataset = "sim-test",
     if (str_detect(dataset, "fb")) Xtab[, true_val := NA_real_]
 
     # Make these nice to read when plotted
-    params2 <- setNames(rename_pars(parameters), parameters)
+    params2 <- setNames(pretty_names(parameters), parameters)
 
 
     # Plot parameters ----

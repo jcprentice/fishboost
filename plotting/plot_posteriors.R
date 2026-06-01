@@ -154,7 +154,7 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
     x3 <- x2[, .(mean = mean(value), median = median(value)), parameter]
 
     # Now convert pars so that it has usable names
-    tidy_pars <- rename_pars(pars) |>
+    pretty_pars <- pretty_names(pars) |>
         str_replace(" (Tr|Don|Rec)", "\n\\1") |>
         setNames(pars)
 
@@ -162,7 +162,7 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
         if (FALSE) {
             par <- pars[[1]]
         }
-        tidy_param <- tidy_pars[[par]]
+        pretty_par <- pretty_pars[[par]]
 
         xp <- x2[parameter == par, .(value)]
 
@@ -260,7 +260,7 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
             coord_cartesian(xlim = c(x_min, x_max)) +
             labs(x = "value",
                  y = "density",
-                 title = tidy_param) +
+                 title = pretty_par) +
             theme_classic() +
             theme(legend.position = "none") +
             easy_title_size(size = 12) +
