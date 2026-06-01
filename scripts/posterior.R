@@ -50,8 +50,7 @@ get_posterior <- function(dataset = "fb-final", scen = 1, rep = 1,
         "sigma",  "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
         "infrat", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
         "sigma",  "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
-        "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec"
-    ) |>
+        "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec") |>
         str_replace_all(c("LP" = "latent_period",
                           "DP" = "detection_period",
                           "RP" = "removal_period"))

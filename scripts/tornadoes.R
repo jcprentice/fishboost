@@ -61,8 +61,11 @@ tornadoes <- function(dataset = "fb-test", scens = 0, combine = TRUE) {
             "sigma",  "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
             "infrat", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
             "sigma",  "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
-            "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec"
-        )
+            "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec") |>
+            str_replace_all(c("LP" = "latent_period",
+                              "DP" = "detection_period",
+                              "RP" = "removal_period"))
+
 
         # Remove repeated sigma and infrat
         beta_in <- str_subset(pars, "beta")
@@ -72,16 +75,11 @@ tornadoes <- function(dataset = "fb-test", scens = 0, combine = TRUE) {
             model_pars[c(11, 16)] <- "empty"
         }
 
-
         fes <- expand.grid(sildt1,
                            c("trial", "donor", "txd", "weight", "weight1", "weight2")) |>
             rev() |> apply(1, str_flatten, "_")
 
-        plt_names <- c(cov_pars, model_pars, fes) |>
-            str_replace_all(c("LP" = "latent_period",
-                              "DP" = "detection_period",
-                              "RP" = "removal_period"))
-
+        plt_names <- c(cov_pars, model_pars, fes)
 
         # Some entries like "trial_s" might be missing
         plt_names[plt_names %notin% pars] <- "empty"
