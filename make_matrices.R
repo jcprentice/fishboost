@@ -8,9 +8,9 @@ sigma2cov <- function(Sigma) {
 }
 
 # Turn a cov matrix into a Sigma matrix
-cov2sigma <- function(x) {
-    D <- diag(x)
-    Sigma <- cov2cor(x)
+cov2sigma <- function(cx) {
+    D <- diag(cx)
+    Sigma <- cov2cor(cx)
     diag(Sigma) <- D
     Sigma
 }
