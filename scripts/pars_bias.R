@@ -3,6 +3,7 @@
     library(purrr)
     library(stringr)
     library(ggplot2)
+    library(ggtext)
     library(cowplot)
 
     source("rename_pars.R")
@@ -66,7 +67,7 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
     x[, parameter := rename_bici_pars(parameter)]
 
     pars <- x[, unique(parameter)]
-    pretty_pars <- setNames(pretty_names(pars), pars)
+    html_pars <- setNames(html_names(pars), pars)
 
     setorder(x, parameter, bias2)
 
@@ -95,9 +96,10 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
             expand_limits(y = 0) +
             labs(x = "Scenario",
                  y = "Bias",
-                 title = pretty_pars[[par]]) +
+                 title = html_pars[[par]]) +
             theme_classic() +
-            theme(legend.position = "none")
+            theme(legend.position = "none",
+                  plot.title = element_markdown())
     }) |> setNames(pars)
 
     title_plt <- ggplot() +
