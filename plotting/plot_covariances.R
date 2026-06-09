@@ -36,6 +36,12 @@ plot_covariances <- function(dataset = "fb-test",
         data_dir <- str_glue("{base_dir}/data")
         res_dir  <- str_glue("{base_dir}/results")
         gfx_dir  <- str_glue("{base_dir}/gfx")
+        cov_dir  <- str_glue("{gfx_dir}/cov")
+
+        if (!dir.exists(cov_dir)) {
+            message("- mkdir ", cov_dir)
+            dir.create(cov_dir, recursive = TRUE)
+        }
     }
 
     title_plot_str <- str_glue("{dataset} / s{scen}")
@@ -89,9 +95,17 @@ plot_covariances <- function(dataset = "fb-test",
     pars <- names(x)
 
     # Names as wanted on figure
-    pars2 <- pretty_pars(pars) |>
-        str_replace_all(c("h\\^2 " = "h<sup>2</sup>",
-                          " ([G|E|P]) " = "<sub>\\1</sub>")) |>
+    html_pars <- html_names(pars) |>
+        str_replace_all(c(" Gen "  = "<sub>A</sub>",
+                          " Env "  = "<sub>E</sub>",
+                          " P "    = "<sub>P</sub>",
+                          "h\\^2 " = "h<sup>2</sup>",
+                          "Period " = "Period<br>",
+                          "Trial (.) \\(" = "(Trial \\1, ")) |>
+    #     setNames(pars)
+    # html_pars <- html_names(pars) |>
+    #     str_replace_all(c("h\\^2 " = "h<sup>2</sup>",
+    #                       " ([G|E|P]) " = "<sub>\\1</sub>")) |>
         setNames(pars) |>
         as.list()
 
@@ -119,14 +133,13 @@ plot_covariances <- function(dataset = "fb-test",
         if (FALSE) {
             i <- 1; par <- pars[[i]]
         }
-        param2 <- pars2[[par]]
 
         xp_val <- x2[parameter == par, val]
 
-        dens <- density(xp_val, adjust = 0.5, cut = 0)
+        dens <- density(xp_val, adjust = 1, cut = 0)
         dd <- with(dens, data.table(x, y))
-
         mx <- median(xp_val)
+
         if (ci == "hpdi") {
             hpdi <- hdi(xp_val, credMass = 0.95)
             lq <- hpdi[["lower"]]
@@ -136,6 +149,11 @@ plot_covariances <- function(dataset = "fb-test",
             lq <- quantile(xp_val, 0.025)
             uq <- quantile(xp_val, 0.975)
         }
+
+        dd[, zone := factor(fcase(x < lq, "left",
+                                  x > uq, "right",
+                                  default = "mid"),
+                            levels = c("left", "mid", "right"))]
 
         sig_figs <- 3
         if (par == "cov_G_ii") {
@@ -181,23 +199,29 @@ plot_covariances <- function(dataset = "fb-test",
             prior <- data.table(x = numeric(0), y = numeric(0))
         }
 
+        l2p <- 1 / ggplot2::.pt
 
         ggplot() +
-            geom_line(data = dd, aes(x = x, y = y)) +
-            geom_area(data = subset(dd, lq < x & x < uq),
-                      aes(x = x, y = y),
-                      fill = "tomato", colour = NA) +
+            geom_area(data = dd,
+                      aes(x = x, y = y, fill = zone),
+                      colour = "black") +
             geom_line(data = prior, aes(x = x, y = y),
                       colour = "black",
                       linetype = "dashed") +
-            geom_vline(xintercept = mx, linewidth = 1, colour = "blue") +
-            coord_cartesian(xlim = c(x_min, x_max)) +
+            geom_vline(xintercept = mx, linewidth = 1 * l2p, colour = "blue") +
+            scale_fill_manual(values = c("royalblue", "tomato", "royalblue"),
+                              labels = NULL, drop = FALSE) +
+            scale_x_continuous(limits = ~ range(., x_min, x_max)) +
+            # coord_cartesian(xlim = c(x_min, x_max)) +
             labs(x = "Value",
                  y = "Density",
-                 title = str_glue("{param2}: {round(mx, 2)} ({round(lq, 2)}, {round(uq, 2)}){h2_str}")) +
+                 title = html_pars[[par]],
+                 subtitle = str_glue("{round(mx, 2)} ({round(lq, 2)}, {round(uq, 2)}){h2_str}")) +
             theme_classic() +
-            theme(plot.title = element_markdown(),
-                  text = element_text(size = 10),
+            theme(plot.title = element_markdown(size = 7),
+                  text = element_text(size = 5),
+                  axis.line = element_line(linewidth = 1 * l2p),
+                  axis.ticks = element_line(linewidth = 1 * l2p),
                   axis.text.y = element_blank(),
                   axis.ticks.y = element_blank(),
                   # text = element_text(size = 28),
@@ -205,50 +229,47 @@ plot_covariances <- function(dataset = "fb-test",
     }) |>
         setNames(pars)
 
-    plts$empty = ggplot() + theme_classic()
+    {
+        plts$empty = ggplot() + theme_classic()
 
-    pltG_list <- c("cov_G_ss", "r_G_si",   "r_G_st",
-                   "empty",    "cov_G_ii", "r_G_it",
-                   "empty",    "empty",    "cov_G_tt")
-    pltE_list <- str_replace(pltG_list, "G", "E")
-    pltH_list <- str_replace(pltG_list, "cov_G_", "h2_")
-    pltP_list <- c("cov_P_ss", "r_P_si",   "r_P_st",
-                   "empty",    "cov_P_ii", "r_P_it",
-                   "empty",    "empty",    "cov_P_tt")
-
-    pltG <- plot_grid(plotlist = plts[pltG_list])
-    pltE <- plot_grid(plotlist = plts[pltE_list])
-    pltP <- plot_grid(plotlist = plts[pltP_list])
-    pltH <- plot_grid(plotlist = plts[pltH_list])
-    pltGE <- plot_grid(pltG, pltE, ncol = 2)
-
-    title_plt <- ggplot() + labs(title = title_plot_str) + theme_classic()
-
-    pltG_cov <- plot_grid(title_plt, pltG, ncol = 1, rel_heights = c(0.08, 1))
-    pltE_cov <- plot_grid(title_plt, pltE, ncol = 1, rel_heights = c(0.08, 1))
-    pltP_cov <- plot_grid(title_plt, pltP, ncol = 1, rel_heights = c(0.08, 1))
-    pltH_cov <- plot_grid(title_plt, pltH, ncol = 1, rel_heights = c(0.08, 1))
-    pltGE_cov <- plot_grid(title_plt, pltGE, ncol = 1, rel_heights = c(0.08, 1))
-    # pltG_cov <- pltG
-    # pltE_cov <- pltE
-    # pltP_cov <- pltP
-    # pltH_cov <- pltH
-    # pltGE_cov <- plot_grid(pltG, pltE, ncol = 2)
-
-
-    cov_dir <- str_glue("{gfx_dir}/cov")
-    if (!dir.exists(cov_dir)) {
-        message("- mkdir ", cov_dir)
-        dir.create(cov_dir, recursive = TRUE)
+        pltG_list <- c("cov_G_ss", "r_G_si",   "r_G_st",
+                       "empty",    "cov_G_ii", "r_G_it",
+                       "empty",    "empty",    "cov_G_tt")
+        pltE_list <- str_replace(pltG_list, "G", "E")
+        pltP_list <- str_replace(pltG_list, "G", "P")
+        pltH_list <- str_replace(pltG_list, "cov_G_", "h2_")
     }
+
+    {
+        pltG <- plot_grid(plotlist = plts[pltG_list])
+        pltE <- plot_grid(plotlist = plts[pltE_list])
+        pltP <- plot_grid(plotlist = plts[pltP_list])
+        pltH <- plot_grid(plotlist = plts[pltH_list])
+        pltGE <- plot_grid(pltG, pltE, ncol = 2)
+
+        title_plt <- ggplot() + labs(title = title_plot_str) + theme_classic()
+
+        pltG_cov  <- plot_grid(title_plt, pltG,  ncol = 1, rel_heights = c(0.08, 1))
+        pltE_cov  <- plot_grid(title_plt, pltE,  ncol = 1, rel_heights = c(0.08, 1))
+        pltP_cov  <- plot_grid(title_plt, pltP,  ncol = 1, rel_heights = c(0.08, 1))
+        pltH_cov  <- plot_grid(title_plt, pltH,  ncol = 1, rel_heights = c(0.08, 1))
+        pltGE_cov <- plot_grid(title_plt, pltGE, ncol = 1, rel_heights = c(0.08, 1))
+    }
+
+    pltX_str <- if (FALSE) "plt{x}_cov" else "plt{x}"
 
     walk(c("G", "E", "P", "H", "GE"), \(x) {
         plt_str <- str_glue("{cov_dir}/{dataset}-s{scen}-{itn}-cov-{x}")
         message(str_glue("Plotting '{plt_str}'"))
-        walk(output, \(ft) ggsave(str_c(plt_str, ".", ft),
-                                  get(str_glue("plt{x}_cov")),
-                                  width = if (x == "GE") 18 else 9,
-                                  height = 6))
+        walk(output, \(ft) {
+            ggsave(str_c(plt_str, ".", ft),
+                   get(str_glue(pltX_str)),
+                   # width = if (x == "GE") 18 else 9,
+                   # height = 6,
+                   width = if (x == "GE") 35 else 17.8,
+                   height = 15,
+                   units = "cm")
+        })
     })
 
     list(G = pltG_cov,
