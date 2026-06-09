@@ -38,7 +38,7 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
 ) {
 
     if (FALSE) {
-        dataset <- "fb-test"; scen <- 1; rep <- 1
+        dataset <- "fb-test"; scen <- 2; rep <- 1
         dataset <- "sim-test2"; scen <- 1; rep <- 1
         ci <- "hpdi"; draw <- "density"; combine <- TRUE
     }
@@ -154,15 +154,15 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
     x3 <- x2[, .(mean = mean(value), median = median(value)), parameter]
 
     # Now convert pars so that it has usable names
-    pretty_pars <- pretty_names(pars) |>
-        str_replace(" (Tr|Don|Rec)", "\n\\1") |>
+    html_pars <- html_names(pars) |>
+        # str_replace(" (\\(.+\\))", "\n\\1") |>
         setNames(pars)
 
     plts <- map(pars, \(par) {
         if (FALSE) {
             par <- pars[[1]]
         }
-        pretty_par <- pretty_pars[[par]]
+        html_par <- html_pars[[par]]
 
         xp <- x2[parameter == par, .(value)]
 
@@ -260,12 +260,15 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
             coord_cartesian(xlim = c(x_min, x_max)) +
             labs(x = "value",
                  y = "density",
-                 title = pretty_par) +
+                 title = html_par) +
             theme_classic() +
-            theme(legend.position = "none") +
-            easy_title_size(size = 12) +
-            easy_remove_y_axis()
-
+            theme(legend.position = "none",
+                  plot.title   = element_markdown(size = 12),
+                  # or use + easy_remove_y_axis()
+                  axis.title.y = element_blank(),
+                  axis.text.y  = element_blank(),
+                  axis.ticks.y = element_blank(),
+                  axis.line.y  = element_blank())
         p
     }) |> setNames(pars)
 

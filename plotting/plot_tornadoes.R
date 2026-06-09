@@ -23,7 +23,7 @@ plot_tornadoes <- function(dataset = "sim-test",
     if (FALSE) {
         dataset <- "sim-test-inf"
         scen <- 1
-        sort_by <- TRUE
+        sort_by <- "median"
         use_hpdi <- TRUE
         combine <- TRUE
     }
@@ -133,7 +133,7 @@ plot_tornadoes <- function(dataset = "sim-test",
                        hdi1 = NA_real_, hdi2 = NA_real_, id = X[.N, id + 1L])
 
     iwalk(parameters, \(par, i) {
-        # par2 <- str_remove_all(par, "_Tr.*")
+        # html_par <- str_remove_all(par, "_Tr.*")
         X_mu <- X[parameter == par, mean(mean)]
         X_hdi <-  X[parameter == par, hdi(mean)][c("lower", "upper")]
         set(Xtab, i, c("xmin", "xmax", "true_val", "est_val", "hdi1", "hdi2"),
@@ -151,12 +151,12 @@ plot_tornadoes <- function(dataset = "sim-test",
     if (str_detect(dataset, "fb")) Xtab[, true_val := NA_real_]
 
     # Make these nice to read when plotted
-    params2 <- setNames(pretty_names(parameters), parameters)
+    html_pars <- setNames(html_names(parameters), parameters)
 
 
     # Plot parameters ----
     plots <- map(parameters, \(par) {
-        par2 <- params2[[par]]
+        html_par <- html_pars[[par]]
         x1 <- Xtab[parameter == par] |> as.list()
 
         ggplot(data = X[parameter == par]) +
@@ -174,9 +174,9 @@ plot_tornadoes <- function(dataset = "sim-test",
                        linetype = "dashed", linewidth = 0.5) +
             coord_cartesian(xlim = c(x1$xmin, x1$xmax)) +
             expand_limits(x = c(0, x1$true_val)) +
-            labs(title = par2, x = "Value", y = "id") +
+            labs(title = html_par, x = "Value", y = "id") +
             theme_classic() +
-            theme(plot.title = element_text(size = 10)) +
+            theme(plot.title = element_markdown(size = 10)) +
             easy_remove_legend() +
             easy_remove_axes("y")
     }) |>
