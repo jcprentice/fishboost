@@ -30,60 +30,115 @@ rename_bici_pars <- function(pars) {
 #'
 #' Turns the short name parameters into something suitable for printing, e.g.
 #' - "cov_G_ss" -> "Var G (sus)"
-#' - "latent_period" -> "Latent Period (days)"
+#' - "latent_period" -> "Latent Period"
 #' - "trial_i" -> "Trial Infectivity"
 #'
 #' @param pars A character vector of parameter names
 #'
 #' @returns A new character vector of modified parameter names
 
-pretty_names <- function(pars) {
+html_names <- function(pars) {
     pars |> str_replace_all(
-        c("latent_period" = "Latent Period (days)",
-          "LP_shape" = "LP shape",
-          "detection_period" = "Detection Period (days)",
-          "DP_shape" = "DP shape",
-          "removal_period" = "Removal Period (days)",
-          "RP_shape" = "RP shape",
-          "infrat" = "Inf ratio",
-          "_s$" = "_Susceptibility",
-          "_l$" = "_Latency",
-          "_i$" = "_Infectivity",
-          "_d$" = "_Detectability",
-          "_t$" = "_Tolerance",
+        c("latent_period" = "LP",
+          "detection_period" = "DP",
+          "removal_period" = "RP",
+          "Tr(.),Don" = "(Tr\\1, Seeder)",
+          "Tr(.),Rec" = "(Tr\\1, Contact)",
+          "beta_Tr(.)" = "beta (Tr\\1)",
+          "infrat" = "Seeder inf ratio",
           "^trial" = "Trial",
           "^donor" = "Donor",
-          "^txd" = "TxD",
+          "^txd" = "Trial x Donor",
+          "weight_" = "Weight_",
+          "weight(.)_" = "Weight (Tr\\1,_",
+          "Tr([12])" = "Trial \\1",
           "sigma" = "Group Effect",
           "^cov_" = "Var_",
           "^r_" = "Cor_",
-          "^h2_" = "h\\^2_",
-          "_ss$" = "_(Sus)",
-          "_ii$" = "_(Inf)",
-          "_tt$" = "_(Tol)",
+          "_G_" = "<sub>A</sub>_",
+          "_E_" = "<sub>E</sub>_",
+          "_P_" = "<sub>P</sub>_",
+          "^h2_" = "h<sup>2</sup>_",
+          "_s+$" = "_(Sus)",
+          "_i+$" = "_(Inf)",
+          "_l+$" = "_(Lat)",
+          "_d+$" = "_(Det)",
+          "_t+$" = "_(End)",
           "_si$" = "_(Sus, Inf)",
-          "_st$" = "_(Sus, Tol)",
-          "_it$" = "_(Inf, Tol)",
+          "_sl$" = "_(Sus, Lat)",
+          "_sd$" = "_(Sus, Det)",
+          "_st$" = "_(Sus, End)",
+          "_il$" = "_(Inf, Lat)",
+          "_id$" = "_(Inf, Det)",
+          "_it$" = "_(Inf, End)",
+          "_ld$" = "_(Lat, Det)",
+          "_lt$" = "_(Lat, End)",
+          "_dt$" = "_(Det, End)",
+          ",_\\(" = ",_",
+          "_" = " "))
+}
+
+pretty_names <- function(pars) {
+    pars |> str_replace_all(
+        c("latent_period" = "LP",
+          "detection_period" = "DP",
+          "removal_period" = "RP",
+          "Tr(.),Don" = "(Tr\\1, Seeder)",
+          "Tr(.),Rec" = "(Tr\\1, Contact)",
+          "beta_Tr(.)" = "beta (Tr\\1)",
+          "infrat" = "Seeder inf ratio",
+          "^trial" = "Trial",
+          "^donor" = "Donor",
+          "^txd" = "Trial x Donor",
+          "weight_" = "Weight_",
+          "weight(.)_" = "Weight (Tr\\1,_",
+          "Tr([12])" = "Trial \\1",
+          "sigma" = "Group Effect",
+          "^cov_" = "Var_",
+          "^r_" = "Cor_",
+          "_G_" = "_Gen_",
+          "_E_" = "_Env_",
+          "_P_" = "_PT_",
+          "_s+$" = "_(Sus)",
+          "_i+$" = "_(Inf)",
+          "_l+$" = "_(Lat)",
+          "_d+$" = "_(Det)",
+          "_t+$" = "_(End)",
+          "_si$" = "_(Sus, Inf)",
+          "_sl$" = "_(Sus, Lat)",
+          "_sd$" = "_(Sus, Det)",
+          "_st$" = "_(Sus, End)",
+          "_il$" = "_(Inf, Lat)",
+          "_id$" = "_(Inf, Det)",
+          "_it$" = "_(Inf, End)",
+          "_ld$" = "_(Lat, Det)",
+          "_lt$" = "_(Lat, End)",
+          "_dt$" = "_(Det, End)",
+          ",_\\(" = ",_",
           "_" = " "))
 }
 
 sildt <- c("Susceptibility", "Infectivity", "Latency", "Detectability", "Tolerance")
-sildt1 <- sildt |> str_sub(1, 1) |> str_to_lower()
+sildt1 <- c("s", "i", "l", "d", "t")
+sildt2 <- c("ss", "ii", "ll", "dd", "tt")
+xy <- c("si", "sl", "sd", "st", "il", "id", "it", "ld", "lt", "dt")
 
-fes <- expand.grid(sildt1,
+fes <- expand.grid(c("s", "i", "l", "d", "t"),
                    c("trial", "donor", "txd", "weight", "weight1", "weight2")) |>
     rev() |> apply(1, str_flatten, "_")
 
 # Preferred parameter order
+
 param_order <- c(
-    "cov_G_ss", "cov_G_ii",  "cov_G_tt", "r_G_si", "r_G_st", "r_G_it",
-    "cov_E_ss", "cov_E_ii",  "cov_E_tt", "r_E_si", "r_E_st", "r_E_it",
-    "cov_P_ss", "cov_P_ii",  "cov_P_tt", "h2_ss", "h2_ii", "h2_tt",
+    str_c("cov_G_", sildt2), str_c("r_G_", xy),
+    str_c("cov_E_", sildt2), str_c("r_E_", xy),
+    str_c("cov_P_", sildt2), str_c("h2_", sildt2),
     "beta_Tr1", "beta_Tr2", "sigma", "infrat",
     "LP_Tr1,Don", "LP_Tr1,Rec", "LP_Tr2,Don", "LP_Tr2,Rec",
     "DP_Tr1,Don", "DP_Tr1,Rec", "DP_Tr2,Don", "DP_Tr2,Rec",
     "RP_Tr1,Don", "RP_Tr1,Rec", "RP_Tr2,Don", "RP_Tr2,Rec",
-    fes, "MVPSF") |>
+    fes, "MVPSF"
+) |>
     str_replace_all(c("LP" = "latent_period",
                       "DP" = "detection_period",
                       "RP" = "removal_period"))
