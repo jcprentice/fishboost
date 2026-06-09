@@ -38,6 +38,8 @@ protocol[GEV == "sittt", `:=`(use_traits = "sildt", link_traits = "sittt")]
 protocol[GEV != "sittt", use_traits := GEV]
 protocol[, GEV := NULL]
 
+protocol[, `:=`(vars = list(list(default = 0)),
+                cors = list(list(default = 0)))]
 
 # Handle FEs
 protocol[, weight_fe := {
