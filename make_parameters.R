@@ -91,22 +91,22 @@ make_parameters <- function(
 
     # Fix any parameters incorrectly assigned as NULL
     {
-        model_type   <- model_type %||% "SEIDR"
-        name         <- name %||% "scen-1-1"
-        dataset      <- dataset %||% "testing"
-        scenario     <- scenario %||% 1L
-        replicate    <- replicate %||% 1L
-        setup        <- setup %||% "fb_12_rpw"
-        use_traits   <- use_traits %||% "sit"
-        h2           <- h2 %||% 0.5
-        vars         <- vars %||% 0
-        cors         <- cors %||% 0
-        group_layout <- group_layout %||% "fishboost"
-        trial_fe     <- trial_fe %||% "none"
-        donor_fe     <- donor_fe %||% "none"
-        txd_fe       <- txd_fe %||% "none"
-        weight_fe    <- weight_fe %||% "none"
-        sim_new_data <- sim_new_data %||% "bici"
+        if (!exists("model_type")) model_type <- "SEIDR"
+        if (!exists("name")) name <- "scen-1-1"
+        if (!exists("dataset")) dataset <- "testing"
+        if (!exists("scenario")) scenario <- 1L
+        if (!exists("replicate")) replicate <- 1L
+        if (!exists("setup")) setup <- "fb_12_rpw"
+        if (!exists("use_traits")) use_traits <- "sit"
+        if (!exists("h2")) h2 <- 0.5
+        if (!exists("vars")) vars <- 0
+        if (!exists("cors")) cors <- 0
+        if (!exists("group_layout")) group_layout <- "fishboost"
+        if (!exists("trial_fe")) trial_fe <- "none"
+        if (!exists("donor_fe")) donor_fe <- "none"
+        if (!exists("txd_fe")) txd_fe <- "none"
+        if (!exists("weight_fe")) weight_fe <- "none"
+        if (!exists("sim_new_data")) sim_new_data <- "bici"
     }
 
     # Description
