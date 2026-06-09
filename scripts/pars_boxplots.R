@@ -45,7 +45,7 @@ pars_boxplots <- function(dataset = "fb-final", scens = 0, st_str = "") {
         })
 
     pars <- names(x)
-    pretty_pars <- setNames(pretty_names(pars), pars)
+    html_pars <- setNames(html_names(pars), pars)
 
     f <- list.files(str_glue("{res_dir}"), "scen", full.names = TRUE)[[1]]
     priors <- readRDS(f)$params$priors
@@ -69,8 +69,9 @@ pars_boxplots <- function(dataset = "fb-final", scens = 0, st_str = "") {
             # coord_flip() +
             labs(x = "Scenario",
                  y = "Value",
-                 title = pretty_pars[[par]]) +
-            theme_classic()
+                 title = html_pars[[par]]) +
+            theme_classic() +
+            theme(plot.title = element_markdown())
     }) |> setNames(pars)
 
     title_plt <- ggplot() +

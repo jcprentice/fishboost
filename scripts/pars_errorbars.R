@@ -3,6 +3,7 @@
     library(purrr)
     library(stringr)
     library(ggplot2)
+    library(ggtext)
     library(cowplot)
 
     source("rename_pars.R")
@@ -79,13 +80,15 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
 
     pars <- x[, unique(parameter)] # |>
         # str_subset("^G_|^Group", negate = TRUE)
-    pretty_pars <- setNames(rename_pars(pars), pars)
+    html_pars <- setNames(html_names(pars), pars)
 
     x1 <- merge(x[parameter %in% pars],
                 priors[parameter %in% pars, .(scen, parameter, type)],
                 by = c("scen", "parameter"))
 
-    if ("type" %notin% names(x1)) x1[, type := "uniform"]
+    if ("type" %notin% names(x1)) {
+        x1[, type := "uniform"]
+    }
 
     setorder(x1, parameter, scen, median)
 
@@ -154,9 +157,10 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
             coord_cartesian(ylim = range(0, ymin, ymax)) +
             labs(x = "Scenario",
                  y = "Value",
-                 title = pretty_pars[[par]]) +
+                 title = html_pars[[par]]) +
             theme_classic() +
             theme(legend.position = "none",
+                  plot.title = element_markdown(),
                   axis.text.x = element_text(size = 6,
                                              angle = 45,
                                              hjust = 1))
@@ -235,7 +239,7 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
     ggsave(str_glue("{plt_str}.png"), plt, width = 20, height = 25)
     ggsave(str_glue("{plt_str}.pdf"), plt, width = 20, height = 25)
 
-    plt
+    mget(c("plt", "plts", "dataset", "scens"))
 }
 
 if (FALSE) {
