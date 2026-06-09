@@ -19,7 +19,7 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
                           opts = c("extremes")[0]) {
     if (FALSE) {
         dataset <- "fb-test"
-        dataset <- "sim-base-inf"
+        dataset <- "sim-test-inf"
         scens <- 0; opts = character(0); alt = ""
     }
 
@@ -239,8 +239,10 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
         theme_bw() +
         theme(axis.text = element_text(size = 8))
     p1
-    ggsave("gfx/model_fit.png", p1,
+    ggsave("gfx/model_fit.pdf", p1,
            width = 15, height = 7.5, units = "cm")
+    ggsave("gfx/model_fit.png", p1,
+           width = 15, height = 7.5, units = "cm", dpi = "print")
 
     ggplot(fit_wide,
            aes(colour = variable)) +
