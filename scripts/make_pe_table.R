@@ -81,11 +81,9 @@ setcolorder(x, c("parameter", t(matrix(names(x)[-1], nrow = ncols))))
 x[, row_order := match(parameter, param_order)]
 setorder(x, row_order)
 x[, row_order := NULL]
-x[, Parameter := pretty_names(parameter)]
+x[, parameter := pretty_names(parameter)]
 
-
-cols <- names(x)[-1]
-x[, (cols) := round(.SD, 3), .SDcols = cols]
+x[, names(.SD) := round(.SD, 3), .SDcols = -1]
 
 # Collapse min95 and max95 into single string
 walk(scens, possibly(\(i) {
@@ -99,7 +97,8 @@ walk(scens, possibly(\(i) {
 
 setnames(x, str_replace_all(names(x), "_", "_s"))
 
-pe_name <- str_glue("dataset/meta/{dataset}-parameter_estimates.txt")
+pe_name <- str_glue("datasets/{dataset}/meta/{dataset}-parameter_estimates.txt")
+message("- Writing to ", pe_name)
 fwrite(x, pe_name, sep = "|")
 
 # setnames(x, c("parameter", rep(cols, 3)))
