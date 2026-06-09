@@ -20,8 +20,8 @@ if (run_from_script) {
     pname <- cmd_args[[1]]
     row_no <- as.integer(cmd_args[[2]])
 } else {
-    pname <- "sim-test-inf1"
-    row_no <- 1L
+    pname <- "sim-test-inf2"
+    row_no <- 11L
 }
 
 {
