@@ -20,8 +20,8 @@ if (run_from_script) {
     pname <- cmd_args[[1]]
     row_no <- as.integer(cmd_args[[2]])
 } else {
-    pname <- "sim-test-inf2"
-    row_no <- 11L
+    pname <- "sim-events"
+    row_no <- 1L
 }
 
 {
@@ -29,7 +29,8 @@ if (run_from_script) {
     message(str_glue("Running: '{pname} / row {row_no}'"))
     protocol <- with(readRDS(str_glue("param_sets/{pname}.rds")),
                      safe_merge(dt_row_to_list(protocol[row_no]),
-                                if (exists("common")) common))
+                                if (exists("common")) common)) |>
+        reorder_protocol()
 
     # protocol$patch_dataset <- "fb-test"
 
@@ -40,7 +41,6 @@ if (run_from_script) {
 
     # This is necessary to ensure that `expand_priors` comes before any priors,
     # since the priors need to override it.
-    protocol <- reorder_protocol(protocol)
 
     # Patch params from protocol file
     walk(names(protocol), \(param) {
@@ -63,13 +63,12 @@ if (run_from_script) {
         }
 
         # Handle special cases first
-        if (str_detect(param, "periods")) {
-            # set all of latent_period and latent_period_*,*
-            sp <- str_split_i(param, "_", 1)
-            params[[str_glue("{sp}_period")]] <<- value
-            params$priors[str_detect(parameter, sp),
+        if (str_detect(param, "[LDR]P")) {
+            # set all of TP and TP_*,*
+            params[[param]] <<- value
+            params$priors[str_detect(parameter, param),
                           `:=`(true_val = value,
-                               val2 = pmax(val2, value))]
+                               val2 = pmax(val2, 1.2 * value))]
 
         } else if (str_starts(param, "prior")) {
             # "prior__abc_xyz__val1" -> "abc_xyz", "val1"
@@ -189,7 +188,7 @@ if (run_from_script) {
     # Tidy up LP, DP, RP, including rate, shape, and priors
     params <- tidy_up_periods(params, protocol)
 
-    params$R0 <- with(params, r_beta * (detection_period + removal_period))
+    params$R0 <- with(params, r_beta * (DP + RP))
 
     # params$DEBUG <- TRUE
 

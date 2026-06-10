@@ -53,9 +53,6 @@ plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
     if (file.exists(rf)) {
         res_file <- readRDS(rf)
         priors <- res_file$params$priors
-        priors[, parameter := str_replace_all(parameter, c("latent_period" = "LP",
-                                                           "detection_period" = "DP",
-                                                           "removal_period" = "RP"))]
         priors <- priors[parameter %in% pars,
                          .(parameter, min = val1, max = val2, true_val)]
         description <- res_file$params$description

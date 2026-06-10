@@ -54,11 +54,7 @@ plot_correlations <- function(dataset = "fb-test", scen = 1, rep = 1) {
 
     x[, str_subset(names(x), "state|State|Group|^G_") := NULL]
 
-    nx <- str_replace_all(names(x),
-                          c("latent_period" = "LP",
-                            "detection_period" = "DP",
-                            "removal_period" = "RP",
-                            "," = "_"))
+    nx <- str_replace_all(names(x), ",", "_")
     setnames(x, nx)
 
     # Genetic covariances and correlations

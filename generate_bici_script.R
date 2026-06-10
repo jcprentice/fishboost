@@ -642,13 +642,10 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
         priors[type == "inverse", val1 := pmax(0.01, val1)]
         priors[type == "inverse" & str_detect(parameter, "beta"),
                val1 := pmax(0.1, val1)]
-        priors[type == "inverse" & str_detect(parameter, "period"),
+        priors[type == "inverse" & str_ends(parameter, "[LDR]P"),
                val1 := pmax(1, val1)]
 
         ## TP priors ----
-        period_to_pp <- function(period = "latent") {
-            period |> str_1st() |> str_to_upper() |> str_c("P")
-        }
 
         # Check for nested weights
         if (weight_is_nested && ntrials > 1) {
@@ -700,30 +697,27 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
             })
 
 
-            # Event periods
-            walk(c("latent", "detection", "removal"), \(period) {
-                pp <- period_to_pp(period)
-
-                prior <- priors[parameter %in% str_c(period, "_period", t_bc),
+            # Transition periods
+            walk(c("LP", "DP", "RP"), \(tp) {
+                prior <- priors[parameter %in% str_c(tp, t_bc),
                                 .(Value = true_val,
                                   Prior = fifelse(type == "fix",
                                                   str_glue("fix({v})", v = true_val),
                                                   str_glue("{type}({v1},{v2})",
                                                            v1 = val1, v2 = val2)))]
 
-
                 data.table(tab, Value = prior$Value) |>
-                    fwrite(str_glue("{output_dir}/value-{pp}.tsv"),
+                    fwrite(str_glue("{output_dir}/value-{tp}.tsv"),
                            sep = "\t", quote = TRUE)
 
                 data.table(tab, Prior = prior$Prior) |>
-                    fwrite(str_glue("{output_dir}/prior-{pp}.tsv"),
+                    fwrite(str_glue("{output_dir}/prior-{tp}.tsv"),
                            sep = "\t", quote = TRUE)
             })
         }
 
         # Check for fixed periods
-        lp_types <- with(priors[str_ends(parameter, "period"), .(parameter, type)],
+        lp_types <- with(priors[str_ends(parameter, "[LDR]P"), .(parameter, type)],
                          setNames(type, parameter)) |> as.list()
 
         ## Cov priors ----
@@ -794,9 +788,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
             if (pname == "beta") {
                 pname <- "beta_b"
                 ppi$true_val <- "value-beta.tsv"
-            } else if (str_ends(pname, "period")) {
-                # "latent_period" -> "LP_b,c"
-                pname <- period_to_pp(pname)
+            } else if (pname %in% c("LP", "DP", "RP")) {
                 ppi$true_val <- str_glue("value-{pname}.tsv")
                 pname <- pname |> str_c("_b,c")
             } else if (str_ends(pname, "shape")) {
@@ -806,7 +798,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
                 ppi$val2 <- 1.4
                 ppi$true_val <- str_glue("value-{pname}.tsv")
                 pname <- pname |> str_c("_b,c")
-            } else if (str_detect(pname, "sigma")) {
+            } else if (pname == "sigma") {
                 # Note: group effect gets 2 entries
                 ppi$val1 <- 1e-2
                 x$prior_ge <<- list(node = "param", name = "G_g",
@@ -818,27 +810,13 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
             } else if (str_detect(pname, "_[GE]_")) {
                 return()
             }
-            # } else if (str_starts(pname, "cov_[GE]_")) {
-            #     # "cov_G_ss" -> "Ω^sa,sa"
-            #     tmp <- str_split_1(pname, "_")
-            #     ge <- str_to_lower(tmp[[2]])
-            #     tr <- tmp[[3]] |> str_1st()
-            #     pname <- str_glue("\\Omega^{tr}{ge},{tr}{ge}")
-            # } else if (str_starts(pname, "r_[GE]_")) {
-            #     # "r_G_si" -> "ω^sg,ig"
-            #     tmp <- str_split_1(pname, "_")
-            #     ge <- str_to_lower(tmp[[2]])
-            #     tr <- str_chars(tmp[[3]])
-            #     pname <- str_glue("\\omega^{tr[[1]]}{ge},{tr[[2]]}{ge}")
-            # }
 
             x_ns <- list(node = "param", name = pname, value = ppi$true_val)
 
             if (ppi$parameter == "beta") {
                 x_ns[["prior-split"]] <- "prior-beta.tsv"
-            } else if (str_ends(ppi$parameter, "period")) {
-                x_ns[["prior-split"]] <- str_glue("prior-{ppar}.tsv",
-                                                  ppar = period_to_pp(ppi$parameter))
+            } else if (str_ends(ppi$parameter, "[LDR]P")) {
+                x_ns[["prior-split"]] <- str_glue("prior-{ppi$parameter}.tsv")
             } else {
                 x_ns$prior <- if (ppi$type == "fix") {
                     str_glue("fix({ppi$true_val})")

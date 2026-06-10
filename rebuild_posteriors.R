@@ -153,13 +153,12 @@ rebuild_bici_posteriors <- function(dataset = "fb-test",
 
     change_names <- function(x) {
         x |> str_replace_all(
-            c("\\\\" = "", "\\^" = "_",
-              "gamma_shape" = "RP_shape",
-              "LP" = "latent_period",
-              "DP" = "detection_period",
-              "RP" = "removal_period",
+            c("\\\\" = "",
+              "\\^" = "_",
               "State" = "state",
-              "Ω" = "Omega", "ω" = "omega", "μ" = "mu",
+              "Ω" = "Omega",
+              "ω" = "omega",
+              "μ" = "mu",
               # "^G_" = "Group effect ",
               "cv_G" = "sigma",
               "mu_weight(\\d?)([sildt])" = "weight\\1_\\2",

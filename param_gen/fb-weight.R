@@ -53,8 +53,8 @@ common <- list(use_traits = "sit",
                use_weight = "log",
                use_grm = "",
                group_effect = 0.1,
-               prior__latent_period__type = "fix",
-               prior__latent_period__val2 = 10,
+               prior__LP__type = "fix",
+               prior__LP__val2 = 10,
                RP_dist = "gamma",
                time_step = 1) |>
     safe_merge(common2)

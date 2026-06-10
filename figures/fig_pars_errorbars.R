@@ -79,10 +79,6 @@ fig_pars_errorbars <- function() {
 
     pars <- x[, unique(parameter)]
     html_pars <- html_names(pars) |>
-        # str_replace_all(c(" Gen" = "<sub>A</sub>",
-        #                   " Env" = "<sub>E</sub>",
-        #                   "Period " = "Period<br>",
-        #                   "Trial (.) \\(" = "(Trial \\1, ")) |>
         setNames(pars)
 
     x1 <- merge(x[parameter %in% pars],
@@ -103,7 +99,10 @@ fig_pars_errorbars <- function() {
     setattr(priors$scen, "levels" , lvls)
 
     plts <- map(pars, \(par) {
-        # i <- 1; par <- pars[[i]]
+        if (FALSE) {
+            i <- 1
+            par <- pars[[i]]
+        }
         y_rng <- priors[parameter == par, c(min(val1), max(val2))]
         y_true <- priors[parameter == par, true_val]
         ymin <- x1[parameter == par, min(hdi95min)]
@@ -151,20 +150,12 @@ fig_pars_errorbars <- function() {
                   # axis.text.x = element_text(angle = 0, hjust = 1))
     }) |> setNames(pars)
 
-    pltnames <- c("cov_G_ss", "cov_G_ii", "cov_G_tt", "r_G_si", "r_G_st", "r_G_it",
-                  "cov_E_ss", "cov_E_ii", "cov_E_tt", "r_E_si", "r_E_st", "r_E_it",
-                  "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
-                  "weight1_s", "weight1_i", "weight1_t",
-                  "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
-                  "weight2_s", "weight2_i", "weight2_t",
-                  "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
-                  "beta_Tr1", "beta_Tr2", "infrat",
-                  "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec",
-                  "sigma") |>
-        str_replace_all(c("LP" = "latent_period",
-                          "DP" = "detection_period",
-                          "RP" = "removal_period"))
-
+    pltnames <- c("cov_G_ss",   "cov_G_ii",   "cov_G_tt",   "r_G_si",    "r_G_st",    "r_G_it",
+                  "cov_E_ss",   "cov_E_ii",   "cov_E_tt",   "r_E_si",    "r_E_st",    "r_E_it",
+                  "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don", "weight1_s", "weight1_i", "weight1_t",
+                  "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec", "weight2_s", "weight2_i", "weight2_t",
+                  "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don", "beta_Tr1",  "beta_Tr2",  "infrat",
+                  "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec", "sigma")
 
     plt <- plot_grid(plotlist = plts[pltnames],
                      ncol = 6, align = "v")

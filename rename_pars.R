@@ -16,7 +16,7 @@ rename_bici_pars <- function(pars) {
         c("\\\\" = "",
           "\\^" = "_",
           "cv_G" = "sigma",
-          "^G_" = "Group effect ",
+          # "^G_" = "Group effect ",
           # "infrat" = "Inf ratio",
           # "Ω" = "Omega", "ω" = "omega", "μ" = "mu",
           "mu_weight([12]?)([slidt])" = "weight\\1_\\2",
@@ -30,7 +30,6 @@ rename_bici_pars <- function(pars) {
 #'
 #' Turns the short name parameters into something suitable for printing, e.g.
 #' - "cov_G_ss" -> "Var G (sus)"
-#' - "latent_period" -> "Latent Period"
 #' - "trial_i" -> "Trial Infectivity"
 #'
 #' @param pars A character vector of parameter names
@@ -39,17 +38,14 @@ rename_bici_pars <- function(pars) {
 
 html_names <- function(pars) {
     pars |> str_replace_all(
-        c("latent_period" = "LP",
-          "detection_period" = "DP",
-          "removal_period" = "RP",
-          "Tr(.),Don" = "(Tr\\1, Seeder)",
+        c("Tr(.),Don" = "(Tr\\1, Seeder)",
           "Tr(.),Rec" = "(Tr\\1, Contact)",
           "beta_Tr(.)" = "beta (Tr\\1)",
           "infrat" = "Seeder inf ratio",
           "^trial" = "Trial",
           "^donor" = "Donor",
           "^txd" = "Trial x Donor",
-          "weight_" = "Weight_",
+          "weight_" = "Weight__",
           "weight(.)_" = "Weight (Tr\\1,_",
           "Tr([12])" = "Trial \\1",
           "sigma" = "Group Effect",
@@ -74,16 +70,13 @@ html_names <- function(pars) {
           "_ld$" = "_(Lat, Det)",
           "_lt$" = "_(Lat, End)",
           "_dt$" = "_(Det, End)",
-          ",_\\(" = ",_",
+          ", \\(" = ",_",
           "_" = " "))
 }
 
 pretty_names <- function(pars) {
     pars |> str_replace_all(
-        c("latent_period" = "LP",
-          "detection_period" = "DP",
-          "removal_period" = "RP",
-          "Tr(.),Don" = "(Tr\\1, Seeder)",
+        c("Tr(.),Don" = "(Tr\\1, Seeder)",
           "Tr(.),Rec" = "(Tr\\1, Contact)",
           "beta_Tr(.)" = "beta (Tr\\1)",
           "infrat" = "Seeder inf ratio",
@@ -138,10 +131,7 @@ param_order <- c(
     "DP_Tr1,Don", "DP_Tr1,Rec", "DP_Tr2,Don", "DP_Tr2,Rec",
     "RP_Tr1,Don", "RP_Tr1,Rec", "RP_Tr2,Don", "RP_Tr2,Rec",
     fes, "MVPSF"
-) |>
-    str_replace_all(c("LP" = "latent_period",
-                      "DP" = "detection_period",
-                      "RP" = "removal_period"))
+)
 
 full_param_order <- pretty_names(param_order)
 

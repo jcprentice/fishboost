@@ -55,7 +55,7 @@ protocol[str_detect(d, "FEs ITTT"),
          `:=`(link_trial = "sittt", link_donor = "sittt", link_txd = "sittt", link_weight = "sittt")]
 
 # Set LP
-protocol[, prior__latent_period__val2 := fcase(
+protocol[, prior__LP__val2 := fcase(
     str_detect(d, "LP 2"), 2,
     str_detect(d, "LP 5"), 5,
     str_detect(d, "LP 8"), 8,
@@ -84,7 +84,7 @@ common <- list(setup = "fb_12",
                use_weight = "log",
                group_effect = 0.1,
                # expand_priors = 5,
-               prior__latent_period__type = "fix",
+               prior__LP__type = "fix",
                RP_dist = "gamma",
                sample_states = 100) |>
     safe_merge(common2)

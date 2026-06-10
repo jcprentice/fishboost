@@ -273,27 +273,27 @@ make_parameters <- function(
 
     # Calculated for an SEIDR model based on donors in trial 1 (+ 0.5)
     # fitdist(Tsign + 0.5, "gamma")
-    latent_period <- 10
+    LP <- 10
     LP_shape <- 1 # 1.46 # 2.0 # 10.0
-    LP_scale <- latent_period / LP_shape # 0.232 # LP_shape / latent_period
+    LP_scale <- LP / LP_shape # 0.232 # LP_shape / LP
     LP_dist <- "exp"
 
 
     ### Detection period I->D ----
 
     # This is currently identical to the latency
-    detection_period <- 10
+    DP <- 10
     DP_shape <- 1 # 1.46 # 2.0 # 10.0
-    DP_scale <- detection_period / DP_shape # 0.232 # LP_shape / latent_period
+    DP_scale <- DP / DP_shape # 0.232 # LP_shape / LP
     DP_dist <- "exp"
 
 
     ### Removal ----
 
     # fitdist(RP + 0.5, "gamma")
-    removal_period <- 10
+    RP <- 10
     RP_shape <- 1
-    RP_scale <- removal_period / RP_shape # 0.149
+    RP_scale <- RP / RP_shape # 0.149
     RP_dist <- "exp"
 
 
@@ -353,7 +353,7 @@ make_parameters <- function(
     ## R0 ----
 
     # This should target R0 around 5?
-    R0 <- r_beta * (removal_period + if ("D" %in% compartments) detection_period else 0)
+    R0 <- r_beta * (RP + if ("D" %in% compartments) DP else 0)
 
 
     # MCMC settings ----
@@ -391,33 +391,33 @@ make_parameters <- function(
     single_prior <- c("inverse", "uniform")[[1]]
 
     base_priors <- rowwiseDT(
-        parameter=,         true_val=,        type=,        val1=, val2=,
+        parameter=, true_val=, type=,        val1=, val2=,
 
-        "beta",             r_beta,           single_prior, 0,     2.0,
-        "latent_period",    latent_period,    single_prior, 0,     40,
-        "detection_period", detection_period, single_prior, 0,     160,
-        "removal_period",   removal_period,   single_prior, 0,     20,
-        "LP_shape",         LP_shape,         "uniform",    0.5,   5,
-        "DP_shape",         DP_shape,         "uniform",    0.5,   5,
-        "RP_shape",         RP_shape,         "uniform",    0.5,   5,
-        "infrat",           inf_ratio,        "uniform",    0,     2,
-        "sigma",            ge,               single_prior, 0,     2 * ge,
+        "beta",     r_beta,    single_prior, 0,     2.0,
+        "LP",       LP,        single_prior, 0,     40,
+        "DP",       DP,        single_prior, 0,     160,
+        "RP",       RP,        single_prior, 0,     20,
+        "LP_shape", LP_shape,  "uniform",    0.5,   5,
+        "DP_shape", DP_shape,  "uniform",    0.5,   5,
+        "RP_shape", RP_shape,  "uniform",    0.5,   5,
+        "infrat",   inf_ratio, "uniform",    0,     2,
+        "sigma",    ge,        single_prior, 0,     2 * ge,
 
-        # parameter                 true_val          type          val1 val2
-        "beta_Tr1",                 r_beta,           single_prior, 0,   2,
-        "beta_Tr2",                 r_beta,           single_prior, 0,   2,
-        "latent_period_Tr1,Don",    latent_period,    single_prior, 0,   50,
-        "latent_period_Tr1,Rec",    latent_period,    single_prior, 0,   50,
-        "latent_period_Tr2,Don",    latent_period,    single_prior, 0,   120,
-        "latent_period_Tr2,Rec",    latent_period,    single_prior, 0,   50,
-        "detection_period_Tr1,Don", detection_period, single_prior, 0,   50,
-        "detection_period_Tr1,Rec", detection_period, single_prior, 0,   50,
-        "detection_period_Tr2,Don", detection_period, single_prior, 0,   160,
-        "detection_period_Tr2,Rec", detection_period, single_prior, 0,   50,
-        "removal_period_Tr1,Don",   removal_period,   single_prior, 0,   30,
-        "removal_period_Tr1,Rec",   removal_period,   single_prior, 0,   30,
-        "removal_period_Tr2,Don",   removal_period,   single_prior, 0,   30,
-        "removal_period_Tr2,Rec",   removal_period,   single_prior, 0,   30)
+        # parameter   true_val type          val1 val2
+        "beta_Tr1",   r_beta,  single_prior, 0,   2,
+        "beta_Tr2",   r_beta,  single_prior, 0,   2,
+        "LP_Tr1,Don", LP,      single_prior, 0,   50,
+        "LP_Tr1,Rec", LP,      single_prior, 0,   50,
+        "LP_Tr2,Don", LP,      single_prior, 0,   120,
+        "LP_Tr2,Rec", LP,      single_prior, 0,   50,
+        "DP_Tr1,Don", DP,      single_prior, 0,   50,
+        "DP_Tr1,Rec", DP,      single_prior, 0,   50,
+        "DP_Tr2,Don", DP,      single_prior, 0,   160,
+        "DP_Tr2,Rec", DP,      single_prior, 0,   50,
+        "RP_Tr1,Don", RP,      single_prior, 0,   30,
+        "RP_Tr1,Rec", RP,      single_prior, 0,   30,
+        "RP_Tr2,Don", RP,      single_prior, 0,   30,
+        "RP_Tr2,Rec", RP,      single_prior, 0,   30)
 
     t1 <- model_traits |> names()
     xx <- strrep(t1, 2)
@@ -460,9 +460,9 @@ make_parameters <- function(
 
     use_parameters <- c(
         "beta",
-        if ("l" %in% t1) "latent_period",
-        if ("d" %in% t1) "detection_period",
-        if ("t" %in% t1) "removal_period",
+        if ("l" %in% t1) "LP",
+        if ("d" %in% t1) "DP",
+        if ("t" %in% t1) "RP",
         if ("l" %in% t1 && LP_dist == "gamma") "LP_shape",
         if ("d" %in% t1 && DP_dist == "gamma") "DP_shape",
         if ("p" %in% t1 && RP_dist == "gamma") "RP_shape",
@@ -584,9 +584,9 @@ make_parameters <- function(
           "link_traits", "link_trial", "link_donor", "link_txd", "link_weight", "link_shapes",
           # Main model parameters
           "r_beta", "inf_ratio", "inf_model", "group_effect", "R0", # infection
-          "latent_period",    "LP_shape", "LP_scale", "LP_dist", # latency
-          "detection_period", "DP_shape", "DP_scale", "DP_dist", # detection
-          "removal_period",   "RP_shape", "RP_scale", "RP_dist", # removal
+          "LP", "LP_shape", "LP_scale", "LP_dist", # latency
+          "DP", "DP_shape", "DP_scale", "DP_dist", # detection
+          "RP", "RP_shape", "RP_scale", "RP_dist", # removal
           "fe_vals", "trial_fe", "donor_fe", "txd_fe",
           "sim_trial_fe", "sim_donor_fe", "sim_txd_fe",
           "weight_fe", "sim_weight_fe", "weight_is_nested",

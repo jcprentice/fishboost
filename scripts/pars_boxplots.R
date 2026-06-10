@@ -96,10 +96,7 @@ pars_boxplots <- function(dataset = "fb-final", scens = 0, st_str = "") {
         "sigma", "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
         "empty", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
         "empty", "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
-        "empty", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec") |>
-        str_replace_all(c("LP" = "latent_period",
-                          "DP" = "detection_period",
-                          "RP" = "removal_period"))
+        "empty", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec")
 
     fes <- expand.grid(sildt1,
                        c("trial", "donor", "txd", "weight", "weight1", "weight2")) |>

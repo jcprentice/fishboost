@@ -44,7 +44,7 @@ protocol[str_detect(d, "Traits SITTT"),
          `:=`(use_traits = "all", link_traits = "sittt")]
 
 # Set LP
-protocol[, prior__latent_period__val2 := get_part(d, "LP") |> as.numeric(), .I]
+protocol[, prior__LP__val2 := get_part(d, "LP") |> as.numeric(), .I]
 
 
 # Set samples etc. for pedigree vs GRM
@@ -62,7 +62,7 @@ source("param_gen/common2.R")
 
 common <- list(sim_new_data = "no",
                setup = "fb_12",
-               prior__latent_period__type = "fix",
+               prior__LP__type = "fix",
                fix_donors = "no_Tsign_survivors",
                t_demote = "10,80",
                trial_fe = "ildt",

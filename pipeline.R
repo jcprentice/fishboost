@@ -24,7 +24,7 @@ run_from_script <- length(cmd_args) > 0
     params <- make_parameters(
         model_type = "SEIDR", # "SIR", "SEIR", "SIDR", or "SEIDR"
         dataset = "testing",
-        name = "scen-2-1",
+        name = "scen-1-1",
         setup = "fb_12_rpw", # chris, small, fb_12, fb_1, fb_2, single
         use_traits = "all", # "all", "none", "sit", "si" etc.
         vars = 0.5, # c(0.5, 1.5, 0, 0, 0.5)
@@ -35,7 +35,7 @@ run_from_script <- length(cmd_args) > 0
         txd_fe = "ildt",
         weight_fe = "sildt",
         weight_is_nested = TRUE,
-        sim_new_data = "bici"
+        sim_new_data = "summary_sim"
     )
 
     params$select_on <- "inf"
@@ -43,7 +43,7 @@ run_from_script <- length(cmd_args) > 0
 
     # Temporary override of some parameters
     # params$group_effect <- 0.3
-    # params$priors[parameter == "latent_period", `:=`(type = "Fixed", val1 = 5, true_val = 5)]
+    # params$priors[parameter == "LP", `:=`(type = "Fixed", val1 = 5, true_val = 5)]
 
     if (!run_from_script) {
         params$nchains <- 2L
@@ -66,11 +66,11 @@ run_from_script <- length(cmd_args) > 0
     params <- tidy_up_periods(params)
 
     # Patch params with posterior mean values from data set/scenario
-    params$patch_dataset <- "fb-test"
-    params$patch_name <- "scen-7-1"
+    params$patch_dataset <- "sim-test"
+    params$patch_name <- "scen-1-1"
     params$traits_source <- "pedigree" # posterior
-    params$patch_type <- "median"
-    params$patch_state <- TRUE
+    params$patch_type <- "sampled"
+    params$patch_state <- 1
     params$skip_patches <- c() #, "covariance")
 
     params <- params |>
@@ -85,21 +85,33 @@ run_from_script <- length(cmd_args) > 0
 
 ## Generate pedigree and popn ----
 
-if (params$sim_new_data != "no") {
+if (params$sim_new_data %in% c("r", "bici")) {
     popn <- make_pedigree(params) |>
-        set_groups(params) |> # Set groups, trial, donors, and group effect
+        set_groups(params) |>
         set_traits(params) |>
         set_weights(params) |>
         apply_selection(params) |>
         apply_fixed_effects(params)
-} else {
-    popn <- readRDS(str_glue("fb_data/{params$setup}.rds"))
+} else if (params$sim_new_data == "no") {
+    # Load popn, pedigree, and GRM
+    popn <- readRDS(str_glue("fb_data/{params$setup}.rds")) |>
+        fix_fb_data(params)
 
+    params$tmax <- c(t1 = 104, t2 = 160)
+
+    # FB only has the last 2 events
+    params$pass_events <- c("Tsign", "Tdeath")
     params$fix_donors <- "no_Tsign_survivors" # c("time", "no_Tsign_survivors")
-
-    # Create a GRM or A matrix
-    GRM <- make_grm(popn, params$use_grm)
+} else {
+    # params$sim_new_data %in% summary_{sim,inf,ps}
+    rf <- with(params, str_glue("datasets/{patch_dataset}/data/",
+                                "{patch_name}-out/{sim_new_data}.rds"))
+    popn <- readRDS(rf)$popn[state == max(params$patch_state, 1L)]
+    popn[, state := NULL]
 }
+
+# Create a GRM or A matrix
+GRM <- make_grm(popn, params$use_grm)
 
 
 ## Simulate and plot epidemic ----
@@ -112,8 +124,10 @@ if (params$sim_new_data == "r") {
     params$tmax <- get_tmax(popn, params)
 
     message("Tmax = ", str_flatten_comma(params$tmax))
+
 } else if (params$sim_new_data == "bici") {
     params$tmax <- c(t1 = 200, t2 = 200)
+
 } else {
     # If Tinf, Tinc etc. are not in popn, create missing column(s) and set to NA
     missing_timings <- setdiff(params$timings, names(popn))
@@ -167,11 +181,13 @@ bici_txt <- generate_bici_script(popn, params, clean_dirs = FALSE)
 {
     message("Retrieving results ...")
 
-    name <- params$name
-    dataset <- params$dataset
-    output_dir <- params$output_dir
-    results_dir <- params$results_dir
-    bici_cmd <- params$bici_cmd
+    {
+        name <- params$name
+        dataset <- params$dataset
+        output_dir <- params$output_dir
+        results_dir <- params$results_dir
+        bici_cmd <- params$bici_cmd
+    }
 
     if (bici_cmd == "inf") {
         # pe_name <- str_glue("{output_dir}/posterior.csv")

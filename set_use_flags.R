@@ -22,54 +22,54 @@ set_use_flags <- function(params) {
         # DTs are modified by reference, so this doesn't need to be copied back
         priors        <- params$priors
     }
-    
+
     message("Setting use flags in priors ...")
-    
+
     priors[, use := FALSE]
-    
+
     # Turn on base parameters
-    
+
     # get letters for each trait
     used <- str_1st(model_traits)
-    
+
     use_parameters <- c(
         "beta",
-        if ("l" %in% used) "latent_period",
-        if ("d" %in% used) "detection_period",
-        if ("t" %in% used) "removal_period",
+        if ("l" %in% used) "LP",
+        if ("d" %in% used) "DP",
+        if ("t" %in% used) "RP",
         if ("l" %in% used && LP_dist == "gamma") "LP_shape",
         if ("d" %in% used && DP_dist == "gamma") "DP_shape",
         if ("p" %in% used && RP_dist == "gamma") "RP_shape",
         if (group_effect > 0) "sigma"
     )
     priors[parameter %in% use_parameters, use := TRUE]
-    
-    
+
+
     # Weight should not be nested unless setup is for 2+ trials
     if (!str_detect(setup, "_12")) {
         params$weight_is_nested <- FALSE
     }
-    
+
     # Only use traits if in used AND in link_traits
     GE_traits <- intersect(used,
                            intersect(str_chars(use_traits),
                                      str_chars(link_traits)))
-    
+
     pwalk(expand.grid(x = used, y = used), \(x, y) {
         priors[str_ends(parameter, str_glue("_[GE]_{x}{y}")),
                use := all(c(x, y) %in% GE_traits)]
     })
-    
+
     # Now handle FEs
-    
+
     fe_str <- function(base) {
         # fe_str("trial") -> "trial_[ildt]"
         # fe_str("weight") -> "weight[12]_[sildt]"
         base_str <- get(str_glue("{base}_fe"))
         link_str <- get(str_glue("link_{base}"))
-        
+
         if (base_str %in% c("", "none")) return("XYZ")
-        
+
         used |>
             intersect(str_chars(base_str)) |>
             intersect(str_chars(link_str)) |>
@@ -79,12 +79,12 @@ set_use_flags <- function(params) {
                      wt = if (base == "weight" && params$weight_is_nested)
                          "[12]" else "")
     }
-    
+
     priors[str_detect(parameter, fe_str("trial")),  use := TRUE]
     priors[str_detect(parameter, fe_str("donor")),  use := TRUE]
     priors[str_detect(parameter, fe_str("txd")),    use := TRUE]
     priors[str_detect(parameter, fe_str("weight")), use := TRUE]
-    
-    
+
+
     params
 }

@@ -54,8 +54,6 @@ x <- map(scens, possibly(\(i) {
     if (is.character(pe$ESS)) stop("Need to rebuild posteriors.csv and fix results")
 
     setnames(pe, c("parameter", "mean", "min95", "max95", "ESS", "GR"))
-    # pe[parameter == "latent_period", `:=`(ESS = NA, GR = NA)]
-    # pe[, ESS := as.numeric(ESS)]
     pe
 })) |>
     rbindlist(idcol = "i") |>
@@ -64,8 +62,7 @@ x <- map(scens, possibly(\(i) {
 # Fix names if they don't line up with scens
 tmp <- expand.grid(scen = scens,
                    var = c("mean", "min95", "max95", "ESS", "GR")) |>
-    rev() |>
-    apply(1, str_flatten, "_") |>
+    rev() |> apply(1, str_flatten, "_") |>
     str_remove_all(" ")
 setnames(x, c("parameter", tmp))
 

@@ -136,19 +136,12 @@ figure_pars_bias <- function(dataset = "sim-test-inf2", scens = 0) {
                   axis.ticks = element_line(linewidth = 0.2))
     }) |> setNames(pars)
 
-    pltnames <- c("cov_G_ss", "cov_G_ii", "cov_G_tt", "r_G_si", "r_G_st", "r_G_it",
-                  "cov_E_ss", "cov_E_ii", "cov_E_tt", "r_E_si", "r_E_st", "r_E_it",
-                  "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
-                  "weight1_s", "weight1_i", "weight1_t",
-                  "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
-                  "weight2_s", "weight2_i", "weight2_t",
-                  "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
-                  "beta_Tr1", "beta_Tr2", "infrat",
-                  "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec",
-                  "sigma") |>
-        str_replace_all(c("LP" = "latent_period",
-                          "DP" = "detection_period",
-                          "RP" = "removal_period")) |>
+    pltnames <- c("cov_G_ss",   "cov_G_ii",   "cov_G_tt",   "r_G_si",    "r_G_st",    "r_G_it",
+                  "cov_E_ss",   "cov_E_ii",   "cov_E_tt",   "r_E_si",    "r_E_st",    "r_E_it",
+                  "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don", "weight1_s", "weight1_i", "weight1_t",
+                  "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec", "weight2_s", "weight2_i", "weight2_t",
+                  "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don", "beta_Tr1",  "beta_Tr2",  "infrat",
+                  "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec", "sigma") |>
         intersect(names(plts))
 
 

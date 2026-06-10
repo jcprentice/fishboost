@@ -14,15 +14,15 @@ x <- map(scens, \(i) {
     # i <- 1
     res_file <- str_glue("datasets/{dataset}/results/scen-{i}-1.rds")
     if (!file.exists(res_file)) return(x)
-    
+
     res <- readRDS(res_file)
     PEs <- res$parameter_estimates
     params <- res$params
-    
+
     scenario <- params$scenario
     trial <- str_split_i(params$setup, "_", 2)
-    
-    PEs[!str_starts(parameter, "Group effect") & parameter != "latent_period",
+
+    PEs[!str_starts(parameter, "G_|Group") & parameter != "LP",
               .(parameter, mean, ESS = as.numeric(ESS), GR, scenario, trial,
                 trial_fe = params$trial_fe,
                 donor_fe = params$donor_fe,
@@ -45,7 +45,7 @@ x[str_starts(parameter, "cov_G")][order(ESS), .SD, parameter]
 # Min and max covariances
 y <- x[str_starts(parameter, "cov_G"),
   .(min = round(min(mean), 2), max = round(max(mean), 2)),
-  .(parameter, trial)] 
+  .(parameter, trial)]
 y[, range := str_c("(", min, ", ", max, ")")]
 y[, c("min", "max") := NULL]
 y

@@ -47,8 +47,8 @@ protocol[str_detect(d, "Traits SITTT"),
 
 # Set LP
 f <- function(x) x |> str_split_1(", ") |> str_subset("LP") |> str_split_i(" ", 2) |> as.numeric()
-protocol[, `:=`(prior__latent_period__val1 = max(f(d) - 1, 0),
-                prior__latent_period__val2 = f(d) + 1),
+protocol[, `:=`(prior__LP__val1 = max(f(d) - 1, 0),
+                prior__LP__val2 = f(d) + 1),
          by = .I]
 
 
@@ -68,7 +68,7 @@ source("param_gen/common2.R")
 
 common <- list(sim_new_data = "no",
                setup = "fb_12",
-               # prior__latent_period__type = "fix",
+               # prior__LP__type = "fix",
                fix_donors = "no_Tsign_survivors",
                # fix_donors = "time,no_Tsign_survivors",
                # t_demote = "10,80",

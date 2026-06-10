@@ -48,7 +48,7 @@ gr_diagnostics <- function(dataset = "fb-final", scen = 1, itn = 0) {
     # Select columns to keep
     cols <- PEs$parameter |>
         str_subset("Group effect", negate = TRUE) |>
-        # Remove columns with zero variance (e.g. "latent_period")
+        # Remove columns with zero variance (e.g. "LP")
         str_subset(fixed_pars, negate = TRUE) # |>
         # str_subset("L_|state|Prior|Posterior|Number infected|log(phi)", negate = TRUE)
 

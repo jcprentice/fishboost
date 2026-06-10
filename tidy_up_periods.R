@@ -11,17 +11,15 @@ tidy_up_periods <- function(params, protocol = NULL) {
     sim_new_data <- params$sim_new_data
 
     TPs <- if (is.null(protocol)) {
-        c("latent_period",    "LP_shape",
-          "detection_period", "DP_shape",
-          "removal_period",   "RP_shape")
+        c("LP", "DP", "RP", "LP_shape", "DP_shape", "RP_shape")
     } else {
         names(protocol)
     }
 
     # Fix TP scales
-    params2$LP_scale <- with(params2, latent_period    / LP_shape)
-    params2$DP_scale <- with(params2, detection_period / DP_shape)
-    params2$RP_scale <- with(params2, removal_period   / RP_shape)
+    params2$LP_scale <- with(params2, LP / LP_shape)
+    params2$DP_scale <- with(params2, DP / DP_shape)
+    params2$RP_scale <- with(params2, RP / RP_shape)
 
     # Update the TP priors
     walk(TPs,

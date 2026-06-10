@@ -145,7 +145,7 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
     priors[str_starts(parameter, "r_"), `:=`(val1 = -1, val2 = 1)]
     priors[type == "inverse",
            val1 := fcase(str_detect(parameter, "beta"), pmax(0.1, val1),
-                         str_detect(parameter, "period"), pmax(1, val1),
+                         str_detect(parameter, "[LDR]P"), pmax(1, val1),
                          default = pmax(0.01, val1))]
 
 
@@ -167,7 +167,7 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
         xp <- x2[parameter == par, .(value)]
 
         if (sd(xp$value) == 0) {
-            # latent_period breaks since sd is 0
+            # LP breaks since sd is 0
             dd <- data.table(x = xp$value[[1]] * c(0.95, 1, 1.05),
                              y = c(0, 1, 0))
         } else {

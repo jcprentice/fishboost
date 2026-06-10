@@ -44,8 +44,8 @@ common <- list(setup = "fb_12",
                weight_is_nested = TRUE,
                use_weight = "log",
                fix_donors = "no_Tsign_survivors",
-               prior__latent_period__type = "fix",
-               prior__latent_period__val2 = 8,
+               prior__LP__type = "fix",
+               prior__LP__val2 = 8,
                RP_dist = "gamma") |>
     safe_merge(common2)
 

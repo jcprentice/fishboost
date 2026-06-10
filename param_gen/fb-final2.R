@@ -69,8 +69,8 @@ common <- list(setup = "fb_12",
                use_weight = "log",
                group_effect = 0.1,
                # expand_priors = 5,
-               prior__latent_period__type = "fix",
-               prior__latent_period__val2 = 5,
+               prior__LP__type = "fix",
+               prior__LP__val2 = 5,
                RP_dist = "gamma",
                sample_states = 100) |>
     safe_merge(common2)

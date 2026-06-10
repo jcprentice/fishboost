@@ -45,8 +45,8 @@ protocol[str_detect(d, "Traits SITTT"),
 
 # Set LP
 f <- function(x) x |> str_split_1(", ") |> str_subset("LP") |> str_split_i(" ", 2) |> as.numeric()
-protocol[, `:=`(prior__latent_period__val1 = f(d),
-                prior__latent_period__val2 = f(d) + 2),
+protocol[, `:=`(prior__LP__val1 = f(d),
+                prior__LP__val2 = f(d) + 2),
          by = .I]
 
 

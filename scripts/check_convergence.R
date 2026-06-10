@@ -42,12 +42,6 @@ check_convergence <- function(dataset = "fb-test") {
                    desc = descriptions[file])] |>
             setcolorder(c("scen", "rep", "desc"))
 
-        # Rename LPs
-        pes[, parameter := parameter |>
-                str_replace_all(c("latent_period" = "LP",
-                                  "detection_period" = "DP",
-                                  "removal_period" = "RP"))]
-
         pes[, GEV := desc |> str_split_1(", ") |> str_subset("GEV ") |> str_remove("GEV "), .I]
         pes[is.na(GEV), GEV := "SIT"]
         pes[, FE := desc |> str_split_1(", ") |> str_subset("FE  ") |> str_remove("FE "), .I]

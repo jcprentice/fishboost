@@ -8,7 +8,11 @@
 }
 
 draw_event_times <- function(dataset = "fb-test", scen = 1, rep = 1) {
-    # dataset <- "testing"; scen <- 1; rep <- 1
+    if (FALSE) {
+        dataset <- "fb-test"
+        scen <- 2
+        rep <- 1
+    }
 
     f <- str_glue("datasets/{dataset}/results/scen-{scen}-{rep}.rds")
     res <- readRDS(f)
@@ -26,17 +30,10 @@ draw_event_times <- function(dataset = "fb-test", scen = 1, rep = 1) {
             .(trial, donor)]
     )
 
-
-    pe <- res$parameter_estimates[str_detect(parameter, "period"),
+    pe <- res$parameter_estimates[str_detect(parameter, "[LDR]P"),
         .(parameter, mean)] # , hdi95min, hdi95max
 
-    pe[, parameter := str_replace_all(
-        parameter,
-        c("latent_period" = "LP",
-          "detection_period" = "DP",
-          "removal_period" = "RP",
-          "," = "_")
-    )]
+    pe[, parameter := str_replace_all(parameter, ",", "_")]
     pe[, `:=`(period = str_split_i(parameter, "_", 1),
               trial = str_split_i(parameter, "_", 2),
               donor = str_split_i(parameter, "_", 3))]

@@ -151,7 +151,7 @@ ggsave(str_glue("r0_results/r0-{scen}-boxplot-alt.png"),
 
 
 x <- fread("datasets/fb-final/data/scen-1-1-out/trace_combine.tsv") |>
-    _[, .SD, .SDcols = patterns("beta|period|_G_")]
+    _[, .SD, .SDcols = patterns("beta|[LDR]P|_G_")]
 
 x[, `:=`(
     cov_G_si = r_G_si * sqrt(cov_G_ss * cov_G_ii),
@@ -166,7 +166,7 @@ Sigma <- with(pars, matrix(c(cov_G_ss, cov_G_si, cov_G_st,
                              cov_G_st, cov_G_it, cov_G_tt),
                            3, 3,
                            dimnames = list(sit, sit)))
-mu <- with(pars, beta * (latent_period + removal_period))
+mu <- with(pars, beta * (LP + RP))
 
 BVs <- mvrnorm(1e4, rep(0, 3), Sigma) |>
     as.data.table()

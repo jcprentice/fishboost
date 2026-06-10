@@ -4,7 +4,7 @@ library(stringr)
 
 dataset <- "fb-final"; scens <- 1:8
 
-pars <- c("latent_period", "detection_period",
+pars <- c("LP", "DP",
           "donor_l", "trial_l", "txd_l", "donor_d", "trial_d", "txd_d")
 
 X <- map_df(scens, \(i) {
@@ -15,32 +15,32 @@ X <- map_df(scens, \(i) {
     c(scen = i, setNames(PEs$value, PEs$parameter))
 }) |>
     setDT() |>
-    setnames(c("latent_period", "detection_period"), c("LP", "DP"))
+    setnames(c("LP", "DP"), c("LP", "DP"))
 
 
 walk(scens, \(i) {
     # Load FEs
     f <- str_glue("datasets/{dataset}/data/scen-{i}-1-data.tsv")
     data <- fread(f)[sdp == "progeny"]
-    
+
     has_trial <- "trial_fe" %in% names(data)
-    
+
     if (has_trial) {
         # Turn into matrix
         ml <- md <- as.matrix(data[, .(trial_fe, donor_fe, txd_fe)])
-        
+
         # Get idx of each unique type of individual
         idxs <- which(!duplicated(ml))
         ntypes <- length(idxs)
-        
+
         # Convert into posterior values
         ml <- ml %*% diag(as.numeric(X[scen == i, .(trial_l, donor_l, txd_l)]), nrow = 3, ncol = 3)
         md <- md %*% diag(as.numeric(X[scen == i, .(trial_d, donor_d, txd_d)]), nrow = 3, ncol = 3)
-        
+
         # Subtract means
         ml <- ml - matrix(1, nrow(ml), ncol(ml)) %*% diag(colMeans(ml), nrow = 3, ncol = 3)
         md <- md - matrix(1, nrow(md), ncol(md)) %*% diag(colMeans(md), nrow = 3, ncol = 3)
-        
+
         # Extract typical unique individual and add expected values to X
         rls <- rowSums(ml)[idxs]
         rds <- rowSums(md)[idxs]
@@ -54,23 +54,23 @@ walk(scens, \(i) {
     } else {
         # Turn into matrix
         ml <- md <- as.matrix(data[, .(donor_fe)])
-        
+
         # Get idx of each unique type of individual
         idxs <- which(!duplicated(ml))
         ntypes <- length(idxs)
-        
+
         # Convert into posterior values
         ml <- ml * X[scen == i, Donor_L]
         md <- md * X[scen == i, Donor_D]
-        
+
         # Subtract means
         ml <- ml - colMeans(ml)
         md <- md - colMeans(md)
-        
+
         # Extract typical unique individual and add expected values to X
         rls <- rowSums(ml)[idxs]
         rds <- rowSums(md)[idxs]
-        
+
         LPs <- setNames(c(exp(rls) * X[scen == i, LP],
                           exp(rds) * X[scen == i, DP]) |>
                             round(1),
@@ -79,7 +79,7 @@ walk(scens, \(i) {
                                  trial = data$trial[[1]],
                                  period = rep(c("LP", "DP"), each = 2)))
     }
-    
+
     walk(names(LPs), ~ X[scenario == i, (.x) := round(LPs[[.x]], 3)])
 })
 
