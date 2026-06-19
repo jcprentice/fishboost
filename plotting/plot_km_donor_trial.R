@@ -6,7 +6,7 @@
     library(HDInterval)
 }
 
-plot_km_donor_trial <- function(data_list, plotopts = NULL) {
+plot_km_donor_trial <- function(data_list, plot_opts = NULL) {
 
     if (FALSE) {
         km_data  <- readRDS("datasets/fb-test/meta/km_data_ps.rds")
@@ -14,8 +14,8 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
         data     <- copy(km_data[[i]]$data)
         params   <- km_data[[i]]$params
         opts     <- km_data[[i]]$opts
-        plotopts <- c("keep_small_groups", "extremes", "drop_donors",
-                      "mean", "fb_only", "ribbon", "t1", "t2")[c(4, 6)]
+        plot_opts <- c("keep_small_groups", "extremes", "drop_donors",
+                       "mean", "fb_only", "ribbon", "t1", "t2")[c(4, 6)]
         DEBUG    <- TRUE
     } else {
         data   <- copy(data_list$data)
@@ -24,11 +24,11 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
         DEBUG  <- FALSE
     }
 
-    if ("mean" %notin% plotopts) {
-        plotops <- setdiff(plotopts, "ribbon")
+    if ("mean" %notin% plot_opts) {
+        plotops <- setdiff(plot_opts, "ribbon")
     }
 
-    if ("fb_only" %in% plotopts) {
+    if ("fb_only" %in% plot_opts) {
         if (DEBUG) message("- Dropping all simulated values")
         data <- data[src == "fb"]
     }
@@ -36,14 +36,10 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
     description <- params$description |>
         str_split_1(", ") |>
         str_subset("convergence|coverage|pedigree|GRM", negate = TRUE) |>
-        str_replace_all(c("inf_model 1" = "inf: I = D",
-                          "inf_model 2" = "inf: I = 0.1*D",
-                          "inf_model 3" = "inf: Don = 0.1*Rec",
-                          "inf_model 4" = "inf: Don = r*Rec")) |>
         str_flatten_comma()
 
     # Choose between actual Tinfs and SIRE's inferred values for FB data
-    if ("use_inferred_Tinfs" %in% plotopts && "Tinf_sire" %in% names(data)) {
+    if ("use_inferred_Tinfs" %in% plot_opts && "Tinf_sire" %in% names(data)) {
         if (DEBUG) message("- Using sire Tinfs")
         # data[src == "fb", Tinf := Tinf_sire]
         Tinf_names <- str_c("Tinf_sire_", seq_len(opts$n_plots))
@@ -56,9 +52,9 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
     }
 
     # Filter by trial
-    if ("t1" %in% plotopts && "t2" %notin% plotopts) {
+    if ("t1" %in% plot_opts && "t2" %notin% plot_opts) {
         data <- data[trial == 1]
-    } else if ("t1" %notin% plotopts && "t2" %in% plotopts) {
+    } else if ("t1" %notin% plot_opts && "t2" %in% plot_opts) {
         data <- data[trial == 2]
     }
 
@@ -72,7 +68,7 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
     data[is.na(RP), RP := tmax[trial] - Tsign]
     data[, RP := pmax(RP, 0)]
 
-    if ("drop_donors" %in% plotopts) {
+    if ("drop_donors" %in% plot_opts) {
         if (DEBUG) message("- Dropping Donors")
         data <- data[donor == 0]
     }
@@ -120,11 +116,11 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
     data_t2[, tmp := seq(.N), id]
     ids_to_keep <- data_t2[src == "fb" & !is.na(survival), tmp]
 
-    data_t2 <- data_t2[tmp %in% ids_to_keep, .SD]
+    data_t2 <- data_t2[tmp %in% ids_to_keep]
     data_t2[, tmp := NULL]
 
     # Apply means
-    if ("mean" %in% plotopts) {
+    if ("mean" %in% plot_opts) {
         if (DEBUG) message("- Reducing to mean of simulated curves")
         data_t2a <- data_t2[, map_if(.SD, is.numeric, mean, .else = first),
                  .(trial, donor, src, variable, time),
@@ -146,7 +142,7 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
 
     data_t3 <- data_t3[time <= tmax[trial]]
 
-    if ("show_Tinfs" %notin% plotopts) {
+    if ("show_Tinfs" %notin% plot_opts) {
         data_t3 <- data_t3[variable != "Tinf"]
     }
 
@@ -160,16 +156,19 @@ plot_km_donor_trial <- function(data_list, plotopts = NULL) {
         "sim_r", "Simulation Contact", "#A6CEE3"
     )
 
-    slw <- if ("mean" %in% plotopts) 0.7 else 0.2
-    slt <- if ("mean" %in% plotopts) "dashed" else "solid"
+    slw <- if ("mean" %in% plot_opts) 0.7 else 0.2
+    slt <- if ("mean" %in% plot_opts) "dashed" else "solid"
 
     # Plot
+    ribbon <- if (all(c("mean", "ribbon") %in% plot_opts)) {
+        geom_ribbon(aes(x = time, ymin = hdi1, ymax = hdi2,
+                group = gp, fill = str, linewidth = src),
+            data_t3[src == "sim"],
+            alpha = 0.5, show.legend = FALSE)
+    }
+
     plt <- ggplot() +
-        {if (all(c("mean", "ribbon") %in% plotopts)) {
-            geom_ribbon(aes(x = time, ymin = hdi1, ymax = hdi2,
-                            group = gp, fill = str, linewidth = src),
-                        data_t3[src == "sim"],
-                        alpha = 0.5, show.legend = FALSE)}} +
+        ribbon +
         geom_line(aes(x = time,
                       y = survival,
                       group = gp,
