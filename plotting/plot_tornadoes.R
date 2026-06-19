@@ -5,6 +5,7 @@
     library(lubridate)
     library(HDInterval)
     library(ggplot2)
+    library(ggtext)
     library(ggeasy)
     library(cowplot)
     library(extrafont)
@@ -21,8 +22,8 @@ plot_tornadoes <- function(dataset = "sim-test",
                            combine = TRUE) {
 
     if (FALSE) {
-        dataset <- "sim-test-inf"
-        scen <- 1
+        dataset <- "sim-test-inf1"
+        scen <- 2
         sort_by <- "median"
         use_hpdi <- TRUE
         combine <- TRUE
@@ -61,14 +62,11 @@ plot_tornadoes <- function(dataset = "sim-test",
 
 
     params <- readRDS(res_files[[1]])$params
-    with(params, message(str_glue("Fitted {model_type} to {dataset} dataset",
-                         dataset = if (sim_new_data == "no") "Fishboost" else "simulated")))
 
     # Get list of parameters ----
     parameters <- readRDS(res_files[[1]])$parameter_estimates$parameter |>
         # discard group effect and shape
-        str_subset("^Group|^G_", negate = TRUE) |>
-        rename_bici_pars()
+        str_subset("^Group|^G_", negate = TRUE)
 
 
     # Combine trace files into X ----
@@ -109,8 +107,8 @@ plot_tornadoes <- function(dataset = "sim-test",
             # 95% Credible Interval (with 2.5% tails)
             tmp[, map(.SD, quantile, c(0.025, 0.975))]
         }
-        tmpx[, `:=`(min = CIs[1] |> unlist() |> unname(),
-                    max = CIs[2] |> unlist() |> unname())]
+        tmpx[, `:=`(ci_min = CIs[1] |> unlist() |> unname(),
+                    ci_max = CIs[2] |> unlist() |> unname())]
         tmpx
     }) |>
         rbindlist(idcol = "chain")
@@ -153,27 +151,28 @@ plot_tornadoes <- function(dataset = "sim-test",
     # Make these nice to read when plotted
     html_pars <- setNames(html_names(parameters), parameters)
 
+    l2p <- 1 / ggplot2::.pt
 
     # Plot parameters ----
-    plots <- map(parameters, \(par) {
+    plts <- map(parameters, \(par) {
+        if (FALSE) {
+            i <- 1; par <- parameters[[i]]
+        }
         html_par <- html_pars[[par]]
-        x1 <- Xtab[parameter == par] |> as.list()
+        x1 <- Xtab[parameter == par, .SD, .SDcols = -"parameter"] |> unlist()
 
         ggplot(data = X[parameter == par]) +
             # credible interval
-            geom_segment(aes(x = min, xend = max, y = id, yend = id, colour = par)) +
+            geom_segment(aes(x = ci_min, xend = ci_max, y = id, yend = id, colour = par)) +
             # mean
             geom_point(aes(x = mean, y = id),
                        colour = "red", size = 1) +
             # true parameter value
-            geom_vline(xintercept = x1$true_val, colour = "green") +
-            geom_vline(xintercept = x1$est_val, colour = "blue") +
-            geom_vline(xintercept = x1$hdi1, colour = "blue",
-                       linetype = "dashed", linewidth = 0.5) +
-            geom_vline(xintercept = x1$hdi2, colour = "blue",
-                       linetype = "dashed", linewidth = 0.5) +
-            coord_cartesian(xlim = c(x1$xmin, x1$xmax)) +
-            expand_limits(x = c(0, x1$true_val)) +
+            geom_vline(xintercept = x1[c("true_val", "est_val", "hdi1", "hdi2")],
+                       colour = c("green", "blue", "blue", "blue"),
+                       linewidth = c(1, 1, 0.5, 0.5) * l2p,
+                       linetype = c("solid", "solid", "dashed", "dashed")) +
+            scale_x_continuous(limits = ~ range(.x, 0, x1[c("true_val", "xmin", "xmax")])) +
             labs(title = html_par, x = "Value", y = "id") +
             theme_classic() +
             theme(plot.title = element_markdown(size = 10)) +
@@ -198,13 +197,13 @@ plot_tornadoes <- function(dataset = "sim-test",
 
     plt_pars <- plot_grid(
         title_plt,
-        plot_grid(plotlist = plots), # ncol = 3?
+        plot_grid(plotlist = plts), # ncol = 3?
         ncol = 1, rel_heights = c(0.05, 1))
 
     # return
     list(X = X,
          title_plt = title_plt,
-         plots = plots,
+         plts = plts,
          pars = plt_pars)
 }
 
