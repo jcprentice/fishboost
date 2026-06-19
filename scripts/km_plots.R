@@ -17,17 +17,17 @@ km_plots <- function(dataset = "fb-test",
                      simulate_new_data = "bici",
                      opts = list(n_plots = 5,
                                  post = "sample"),
-                     plotopts = c("keep_small_groups",
-                                  "drop_donors",
-                                  "use_inferred_Tinfs",
-                                  "t1", "t2")[0]) {
+                     plot_opts = c("keep_small_groups",
+                                   "drop_donors",
+                                   "use_inferred_Tinfs",
+                                   "t1", "t2")[0]) {
 
     if (FALSE) {
         dataset <- "sim-test-inf"; scens <- 0;  simulate_new_data <- "no"
         dataset <- "fb-test"; scens <- 0; simulate_new_data <- "no"
         opts <- list(n_plots = 50, post = "sample")
-        plotopts <- c("keep_small_groups", "extreme_sires", "drop_donors",
-                      "mean", "t1", "t2")[0]
+        plot_opts <- c("keep_small_groups", "extreme_sires", "drop_donors",
+                       "mean", "t1", "t2")[0]
     }
 
     if (all(scens == 0)) {
@@ -86,9 +86,9 @@ km_plots <- function(dataset = "fb-test",
     }
 
     # Generate the plots
-    plts_st <- map(km_data, plot_km_sire_trial,  plotopts)
-    plts_dt <- map(km_data, plot_km_donor_trial, plotopts)
-    plts_ft <- map(km_data, plot_km_family_trial, plotopts)
+    plts_st <- map(km_data, plot_km_sire_trial,  plot_opts)
+    plts_dt <- map(km_data, plot_km_donor_trial, plot_opts)
+    plts_ft <- map(km_data, plot_km_family_trial, plot_opts)
 
     # Grab the descriptions of the first available result for each scen
     descriptions <- map_chr(scens, \(i) {
@@ -122,9 +122,9 @@ km_plots <- function(dataset = "fb-test",
     }
 
 
-    mu <- if ("mean" %in% plotopts) "_mu" else ""
-    es <- if ("extreme_sires" %in% plotopts) "_es" else ""
-    dd <- if ("drop_donors" %in% plotopts) "_dd" else ""
+    mu <- if ("mean" %in% plot_opts) "_mu" else ""
+    es <- if ("extreme_sires" %in% plot_opts) "_es" else ""
+    dd <- if ("drop_donors" %in% plot_opts) "_dd" else ""
 
     # Save the plots as PDF and PNG
     walk(seq_along(scens), \(i) {
@@ -154,8 +154,8 @@ if (FALSE) {
              scens = 0,
              simulate_new_data = "no",
              opts = list(n_plots = 50, post = "sample"),
-             plotopts = c("keep_small_groups", "extreme_sires", "drop_donors",
-                          "mean", "ribbon", "t1", "t2")[c(2, 4, 5)])
+             plot_opts = c("keep_small_groups", "extreme_sires", "drop_donors",
+                           "mean", "ribbon", "t1", "t2")[c(2, 4, 5)])
 }
 
 if (FALSE) {
@@ -163,8 +163,8 @@ if (FALSE) {
              scens = 0,
              simulate_new_data = "no",
              opts = list(n_plots = 50, post = "sample"),
-             plotopts = c("keep_small_groups", "extreme_sires", "drop_donors",
-                          "mean", "t1", "t2")[c(4)])
+             plot_opts = c("keep_small_groups", "extreme_sires", "drop_donors",
+                           "mean", "t1", "t2")[c(4)])
 }
 
 if (FALSE) {
@@ -173,10 +173,10 @@ if (FALSE) {
     simulate_new_data <- "no"
     opts <- list(n_plots = 50,
                 post = "sample")
-    plotopts <- c("keep_small_groups", "extreme_sires", "drop_donors",
-                 "mean", "t1", "t2")[c(2,4)]
+    plot_opts <- c("keep_small_groups", "extreme_sires", "drop_donors",
+                  "mean", "t1", "t2")[c(2,4)]
 
-    km_plots(dataset, scens, simulate_new_data, opts, plotopts)
+    km_plots(dataset, scens, simulate_new_data, opts, plot_opts)
 }
 
 
