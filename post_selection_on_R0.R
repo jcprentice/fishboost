@@ -60,7 +60,8 @@ ggplot(data = R0het) +
                                    "<i>R</i><sub>0</sub>")) +
     geom_richtext(data = epi_pc,
                   aes(x = x, y = y, label = label)) +
-    expand_limits(x = 0, y = 0) +
+    scale_x_continuous(limits = ~ range(.x, 0)) +
+    scale_y_continuous(limits = ~ range(.x, 0)) +
     guides(fill = guide_legend(reverse = TRUE)) +
     labs(x = "<i>R</i><sub>0</sub>",
          y = NULL,
@@ -83,8 +84,8 @@ ggplot(data = R0s) +
                  outliers = FALSE) +
     scale_fill_discrete("Selection on",
                         labels = c("None", bquote(R[0]))) +
-    expand_limits(x = 0,
-                  y = 0) +
+    scale_x_continuous(limits = ~ range(.x, 0)) +
+    scale_y_continuous(limits = ~ range(.x, 0)) +
     guides(fill = guide_legend(reverse = TRUE)) +
     labs(x = bquote(R[0]),
          y = NULL,
@@ -108,7 +109,8 @@ ggplot(data = R0s) +
     #              outliers = FALSE) +
     scale_fill_discrete("Selection on",
                         labels = c("None", bquote(R[0]))) +
-    expand_limits(x = 0, y = 0) +
+    scale_x_continuous(limits = ~ range(.x, 0)) +
+    scale_y_continuous(limits = ~ range(.x, 0)) +
     guides(fill = guide_legend(reverse = TRUE)) +
     labs(x = bquote(R[0]),
          y = NULL,
@@ -136,7 +138,8 @@ ggplot(data = R0s2) +
     geom_boxplot(aes(x = R0, y = Type, fill = Type),
                  staplewidth = 0.5,
                  outliers = FALSE) +
-    expand_limits(x = 0, y = 0) +
+    scale_x_continuous(limits = ~ range(.x, 0)) +
+    scale_y_continuous(limits = ~ range(.x, 0)) +
     guides(fill = "none") +
     labs(x = bquote(R[0]),
          y = NULL,
