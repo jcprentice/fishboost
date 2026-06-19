@@ -26,7 +26,7 @@ get_auc <- function(dataset = "fb-final",
                  opts = list(n_plots = 50,
                              post = "sampled",
                              apply_gammas = 0),
-                 plotopts = c())
+                 plot_opts = c())
     }
     km_data <- readRDS(f)
 
@@ -89,7 +89,7 @@ get_auc_donor <- function(dataset = "fb-final",
                  opts = list(n_plots = 50,
                              post = "sampled",
                              apply_gammas = 0),
-                 plotopts = c())
+                 plot_opts = c())
     }
     km_data <- readRDS(f)
 
@@ -229,7 +229,7 @@ plt_donor <- auc_ |>
     labs(x = "Scenario",
          y = "Difference in AUC from FB",
          title = str_glue("Dataset: '{dataset}', by donor / trial")) +
-    expand_limits(y = 0) +
+    scale_y_continuous(limits = ~ range(.x, 0)) +
     theme_bw() +
     facet_grid2(rows = vars(td),
                 cols = vars(variable),
@@ -257,7 +257,7 @@ plt_sire <- auc_sire |>
     labs(x = "Scenario",
          y = "Abs difference in AUC",
          title = str_glue("Dataset: '{dataset}', by sire / trial")) +
-    expand_limits(y = 0) +
+    scale_y_continuous(limits = ~ range(.x, 0)) +
     theme_bw() +
     facet_grid2(rows = vars(trial),
                 cols = vars(variable),
