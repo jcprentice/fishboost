@@ -52,7 +52,7 @@ plot_chain_ribbons <- function(dataset = "fb-test", scen = 1, use_hpdi = TRUE) {
         geom_point(aes(y = mean)) +
         geom_ribbon(aes(ymin = min, ymax = max, fill = variable),
                     alpha = 0.2) +
-        expand_limits(y = 0) +
+        scale_y_continuous(limits = ~ range(.x, 0)) +
         labs(x = "Chain",
              y = "Value") +
         theme(legend.position = "none") +
