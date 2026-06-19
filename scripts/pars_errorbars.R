@@ -59,12 +59,18 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
     rf <- str_glue("{res_dir}/{scens_str[[1]]}.rds")
     x[, parameter := rename_bici_pars(parameter)]
 
+    # Extract parameters
+    pars <- x[, unique(parameter)]
+    html_pars <- setNames(html_names(pars), pars)
+
+
     # Extract the widest priors for all parameters
     priors <- map(scens, ~ {
         files <- list.files(res_dir, str_glue("scen-{.x}-"), full.names = TRUE) |>
             str_sort(numeric = TRUE)
         if (is_empty(files)) return(NULL)
-        readRDS(files[[1]])$params$priors[, .(parameter, type, val1, val2, true_val)]
+        tmp <- readRDS(files[[1]])$params$priors[, .(parameter, type, val1, val2, true_val)]
+        tmp[parameter %in% pars]
     }) |>
         rbindlist(idcol = "scen")
 
@@ -74,16 +80,17 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
     x[, scen := scens_str[scen] |> str_split_i("-", 2) |> str_c("s", x = _) |>
           factor(levels = str_c("s", scens))]
 
+    # Remove priors for non-existing parameters
+    priors <- merge(priors,
+                    unique(x[, .(scen, parameter)]),
+                    by = c("scen", "parameter"),
+                    all.y = TRUE)
+
     priors[, `:=`(val1 = min(val1, true_val),
                   val2 = max(val2, true_val)),
            parameter]
 
-    pars <- x[, unique(parameter)] # |>
-        # str_subset("^G_|^Group", negate = TRUE)
-    html_pars <- setNames(html_names(pars), pars)
-
-    x1 <- merge(x[parameter %in% pars],
-                priors[parameter %in% pars, .(scen, parameter, type)],
+    x1 <- merge(x, priors[, .(scen, parameter, type)],
                 by = c("scen", "parameter"))
 
     if ("type" %notin% names(x1)) {
@@ -113,7 +120,9 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
 
 
     plts <- map(pars, \(par) {
-        # i <- 1; par <- pars[[i]]
+        if (FALSE) {
+            i <- 1; par <- pars[[i]]
+        }
         y_rng <- priors[parameter == par, c(min(val1), max(val2))]
         y_true <- priors[parameter == par, true_val]
         ymin <- x1[parameter == par, min(hdi95min)]
@@ -129,20 +138,22 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
         # conv_cols <- c("blue3", "green4", "yellow3","red2")
         conv_values <- c("blue3", "blue3", "red2","red2")
 
-        ggplot(x1[parameter == par],
-                    # aes(x = scen, y = median, colour = type)) +
-                    aes(x = scen, y = median, group = scen, colour = convergence)) +
+        true_line <- if (is_sim) {
+            geom_segment(aes(x = scen - 0.5,xend = scen + 0.5,
+                             y = true_val, yend = true_val),
+                         priors2,
+                         colour = "green",
+                         linewidth = 0.5,
+                         linetype = "dashed")
+        }
+
+        ggplot(x1[parameter == par]) +
+            aes(x = scen, y = median, group = scen, colour = convergence) +
             # geom_boxplot() +
             geom_errorbar(aes(ymin = hdi95min, ymax = hdi95max),
                           position = position_dodge2(),
                           width = 0.5) +
-            {if (is_sim)
-                geom_segment(data = priors2,
-                             aes(x = scen - 0.5, xend = scen + 0.5,
-                                 y = true_val, yend = true_val),
-                             colour = "green",
-                             linewidth = 0.5,
-                             linetype = "dashed")} +
+            true_line +
             geom_point(position = position_dodge2(width = 0.5),
                        size = 1) +
             # geom_hline(yintercept = y_rng[[2]],
@@ -152,9 +163,7 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
             scale_colour_manual(breaks = conv_breaks,
                                 values = conv_values) +
             scale_x_discrete(drop = FALSE) +
-            # scale_y_discrete(limits = ~ range(.x, y_rng)) +
-            expand_limits(y = 0) +
-            coord_cartesian(ylim = range(0, ymin, ymax)) +
+            scale_y_continuous(limits = ~ range(.x, 0, ymin, ymax)) +
             labs(x = "Scenario",
                  y = "Value",
                  title = html_pars[[par]]) +
@@ -240,24 +249,7 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
 }
 
 if (FALSE) {
-    # pars_errorbars("testing", 1, "")
-    # pars_errorbars("fb-final", 1:8, "Testing Unlinked vs Linked Traits and FEs")
-    # pars_errorbars("fb-final2", 1:4, "Testing Unlinked vs Linked Traits and FEs")
-    # pars_errorbars("fb-lp", 1:12, "Testing varying the LP")
-    # pars_errorbars("fb-donors", 1:3, "Testing reclassifying Seeder fish")
-    # pars_errorbars("fb-simple", 1:6, "Testing if we can fit the LP")
-    # pars_errorbars("fb-simple-b", 1:6, "Testing if we can fit the LP with BICI")
-    pars_errorbars("sim-test2", 1:5, "Testing coverage")
-    pars_errorbars("fb-dp", 1:6, "Testing DPs")
-    pars_errorbars("fb-donors", 1:27, "Testing donor reclassification")
     pars_errorbars("fb-test", 0, "Testing BICI on FB data")
-    pars_errorbars("fb-test-1e7", 0, "Testing BICI on FB data")
-    pars_errorbars("fb-qtest", 0, "Testing BICI on FB data")
-    pars_errorbars("sim-base-inf", 0, "Validating BICI")
-    pars_errorbars("sim-base-inf", 1:2, "Validating BICI - Base models", "base")
-    pars_errorbars("sim-base-inf", 1:12, "Validating BICI - Misspecifying model", "misspecify")
-    # pars_errorbars("sim-base-inf", c(1:2, 13:20), "Validating BICI - convergence", "conv")
-    pars_errorbars("sim-test-inf", 0, "Validating BICI on Simulated data")
-    pars_errorbars("sim-test-inf", 1:10, "Validating BICI on Simulated data", "tr1")
-    pars_errorbars("sim-test-inf", 11:20, "Validating BICI on Simulated data", "tr12")
+    pars_errorbars("sim-test-inf1", 0, "Validating BICI on Simulated data")
+    pars_errorbars("sim-test-inf2", 0, "Validating BICI on Simulated data")
 }
