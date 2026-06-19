@@ -3,6 +3,7 @@
     library(stringr)
     library(purrr)
     library(ggplot2)
+    library(ggtext)
     library(ggeasy)
     library(RColorBrewer)
     library(cowplot)
@@ -13,7 +14,7 @@
 
 plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
     if (FALSE) {
-        dataset <- "sim-base-inf"; scen <- 2; rep <- 1
+        dataset <- "sim-test-inf1"; scen <- 1; rep <- 1
         dataset <- "fb-test"; scen <- 7; rep <- 1
     }
 
@@ -66,7 +67,10 @@ plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
     nchains <- ltraces$chain |> levels() |> length()
     thin <- 1L
     plts <- map(pars, \(par) {
-        # par <- "cov_G_ii"
+        if (FALSE) {
+            i <- 1
+            par <- pars[[i]]
+        }
         X <- ltraces[parameter == par][seq(1, .N, thin)]
         ytrue <- if (str_detect(dataset, "sim")) {
             priors[parameter == par, true_val]
@@ -75,12 +79,15 @@ plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
         yrng <- ltraces[parameter == par, range(ytrue, y)]
         yrng <- yrng + c(-0.1, 0.1) * abs(yrng)
 
+        p_true <- if (str_detect(dataset, "sim")) {
+            geom_hline(yintercept = ytrue,
+                       linetype = "dashed",
+                       colour = "green")
+        }
+
         ggplot(X, aes(x, y, group = par, colour = chain)) +
             geom_point(size = 0.1) +
-            {if (str_detect(dataset, "sim"))
-                geom_hline(yintercept = ytrue,
-                           linetype = "dashed",
-                           colour = "green")} +
+            p_true +
             scale_colour_manual(values = rep(brewer.pal(4, "Set1"),
                                              length = nchains)) +
             scale_y_continuous(limits = ~ range(.x, 0, yrng)) +
@@ -88,8 +95,8 @@ plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
                  y = "value",
                  title = html_names(par)) +
             theme_classic() +
-            theme(plot.title = element_text(size = 12),
-                  plot.subtitle = element_text(size = 10),
+            theme(plot.title = element_markdown(size = 12),
+                  plot.subtitle = element_markdown(size = 10),
                   legend.position = "none",
                   axis.text.x = element_blank())
     }) |>
