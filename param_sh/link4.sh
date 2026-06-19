@@ -17,7 +17,7 @@
 # Initialise the environment modules
 . /etc/profile.d/modules.sh
 
-module load R/4.5
+module load R/4.6
 module load openmpi/5.0.7
 
 # Run the program

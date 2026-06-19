@@ -18,7 +18,7 @@
 # Initialise the environment modules
 . /etc/profile.d/modules.sh
 
-module load R/4.5
+module load R/4.6
 
 # Run the program
 Rscript batch_flatten_bici_states.R fb-test $SGE_TASK_ID # 2
