@@ -7,11 +7,14 @@
     library(ggtext)
 
     source("rename_pars.R")
+    source("figures/theme_jamie.R")
 }
 
-fig_pars_errorbars <- function() {
-    dataset <- "fb-test"
-    scens <- c(1, 2, 7, 8)
+fig_pars_errorbars <- function(dataset = "fb-test", scens = 0) {
+    if (FALSE) {
+        dataset <- "fb-test"; scens <- c(1, 2, 7, 8)
+        dataset <- "sim-test-inf1"; scens <- 0
+    }
 
     {
         base_dir <- str_glue("datasets/{dataset}")
@@ -24,17 +27,19 @@ fig_pars_errorbars <- function() {
             walk(dir.create)
     }
 
+    is_sim <- str_detect(dataset, "sim")
 
     scens_str <- list.files(res_dir) |>
         str_remove("\\.rds") |>
         str_sort(numeric = TRUE)
 
     if (any(scens == 0)) {
-        scens <- scens_str |> str_split_i("-", 2) |> unique() |> as.integer()
+        scens <- scens_str |> str_split_i("-", 2) |> unique()
     } else {
         scens_str <- scens_str |>
             keep(~ .x |> str_split_i("-", 2) |> as.integer() |> is.element(scens))
     }
+    scens <- as.integer(scens)
 
     # Put scens_str back into the order specified by scens
     tmp <- data.table(str = scens_str)
@@ -51,20 +56,28 @@ fig_pars_errorbars <- function() {
         pe[str_starts(parameter, "weight_"),
            parameter := str_replace(parameter, "weight_", str_c("weight", setup, "_"))]
         pe[!str_starts(parameter, "G_|Group"),
-                       .(parameter, true_val, median, hdi95min, hdi95max, convergence)]
+           .(parameter, true_val, median, hdi95min, hdi95max, convergence)]
     }) |>
         rbindlist(idcol = "scen", fill = TRUE) |>
-        _[, scen := scens[scen]]
+        _[, scen := scens_str[scen] |> str_split_i("-", 2) |> as.integer()]
 
-    rf <- str_glue("{res_dir}/{scens_str[[1]]}.rds")
     x[, parameter := rename_bici_pars(parameter)]
 
+    # Extract parameters
+    pars <- x[, unique(parameter)]
+    html_pars <- html_names(pars) |>
+        setNames(pars)
+
     # Extract the widest priors for all parameters
-    priors <- map(scens, ~ {
-        files <- list.files(res_dir, str_glue("scen-{.x}-"), full.names = TRUE) |>
+    priors <- map(scens, \(scen) {
+        if (FALSE) {
+            scen <- 1
+        }
+        files <- list.files(res_dir, str_glue("scen-{scen}-"), full.names = TRUE) |>
             str_sort(numeric = TRUE)
         if (is_empty(files)) return(NULL)
-        readRDS(files[[1]])$params$priors[, .(parameter, type, val1, val2, true_val)]
+        tmp <- readRDS(files[[1]])$params$priors[, .(parameter, type, val1, val2, true_val)]
+        tmp[parameter %in% pars]
     }) |>
         rbindlist(idcol = "scen") |>
         _[, scen := scens[scen]]
@@ -73,16 +86,17 @@ fig_pars_errorbars <- function() {
     priors[, scen := factor(scen)]
     x[, scen := factor(scen)]
 
+    # Remove priors for non-existing parameters
+    priors <- merge(priors,
+                    unique(x[, .(scen, parameter)]),
+                    by = c("scen", "parameter"),
+                    all.y = TRUE)
+
     priors[, `:=`(val1 = min(val1, true_val),
                   val2 = max(val2, true_val)),
            parameter]
 
-    pars <- x[, unique(parameter)]
-    html_pars <- html_names(pars) |>
-        setNames(pars)
-
-    x1 <- merge(x[parameter %in% pars],
-                priors[parameter %in% pars, .(scen, parameter, type)],
+    x1 <- merge(x, priors[, .(scen, parameter, type)],
                 by = c("scen", "parameter"))
 
     if ("type" %notin% names(x1)) {
@@ -92,9 +106,12 @@ fig_pars_errorbars <- function() {
     setorder(x1, parameter, scen, median)
 
     # Set lvl names
-    lvls <- expand.grid(c("SS", "MS"),
-                    c("Tr1", "Tr1+2")) |>
-            apply(1, str_flatten, collapse = "\n")
+    lvls <- if ((dataset == "fb-test" && identical(scens, c(1L, 2L, 7L, 8L))) ||
+                dataset == "sim-test-inf1") {
+        c("SS\nTr1", "MS\nTr1", "SS\nTr1+2", "MS\nTr1+2")
+    } else {
+        str_c("s", scens)
+    }
     setattr(x1$scen, "levels" , lvls)
     setattr(priors$scen, "levels" , lvls)
 
@@ -118,55 +135,77 @@ fig_pars_errorbars <- function() {
         # conv_cols <- c("blue3", "green4", "yellow3","red2")
         conv_values <- c("blue3", "blue3", "red2","red2")
 
+        true_line <- if (is_sim) {
+            geom_segment(aes(x = scen - 0.5,xend = scen + 0.5,
+                             y = true_val, yend = true_val),
+                         priors2,
+                         colour = "green",
+                         linewidth = 0.5,
+                         linetype = "dashed")
+        }
+
+
+        l2p <- 1 / ggplot2::.pt
+
         ggplot(x1[parameter == par],
                     aes(x = scen, y = median,
                         group = scen, colour = convergence)) +
-            # geom_boxplot() +
             geom_errorbar(aes(ymin = hdi95min, ymax = hdi95max),
                           position = position_dodge2(),
                           width = 0.5,
-                          linewidth = 0.35) +
+                          linewidth = 1 * l2p) +
             geom_point(position = position_dodge2(width = 0.5),
                        size = 0.5) +
-            # geom_hline(yintercept = y_rng[[2]],
-            #            colour = "grey", linewidth = 0.5, linetype = "dashed") +
-            # scale_colour_manual(breaks = c("uniform", "inverse", "constant"),
-            #                     values = c("red", "red", "grey40")) +
+            true_line +
             scale_colour_manual(breaks = conv_breaks,
                                 values = conv_values) +
             scale_x_discrete(drop = FALSE) +
-            # scale_y_discrete(limits = ~ range(.x, y_rng)) +
-            expand_limits(y = 0) +
-            coord_cartesian(ylim = range(0, ymin, ymax)) +
+            scale_y_continuous(limits = ~ range(0, ymin, ymax)) +
             labs(x = NULL,
                  y = NULL,
                  title = html_pars[[par]]) +
-            theme_classic() +
-            theme(legend.position = "none",
-                  text = element_text(size = 5),
-                  plot.title = element_markdown(size = 7),
-                  axis.line = element_line(linewidth = 0.35),
-                  axis.ticks = element_line(linewidth = 0.2))
+            theme_jamie()
                   # axis.text.x = element_text(angle = 0, hjust = 1))
     }) |> setNames(pars)
 
-    pltnames <- c("cov_G_ss",   "cov_G_ii",   "cov_G_tt",   "r_G_si",    "r_G_st",    "r_G_it",
-                  "cov_E_ss",   "cov_E_ii",   "cov_E_tt",   "r_E_si",    "r_E_st",    "r_E_it",
-                  "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don", "weight1_s", "weight1_i", "weight1_t",
-                  "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec", "weight2_s", "weight2_i", "weight2_t",
-                  "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don", "beta_Tr1",  "beta_Tr2",  "infrat",
-                  "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec", "sigma")
 
-    plt <- plot_grid(plotlist = plts[pltnames],
+    # May need to rename weights if only 1 trial
+    trials <- str_extract(pars, "beta_Tr(.)", group = 1) |>
+        discard(is.na) |> unique() |> as.integer() |> sort()
+
+    plt_names <- c(
+        "cov_G_ss",   "cov_G_ii",   "cov_G_tt",   "r_G_si",    "r_G_st",    "r_G_it",
+        "cov_E_ss",   "cov_E_ii",   "cov_E_tt",   "r_E_si",    "r_E_st",    "r_E_it",
+        if (identical(trials, 1L)) {
+            c("LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don", "weight1_s", "weight1_i", "weight1_t",
+              "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec", "beta_Tr1",  "infrat",    "sigma")
+        } else if (identical(trials, 2L)) {
+            c("LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don", "weight2_s", "weight2_i", "weight2_t",
+              "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec", "beta_Tr2",  "infrat",    "sigma")
+        } else {
+            c("LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don", "weight1_s", "weight1_i", "weight1_t",
+              "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec", "weight2_s", "weight2_i", "weight2_t",
+              "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don", "beta_Tr1",  "beta_Tr2",  "infrat",
+              "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec", "sigma")
+        }
+    )
+
+    plt <- plot_grid(plotlist = plts[plt_names],
                      ncol = 6, align = "v")
     plt
 
-    ggsave("gfx/fb-pars-errorbars.png", plt,
+    plot_str <- str_glue("gfx/{dataset}-pars-errorbars")
+    ggsave(str_glue("{plot_str}.pdf"), plt,
            width = 18.3, height = 17, units = "cm")
-    ggsave("gfx/fb-pars-errorbars.pdf", plt,
+    ggsave(str_glue("{plot_str}.png"), plt,
            width = 18.3, height = 17, units = "cm", dpi = "print")
 
     plt
 }
 
-fig_pars_errorbars()
+if (FALSE) {
+    plt <- fig_pars_errorbars("fb-test", c(1, 2, 7, 8))
+    plt <- fig_pars_errorbars("sim-test-inf2", 0)
+    plt <- fig_pars_errorbars("sim-test-inf2", 0)
+    plt
+}
