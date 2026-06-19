@@ -254,14 +254,14 @@ make_parameters <- function(
     r_beta <- 0.5
 
     # Infectivity model
-    # 1: standard
-    # 2: I is 10% as infectious as D
-    # 3: donors are 10% as infectious as recipients
-    # 4: donors are `id_ratio` as infectious as recipients
-    inf_model <- 1L
+    # "standard": standard
+    # "I=D/10": I is 10% as infectious as D
+    # "S=C/10": Seeders are 10% as infectious as Contacts
+    # "S=pC": Seeders are `id_ratio` as infectious as Contacts
+    inf_model <- "standard"
 
     # Infectivity ratio
-    inf_ratio <- if (inf_model == 1) 1 else 0.1
+    inf_ratio <- if (inf_model == "standard") 1 else 0.1
 
     # Note for Gamma dist:
     # shape = mean^2 / var

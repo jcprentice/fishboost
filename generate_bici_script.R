@@ -201,22 +201,15 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
         }
 
         # Infection time
-        if (!exists("inf_model")) inf_model <- 1
-        priors[parameter == "infrat", use := inf_model == 4]
+        if (!exists("inf_model")) inf_model <- "standard"
+        priors[parameter == "infrat", use := inf_model == "S=pC"]
 
         get_IT <- function(id = "I|D") {
             # this is rate, because it's a poisson process, not a waiting time
-            inf_eqn <- if (id == "I|D" || inf_model != 2) {
-                switch(inf_model,
-                       str_glue("{{{id},g; FEi_IEi_}}"),
-                       str_glue("(0.1*{{I,g; FEi_IEi_}}+{{D,g; FEi_IEi_}})"),
-                       str_glue("(0.1*{{{id},g,Don; FEi_IEi_}+{{{id},g,Rec; FEi_IEi_}})"),
-                       str_glue("(infrat*{{{id},g,Don; FEi_IEi_}+{{{id},g,Rec; FEi_IEi_}})"))
+            inf_eqn <- if (inf_model == "S=pC") {
+                str_glue("(infrat*{{{id},g,Don; FEi_IEi_}+{{{id},g,Rec; FEi_IEi_}})")
             } else {
-                if (inf_model == 2) {
-                    message("Warning, incompatible `inf_model`, defaulting to `inf_model=1`")
-                }
-                str_glue("{{{id},g; FEi_IEi_}}/{group_size}")
+                str_glue("{{{id},g; FEi_IEi_}}")
             }
             str_glue("exp(rate:GE_FEs_IEs_beta_b{inf_eqn}/{group_size})")
         }

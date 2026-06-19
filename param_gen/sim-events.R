@@ -18,24 +18,16 @@ dataset <- "sim-events"
 
 # Variable parameters ----
 protocol <- rbind(
-    data.table(d = "FB_1_rpw, Events 1, Fit d2"), # 1
-    data.table(d = "FB_1_rpw, Events 2, Fit d2"), # 2
-    data.table(d = "FB_1_rpw, Events 3, Fit d2"), # 2
-    data.table(d = "FB_1_rpw, Events 4, Fit d2"), # 3
+    data.table(d = "FB_1_rpw, Events 1, Fit d2", pass_events = "Tdeath"), # 1
+    data.table(d = "FB_1_rpw, Events 2, Fit d2", pass_events = "Tsign,Tdeath"), # 2
+    data.table(d = "FB_1_rpw, Events 3, Fit d2", pass_events = "Tinf,Tsign,Tdeath"), # 3
+    data.table(d = "FB_1_rpw, Events 4, Fit d2", pass_events = "Tinf,Tinc,Tsign,Tdeath"), # 4
 
     fill = TRUE
 )
 
 # Setup
 protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
-
-# Handle events
-protocol[, pass_events := fcase(
-    str_detect(d, "Events 1"), "Tdeath",
-    str_detect(d, "Events 2"), "Tsign,Tdeath",
-    str_detect(d, "Events 3"), "Tinf,Tsign,Tdeath",
-    str_detect(d, "Events 4"), "Tinf,Tinc,Tsign,Tdeath"
-)]
 
 # Common options ----
 source("param_gen/common2.R")
@@ -44,7 +36,7 @@ common <- list(sim_new_data = "summary_sim",
                use_traits = "sildt",
                link_traits = "sittt",
                use_grm = "HG_inv", # "pedigree",
-               inf_model = 4L,
+               inf_model = "S=pC",
                traits_source = "posterior", # should this be GRM?
                use_weight = "log",
                weight_fe = "sittt",

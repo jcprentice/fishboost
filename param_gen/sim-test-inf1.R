@@ -55,7 +55,7 @@ source("param_gen/common2.R")
 
 common <- list(sim_new_data = "summary_sim",
                use_grm = "HG_inv", # "pedigree",
-               inf_model = 4L,
+               inf_model = "S=pC",
                traits_source = "posterior", # should this be GRM?
                use_weight = "log",
                weight_is_nested = TRUE,

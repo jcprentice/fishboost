@@ -53,7 +53,7 @@ source("param_gen/common2.R")
 
 common <- list(use_grm = "HG_inv",
                popn_format = "intervals",
-               inf_model = 4L,
+               inf_model = "S=pC",
                group_effect = 0.05,
                weight_is_nested = TRUE,
                use_weight = "log",
