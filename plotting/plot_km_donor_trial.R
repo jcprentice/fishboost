@@ -25,7 +25,7 @@ plot_km_donor_trial <- function(data_list, plot_opts = NULL) {
     }
 
     if ("mean" %notin% plot_opts) {
-        plotops <- setdiff(plot_opts, "ribbon")
+        plot_opts <- setdiff(plot_opts, "ribbon")
     }
 
     if ("fb_only" %in% plot_opts) {
