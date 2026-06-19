@@ -103,7 +103,7 @@ model_fit_auc <- function(dataset = "fb-final") {
                       width = 0.2) +
         geom_point(aes(y = est),
                    position = position_dodge(0.2)) +
-        expand_limits(y = c(-0.3, 1)) +
+        scale_y_continuous(limits = ~ range(.x, -0.3, 1)) +
         scale_colour_discrete("Measurements",
                               breaks = c("all", "Tsign", "RP"),
                               labels = c("Combined", "Tsign", "RP")) +
@@ -140,7 +140,8 @@ model_fit_auc <- function(dataset = "fb-final") {
             labs(x = "AUC (data)",
                  y = "AUC (simulation)",
                  title = str_glue("Scenario {label}")) +
-            expand_limits(x = 0, y = 0) +
+            scale_x_continuous(limits = ~ range(.x, 0)) +
+            scale_y_continuous(limits = ~ range(.x, 0)) +
             facet_wrap(vars(variable),
                        scales = "free",
                        labeller = labeller(variable = c(
