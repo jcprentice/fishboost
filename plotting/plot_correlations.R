@@ -107,11 +107,7 @@ plot_correlations <- function(dataset = "fb-test", scen = 1, rep = 1) {
     description <- params$description |>
         str_split_1(", ") |>
         str_subset("GRM|convergence|coverage", negate = TRUE) |>
-        str_flatten_comma() |>
-        str_replace_all(c("inf_model 1" = "inf: I = D",
-                          "inf_model 2" = "inf: I = 0.1*D",
-                          "inf_model 3" = "inf: Don = 0.1*Rec",
-                          "inf_model 4" = "inf: Don = p*Rec"))
+        str_flatten_comma()
 
     title_str <- str_glue("{dataset}/s{scen}-{rep}: {description}")
 
