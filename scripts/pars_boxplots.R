@@ -64,7 +64,7 @@ pars_boxplots <- function(dataset = "fb-final", scens = 0, st_str = "") {
             geom_boxplot(fill = "tomato",
                          outliers = FALSE,
                          staplewidth = 1) +
-            expand_limits(y = 0) +
+            scale_y_continuous(limits = ~ range(.x, 0)) +
             ylim(rng$min, rng$max) +
             # coord_flip() +
             labs(x = "Scenario",
