@@ -8,6 +8,7 @@
 
     source("rename_pars.R")
     source("fes_to_vals.R")
+    source("figures/theme_jamie.R")
 }
 
 pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_grid = TRUE) {
@@ -56,8 +57,7 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
            .(parameter,
              bias1 = mean - true_val,
              bias2 = (median - true_val) / sd,
-             bias3 = median / true_val - 1,
-             convergence)]
+             bias3 = median / true_val - 1)]
     }) |>
         rbindlist(idcol = "scen", fill = TRUE)
 
@@ -72,34 +72,47 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
     setorder(x, parameter, bias2)
 
     plts <- map(pars, \(par) {
-        # i <- 1; par <- pars[[i]]
-        x1 <- x[parameter == par, .(scen, bias = bias2, convergence)]
+        if (FALSE) {
+            i <- 1; par <- pars[[i]]
+        }
+        x1 <- x[parameter == par, .(scen, bias = bias2)]
+        x2 <- x1[, .(mu  = mean(bias),
+                     min = hdi(bias)[["lower"]],
+                     max = hdi(bias)[["upper"]])]
         mu_x1 <- x1[, .(mu = mean(bias)), scen]
         mu_x1[, scen := as.integer(scen)]
 
-        ggplot(x1, aes(x = scen, y = bias, colour = convergence)) +
-            geom_boxplot(fill = "tomato",
-                         colour = "black",
-                         staplewidth = 0.5,
-                         width = 0.3) +
-            geom_segment(data = mu_x1,
-                         aes(x = scen - 0.4, xend = scen + 0.4,
-                             y = mu, yend = mu),
-                      colour = "blue",
-                      linewidth = 0.5) +
-            # geom_point() +
-            geom_hline(yintercept = 0, linetype = "dashed") +
-            scale_colour_manual(breaks = c("", "*", "**", "***"),
-                                values = c("blue3", "green4", "yellow3", "red2")) +
+        ggplot(x1) +
+            geom_errorbar(aes(x = scen, ymin = min, ymax = max),
+                          x2,
+                          colour = "red",
+                          width = 0.2) +
+            geom_point(aes(x = scen, y = mu),
+                       x2,
+                       colour = "red",
+                       size = 2 * l2p) +
+            # geom_boxplot(aes(x = scen, y = bias),
+            #              x1,
+            #              fill = "tomato",
+            #              colour = "black",
+            #              staplewidth = 0.5,
+            #              linewidth = 0.35,
+            #              width = 0.3,
+            #              outliers = FALSE) +
+            # geom_segment(aes(x = scen - 0.4, xend = scen + 0.4,
+            #                  y = mu, yend = mu),
+            #              mu_x1,
+            #              colour = "blue",
+            #              linewidth = 0.35) +
+            geom_hline(yintercept = 0,
+                       linetype = "dashed",
+                       linewidth = 0.5 * l2p) +
             scale_x_discrete(drop = FALSE) +
-            # scale_y_discrete(limits = ~ range(.x, 0, max_bias)) +
-            expand_limits(y = 0) +
-            labs(x = "Scenario",
-                 y = "Bias",
+            scale_y_continuous(limits = ~ range(.x, 0)) +
+            labs(x = NULL,
+                 y = NULL,
                  title = html_pars[[par]]) +
-            theme_classic() +
-            theme(legend.position = "none",
-                  plot.title = element_markdown())
+            theme_jamie()
     }) |> setNames(pars)
 
     title_plt <- ggplot() +
