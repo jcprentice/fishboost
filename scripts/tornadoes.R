@@ -46,11 +46,14 @@ tornadoes <- function(dataset = "fb-test", scens = 0, combine = TRUE) {
     any_non_empty <- function(x) any(x != "empty")
 
     walk2(plts, names(plts), \(x, scen) {
-        # scen <- "s1"; x <- plts[[scen]]
+        if (FALSE) {
+            scen <- "s1"
+            x <- plts[[scen]]
+        }
         if (is.null(x)) return()
 
-        x$plots$empty <- empty
-        pars <- names(x$plots)
+        x$plts$empty <- empty
+        pars <- names(x$plts)
 
         cov_pars <- c(str_c("cov_G_", sildt2),
                       "r_G_si", "r_G_st", "empty", "empty", "r_G_it",
@@ -89,7 +92,7 @@ tornadoes <- function(dataset = "fb-test", scens = 0, combine = TRUE) {
         ]
         plt_names <- as.character(plt_mat)
 
-        pltlst <- with(x$plots, mget(plt_names))
+        pltlst <- with(x$plts, mget(plt_names))
 
         plt <- plot_grid(x$title_plt,
                          plot_grid(plotlist = pltlst,
