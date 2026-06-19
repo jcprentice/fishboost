@@ -50,7 +50,7 @@ basic_km <- function(popn, params) {
     sv_curve <- function(x) c(0, sort(x, na.last = TRUE))
 
     x1 <- x[, .(donor = fifelse(any(donor == 1), "donor", "recip"),
-                survival = seq(1, 0, length.out = .N + 1),
+                survival = seq(100, 0, length.out = .N + 1),
                 Tsign = sv_curve(Tsign),
                 RP    = sv_curve(RP)),
             .(family, trial)] |>
@@ -64,33 +64,36 @@ basic_km <- function(popn, params) {
              survival = approx(time, survival, times,
                                method = "constant",
                                ties = list("ordered", max))$y)
-    },
-    .(family, trial, donor, variable)]
+    }, .(family, trial, donor, variable)]
 
     plt <- ggplot(x2,
                   aes(x = time, y = survival,
                       colour = donor, group = family)) +
         geom_line() +
         # geom_point(size = 0.5) +
-        scale_colour_manual("Inoculated",
+        scale_colour_manual("Inoculated Family",
                             breaks = c("donor", "recip"),
                             labels = c("Yes", "No"),
                             values = c("#33A02C", "#1F78B4")) +
+        lims(y = c(0, 100)) +
         labs(x = "Time (days)",
-             y = "Survival") +
+             y = "Survival (%)") +
         facet_grid(rows = vars(trial),
                    cols = vars(variable),
                    scales = "free_x",
                    labeller = labeller(
                        variable = c(Tinf  = "Time of infection",
-                                    Tsign = "Time to first signs",
-                                    RP    = "Time from first signs to death"),
+                                    Tsign = "Time to first visual signs",
+                                    RP    = "Time from visual signs to death"),
                        trial = c("1" = "Trial 1",
                                  "2" = "Trial 2"))) +
         theme_bw() +
-        theme(panel.background = element_blank(),
-              # panel.grid.major = element_blank(),
-              # panel.grid.minor = element_blank(),
+        theme(text = element_text(size = 5),
+              plot.title = element_markdown(size = 7),
+              strip.background = element_blank(),
+              # panel.background = element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
               legend.position = "bottom")
     plt
 }
