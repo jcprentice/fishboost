@@ -24,6 +24,7 @@ run_all_tests <- function(dataset = "fb-test",
     if (FALSE) {
         dataset <- "fb-test"
         dataset <- "sim-test-inf1"
+        dataset <- "sim-events"
         km <- FALSE
     }
 
@@ -60,17 +61,17 @@ run_all_tests <- function(dataset = "fb-test",
 
     if (km) {
         opts <- list(n_plots = 50, post = "sample")
-        plotopts <- c("keep_small_groups", "extremes", "drop_donors",
-                      "mean", "ribbon", "fb_only", "t1", "t2")
+        plot_opts <- c("keep_small_groups", "extremes", "drop_donors",
+                       "mean", "ribbon", "fb_only", "t1", "t2")
 
         km_plots(dataset, scens, simulate_new_data = "no", opts = opts,
-                 plotopts = plotopts[c(4, 5)])
+                 plot_opts = plot_opts[c(4, 5)])
 
         km_plots(dataset, scens, simulate_new_data = "no", opts = opts,
-                 plotopts = plotopts[c(2, 4, 5)])
+                 plot_opts = plot_opts[c(2, 4, 5)])
 
         km_plots(dataset, scens, simulate_new_data = "no", opts = opts,
-                 plotopts = plotopts[0])
+                 plot_opts = plot_opts[0])
 
         # Don't want the extreme sires results for donor/trial KM plots
         list.files(str_glue("datasets/{dataset}/gfx/km_dt"), "_es",
@@ -92,4 +93,5 @@ if (FALSE) {
     run_all_tests("fb-qtest-5e5")
     run_all_tests("sim-test-inf1")
     run_all_tests("sim-test-inf2")
+    run_all_tests("sim-events")
 }
