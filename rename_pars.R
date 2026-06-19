@@ -70,7 +70,7 @@ html_names <- function(pars) {
           "_ld$" = "_(Lat, Det)",
           "_lt$" = "_(Lat, End)",
           "_dt$" = "_(Det, End)",
-          ", \\(" = ",_",
+          ",_\\(" = ",_",
           "_" = " "))
 }
 
