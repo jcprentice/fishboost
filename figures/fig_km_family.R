@@ -14,7 +14,7 @@ fig_km_family <- function(dataset = "fb-test",
                           scen = 2,
                           plot_opts = c(),
                           title_str = NULL,
-                          debug = FALSE) {
+                          DEBUG = FALSE) {
 
     if (FALSE) {
         dataset <- "fb-test"
@@ -22,8 +22,8 @@ fig_km_family <- function(dataset = "fb-test",
         plot_opts <- c("keep_small_groups", "fb_only", "extremes", "drop_donors",
                        "t1", "t2", "t2_width", "mean", "ribbon")
         plot_opts <- c("Tsign", "t1", "t2_width", "fb_only", "ribbon")
-        title_str <- "Tsign\nMulti-stage endurance"
-        debug <- TRUE
+        title_str <- "Tsign<br>Multi-stage endurance"
+        DEBUG <- TRUE
     }
 
     {
@@ -53,19 +53,19 @@ fig_km_family <- function(dataset = "fb-test",
 
     # Drop small families unless specified otherwise
     if ("keep_small_groups" %notin% plot_opts) {
-        if (debug) message("- Dropping small groups")
+        if (DEBUG) message("- Dropping small groups")
         small_groups <- data[id == last(id), .N, family][N < 10, family]
         data <- data[family %notin% small_groups]
     } else {
-        if (debug) message("- Keeping small groups")
+        if (DEBUG) message("- Keeping small groups")
     }
 
     # Filter by trial
     if ("t1" %in% plot_opts & "t2" %notin% plot_opts) {
-        if (debug) message(" - Keeping Trial 1 only")
+        if (DEBUG) message(" - Keeping Trial 1 only")
         data <- data[trial == 1]
     } else if ("t1" %notin% plot_opts & "t2" %in% plot_opts) {
-        if (debug) message(" - Keeping Trial 2 only")
+        if (DEBUG) message(" - Keeping Trial 2 only")
         data <- data[trial == 2]
     }
 
@@ -85,7 +85,7 @@ fig_km_family <- function(dataset = "fb-test",
     data[, donor := fifelse(any(donor == 1L), 1L, 0L), .(family, trial)]
 
     if ("drop_donors" %in% plot_opts) {
-        if (debug) message("- Dropping Donor families")
+        if (DEBUG) message("- Dropping Donor families")
         data <- data[donor == 0]
     }
 
@@ -106,7 +106,7 @@ fig_km_family <- function(dataset = "fb-test",
 
     # Set extreme families
     if ("extremes" %in% plot_opts) {
-        if (debug) message("- Using extreme families")
+        if (DEBUG) message("- Using extreme families")
         foo <- data_sv[src == "fb", .(family, trial, donor, Tsign)]
         # Filter out any sires with fewer than 5 non-NA values
         foo[, p := sum(!is.na(Tsign)), .(family, trial)]
@@ -119,7 +119,7 @@ fig_km_family <- function(dataset = "fb-test",
                     .(trial, donor)]
         data_sv <- merge(data_sv, ids, by = c("trial", "donor", "family"))
     } else {
-        if (debug) message("- Using all families")
+        if (DEBUG) message("- Using all families")
         data_sv[, es := "X"]
     }
 
@@ -237,22 +237,22 @@ fig_km_family <- function(dataset = "fb-test",
 
 {
     p1 <- fig_km_family("fb-test", 2, c("Tsign", "ribbon"),
-                        "Time to visual signs\nMulti-stage endurance")
+                        "Time to visual signs<br>Multi-stage endurance")
 
     p2 <- fig_km_family("fb-test", 2, c("Tsign", "extremes", "ribbon"),
-                        "Time to visual signs, extremes\nMulti-stage endurance")
+                        "Time to visual signs, extremes<br>Multi-stage endurance")
 
     p3 <- fig_km_family("fb-test", 3, c("Tsign", "extremes", "ribbon"),
-                        "Time to visual signs, extremes\nNo genetic variance")
+                        "Time to visual signs, extremes<br>No genetic variance")
 
     p4 <- fig_km_family("fb-test", 2, c("RP", "ribbon"),
-                        "Time from visual signs to death\nMulti-stage endurance")
+                        "Time from visual signs to death<br>Multi-stage endurance")
 
     p5 <- fig_km_family("fb-test", 2, c("RP", "extremes", "ribbon"),
-                        "Time from visual signs to death, extremes\nMulti-stage endurance")
+                        "Time from visual signs to death, extremes<br>Multi-stage endurance")
 
     p6 <- fig_km_family("fb-test", 3, c("RP", "extremes", "ribbon"),
-                        "Time from visual signs to death, extremes\nNo genetic variance")
+                        "Time from visual signs to death, extremes<br>No genetic variance")
 
     scm <- rowwiseDT(
         breaks=,    labels=,                      values=,
@@ -301,18 +301,18 @@ plt <- plot_grid(plt1, p_legend,
                  ncol = 1, rel_heights = c(1, 0.08))
 plt
 
-ggsave("figures/km_plots.pdf", plt,
+ggsave("gfx/km_plots.pdf", plt,
        width = 18.3, height = 17, units = "cm", dpi = "print")
-ggsave("figures/km_plots.png", plt,
+ggsave("gfx/km_plots.png", plt,
        width = 18.3, height = 17, units = "cm", dpi = "print")
 
 
 {
     p_fb1a <- fig_km_family("fb-test", 2, c("Tsign", "fb_only", "t1"),
-                            "Time to visual signs\nMulti-stage endurance")
+                            "Time to visual signs<br>Multi-stage endurance")
 
     p_fb1b <- fig_km_family("fb-test", 2, c("RP", "fb_only", "t1"),
-                            "Time from visual signs to death\nMulti-stage endurance")
+                            "Time from visual signs to death<br>Multi-stage endurance")
 
     scm2 <- scm[c(1, 3)]
 
@@ -350,16 +350,16 @@ ggsave("figures/km_plots.png", plt,
     # ----
 
     p_fb1a <- fig_km_family("fb-test", 2, c("Tsign", "fb_only", "t1", "t2_width"),
-                            "Time to visual signs\nMulti-stage endurance")
+                            "Time to visual signs<br>Multi-stage endurance")
 
     p_fb1b <- fig_km_family("fb-test", 2, c("RP", "fb_only", "t1", "t2_width"),
-                            "Time from visual signs to death\nMulti-stage endurance")
+                            "Time from visual signs to death<br>Multi-stage endurance")
 
     p_fb2a <- fig_km_family("fb-test", 7, c("Tsign", "fb_only", "t2"),
-                            "Time to visual signs\nMulti-stage endurance")
+                            "Time to visual signs<br>Multi-stage endurance")
 
     p_fb2b <- fig_km_family("fb-test", 7, c("RP", "fb_only", "t2"),
-                            "Time from visual signs to death\nMulti-stage endurance")
+                            "Time from visual signs to death<br>Multi-stage endurance")
 
     plt_fb12 <- plot_grid(p_fb1a + theme(legend.position = "none"),
                           p_fb1b + theme(legend.position = "none"),
