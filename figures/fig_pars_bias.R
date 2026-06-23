@@ -140,8 +140,8 @@ fig_pars_bias <- function(dataset = "sim-test-inf1", scens = 0) {
         discard(is.na) |> unique() |> as.integer() |> sort()
 
     plt_names <- c(
-        "cov_G_ss",   "cov_G_ii",   "cov_G_tt",   "r_G_si",    "r_G_st",    "r_G_it",
-        "cov_E_ss",   "cov_E_ii",   "cov_E_tt",   "r_E_si",    "r_E_st",    "r_E_it",
+        "cov_G_ss", "cov_G_ii", "cov_G_tt", "r_G_si", "r_G_st", "r_G_it",
+        "cov_E_ss", "cov_E_ii", "cov_E_tt", "r_E_si", "r_E_st", "r_E_it",
         if (identical(trials, 1L)) {
             c("LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don", "weight1_s", "weight1_i", "weight1_t",
               "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec", "beta_Tr1",  "infrat",    "sigma")
@@ -160,11 +160,13 @@ fig_pars_bias <- function(dataset = "sim-test-inf1", scens = 0) {
                      ncol = 6, align = "v")
     plt
 
+    ht <- if (length(trials) == 1) 17 * 2 / 3 else 17
+
     plt_str <- str_glue("gfx/{dataset}-pars-bias")
     ggsave(str_glue("{plt_str}.pdf"), plt,
-           width = 18.3, height = 17, units = "cm", dpi = "print")
+           width = 18.3, height = ht, units = "cm", dpi = "print")
     ggsave(str_glue("{plt_str}.png"), plt,
-           width = 18.3, height = 17, units = "cm", dpi = "print")
+           width = 18.3, height = ht, units = "cm", dpi = "print")
 
     plt
 }
