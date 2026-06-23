@@ -15,15 +15,17 @@ rename_bici_pars <- function(pars) {
     pars |> str_replace_all(
         c("\\\\" = "",
           "\\^" = "_",
+          "State" = "state",
           "cv_G" = "sigma",
           # "^G_" = "Group effect ",
           # "infrat" = "Inf ratio",
-          # "Ω" = "Omega", "ω" = "omega", "μ" = "mu",
+          "Ω" = "Omega", "ω" = "omega", "μ" = "mu",
           "mu_weight([12]?)([slidt])" = "weight\\1_\\2",
-          "Omega_gen_(.)g,(.)g" = "cov_G_\\1\\2",
-          "Omega_env_(.)e,(.)e" = "cov_E_\\1\\2",
-          "omega_gen_(.)g,(.)g" = "r_G_\\1\\2",
-          "omega_env_(.)e,(.)e" = "r_E_\\1\\2"))
+          "_gen" = "", "_env" = "",
+          "Omega_(.)g,(.)g" = "cov_G_\\1\\2",
+          "Omega_(.)e,(.)e" = "cov_E_\\1\\2",
+          "omega_(.)g,(.)g" = "r_G_\\1\\2",
+          "omega_(.)e,(.)e" = "r_E_\\1\\2"))
 }
 
 #' Rename parameters
