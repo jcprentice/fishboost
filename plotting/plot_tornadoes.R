@@ -177,7 +177,7 @@ plot_tornadoes <- function(dataset = "sim-test",
             theme_classic() +
             theme(plot.title = element_markdown(size = 10)) +
             easy_remove_legend() +
-            easy_remove_axes("y")
+            easy_remove_y_axis()
     }) |>
         setNames(parameters)
 
