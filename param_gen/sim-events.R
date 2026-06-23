@@ -35,7 +35,7 @@ source("param_gen/common2.R")
 common <- list(sim_new_data = "summary_sim",
                use_traits = "sildt",
                link_traits = "sittt",
-               use_grm = "HG_inv", # "pedigree",
+               use_grm = "pedigree", # "HG_inv",
                inf_model = "S=pC",
                traits_source = "posterior", # should this be GRM?
                use_weight = "log",
@@ -51,7 +51,7 @@ common <- list(sim_new_data = "summary_sim",
                bici_cmd = "inf",
                fix_donors = "no_Tsign_survivors",
                censor = 0.8,
-               nsample = 2e6,
+               nsample = 5e5,
                nchains = 16,
                sample_states = 100,
                time_step_bici = 1) |>
