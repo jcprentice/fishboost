@@ -9,6 +9,7 @@ suppressPackageStartupMessages({
 
 time_start <- now()
 message(str_glue("Started at {round(time_start)}"))
+message("Number of cores detected: ", parallel::detectCores())
 
 # set.seed(0)
 
@@ -21,7 +22,7 @@ if (run_from_script) {
     row_no <- as.integer(cmd_args[[2]])
 } else {
     pname <- "sim-events"
-    row_no <- 1L
+    row_no <- 61L
 }
 
 {
