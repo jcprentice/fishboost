@@ -103,21 +103,17 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
         }
     }
 
-    # Get the list of columns, and find the subset we want to actually plot by
-    # discarding unwanted columns like Group effect and shape
-    pars <- names(x) |>
-        str_subset("^G_|Group|state|State|L_|Prior|Posterior|Number|log", negate = TRUE)
+    trials <- str_extract(names(x), "beta_Tr(.)", group = 1) |>
+        discard(is.na) |> unique() |> as.integer() |> sort()
 
-    # Remove trial and nested weights if only 1 trial
-    if (!str_detect(params$setup, "12")) {
-        pars <- if (str_detect(params$setup, "_1")) {
-            str_subset(pars, "trial|Tr2|weight2", negate = TRUE)
-        } else if (str_detect(params$setup, "_2")) {
-            str_subset(pars, "trial|Tr1|weight1", negate = TRUE)
-        }
+    if (any(str_detect(names(x), "weight_"))) {
+        setnames(x, \(s) {
+            str_replace_all(s, "weight_", str_glue("weight{trials[[1]]}_"))
+        })
     }
 
-    x[, setdiff(names(x), pars) := NULL]
+    pars <- names(x)
+
 
     # # Check for values with 0 std. dev. and discard them
     # pars <- x[, names(x)[map(.SD, sd) == 0]]
@@ -128,12 +124,18 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
     x[, names(.SD) := map(.SD, as.numeric)]
 
     # Calculate heritability
-    pars <- add_h2_to_pars(x, pars)
-    h2_priors <- data.table(parameter = c("cov_P_ss", "cov_P_ii", "cov_P_tt",
-                                          "h2_ss", "h2_ii", "h2_tt"),
-                            type = "default", val1 = 0, val2 = 1,
-                            true_val = 0.5, use = TRUE)
-    priors <- rbind(params$priors, h2_priors)
+    if (!any(str_detect(pars, "h2"))) {
+        message(str_glue("- No heritability found, suggest running\n",
+                         "> rebuild_bici_posteriors(\"{x}\", \"{y}\")",
+                         x = dataset, y = str_glue("scen-{name}")))
+        pars <- add_h2_to_pars(x, pars)
+    }
+
+    priors <- rbind(params$priors,
+                    data.table(parameter = c("cov_P_ss", "cov_P_ii", "cov_P_tt",
+                                             "h2_ss", "h2_ii", "h2_tt"),
+                               type = "default", val1 = 0, val2 = 1,
+                               true_val = 0.5, use = TRUE))
 
     walk(c("ss", "ii", "tt"), \(trait) {
         v2 <- priors[str_detect(parameter, str_c("cov_[GE]_", trait)), val2]
@@ -263,12 +265,8 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
                  title = html_par) +
             theme_classic() +
             theme(legend.position = "none",
-                  plot.title   = element_markdown(size = 12),
-                  # or use + easy_remove_y_axis()
-                  axis.title.y = element_blank(),
-                  axis.text.y  = element_blank(),
-                  axis.ticks.y = element_blank(),
-                  axis.line.y  = element_blank())
+                  plot.title = element_markdown(size = 12)) +
+                  easy_remove_y_axis()
         p
     }) |> setNames(pars)
 
