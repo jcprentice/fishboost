@@ -49,3 +49,4 @@ p1
 
 ggsave("gfx/KM_trials_12.png", p1,
        width = 17.8, height = 17.8 * 9 / 16, units = "cm")
+
