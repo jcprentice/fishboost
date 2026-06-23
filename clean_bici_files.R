@@ -1,4 +1,4 @@
-cleanup_bici_files <- function(params) {
+clean_bici_files <- function(params) {
     if (params$DEBUG) {
         return()
     }
