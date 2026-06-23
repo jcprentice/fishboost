@@ -22,7 +22,7 @@
     source("apply_fixed_effects.R")
     source("simulate_epidemic.R")
     source("init_populations.R")
-    source("cleanup_files.R")
+    source("clean_bici_files.R")
     source("fix_fb_data.R")
     source("discretise_time_bici.R")
     source("generate_bici_script.R")
