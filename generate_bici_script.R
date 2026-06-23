@@ -17,7 +17,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
 
     if (clean_dirs) {
         # Clean up old config files and generate fresh one
-        cleanup_bici_files(params)
+        clean_bici_files(params)
     }
 
 
@@ -317,7 +317,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
 
                     e1 <- compartments[[i]]
                     e2 <- compartments[[i + 1]]
-                    file_str <- str_glue("trans-data-{e1}{e2}.tsv")
+                    file_str <- str_glue("trans-data-{ti}.tsv")
                     xtd <- list(node = "trans-data",
                                 name = "Transition data",
                                 trans = str_glue("{e1}->{e2}"),
@@ -327,6 +327,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
                     x[[str_glue("trans_data_{e1}{e2}")]] <<- xtd
 
                     out <- if (ti == "Tinf" && ti %in% pass_events) {
+                        # Donor infection events shouldn't be passed
                         data[donor == 0 & !is.na(Tinf), .(ID = id, t = Tinf)]
                     } else {
                         data[!is.na(get(ti)), .(ID = id, t = get(ti))]
