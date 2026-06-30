@@ -429,7 +429,7 @@ make_parameters <- function(
     cov_priors <- data.table(parameter = cov_p, true_val = 0,
                              type = "default", val1 = 0, val2 = 4)
     cov_priors[str_starts(parameter, "r_"),
-               `:=`(val1 = -0.9, val2 = 0.9)]
+               `:=`(val1 = -1, val2 = 1)]
 
     for (i in seq_along(model_traits)) for (j in seq_along(model_traits)) {
         ti <- names(model_traits)[[i]]
