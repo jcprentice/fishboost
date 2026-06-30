@@ -1,3 +1,5 @@
+source("utils.R")
+
 set_use_flags <- function(params) {
     {
         all_traits    <- params$all_traits
