@@ -3,6 +3,7 @@
     library(stringr)
     library(purrr)
 
+    source("utils.R")
     source("widen_priors.R")
     source("remove_bici_fes.R")
 }
