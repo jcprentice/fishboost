@@ -6,9 +6,10 @@
     library(ggtext)
     library(cowplot)
 
+    source("utils.R")
     source("rename_pars.R")
     source("fes_to_vals.R")
-    source("figures/theme_jamie.R")
+    source("figures/theme_natcom.R")
 }
 
 pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_grid = TRUE) {
@@ -112,7 +113,7 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
             labs(x = NULL,
                  y = NULL,
                  title = html_pars[[par]]) +
-            theme_jamie()
+            theme_natcom()
     }) |> setNames(pars)
 
     title_plt <- ggplot() +
@@ -126,14 +127,14 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
 
     if (as_grid) {
 
-        sildt1 <- c("s", "i", "l", "d", "t")
+        sildt1 <- str_chars("sildt")
         sildt2 <- str_c(sildt1, sildt1)
         any_non_empty <- function(x) any(x != "empty")
 
         cov_pars <- c(str_c("cov_G_", sildt2),
                       "r_G_si", "r_G_st", "empty", "empty", "r_G_it",
-                      str_c("cov_E_", sildt2),
-                      str_c("cov_P_", sildt2))
+                      str_c("cov_E_", sildt2))
+        # cov_pars <- c(cov_pars, str_c("cov_P_", sildt2), str_c("h2_", sildt2))
 
         model_pars <- c(
             "sigma",  "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
@@ -159,56 +160,47 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
         plt_names[plt_names %notin% pars] <- "empty"
 
         # This clips any rows or columns that are entirely empty
-        plt_mat <- matrix(plt_names, nrow = 5)
+        plt_mat <- matrix(plt_names, nrow = 5, byrow = TRUE)
         plt_mat <- plt_mat[
             which(apply(plt_mat, 1, any_non_empty)),
             which(apply(plt_mat, 2, any_non_empty))
         ]
-        plt_names <- c(plt_mat)
+        plt_names <- c(t(plt_mat))
 
         pltlst <- with(plts, mget(plt_names))
 
+        nc <- ncol(plt_mat)
+        nr <- nrow(plt_mat)
+
         plt <- plot_grid(title_plt,
                          plot_grid(plotlist = pltlst,
-                                   ncol = nrow(plt_mat),
-                                   align = "v"),
-                         ncol = 1, rel_heights = c(0.06, 1))
+                                   nrow = nr, ncol = nc,
+                                   byrow = TRUE, align = "v"),
+                         ncol = 1, rel_heights = c(0.75 / nr, 1))
     } else {
+        nc <- 5
+        nr <- ceiling(length(plts) / nc)
+
         plt <- plot_grid(title_plt,
                          plot_grid(plotlist = plts,
-                                   align = "v"),
-                         ncol = 1, rel_heights = c(0.06, 1))
+                                   nrow = nr, ncol = nc,
+                                   byrow = TRUE, align = "v"),
+                         ncol = 1, rel_heights = c(0.75 / nr, 1))
     }
 
     if (str_length(alt) > 0) alt <- str_c("-", alt)
+
     plt_str <- str_glue("{gfx_dir}/{dataset}-all_bias{alt}")
 
     message(str_glue("plotted '{plt_str}'"))
-    ggsave(str_glue("{plt_str}.png"), plt, width = 20, height = 25)
-    ggsave(str_glue("{plt_str}.pdf"), plt, width = 20, height = 25)
+    ggsave(str_glue("{plt_str}.png"), plt, width = 4 * nc, height = 3 * (nr + 0.75))
+    ggsave(str_glue("{plt_str}.pdf"), plt, width = 4 * nc, height = 3 * (nr + 0.75))
 
     plt
 }
 
 if (FALSE) {
-    # pars_bias("testing", 1, "")
-    # pars_bias("fb-final", 1:8, "Testing Unlinked vs Linked Traits and FEs")
-    # pars_bias("fb-final2", 1:4, "Testing Unlinked vs Linked Traits and FEs")
-    # pars_bias("fb-lp", 1:12, "Testing varying the LP")
-    # pars_bias("fb-donors", 1:3, "Testing reclassifying Seeder fish")
-    # pars_bias("fb-simple", 1:6, "Testing if we can fit the LP")
-    # pars_bias("fb-simple-b", 1:6, "Testing if we can fit the LP with BICI")
-    pars_bias("sim-test2", 1:5, "Testing coverage")
-    pars_bias("fb-dp", 1:6, "Testing DPs")
-    pars_bias("fb-donors", 1:27, "Testing donor reclassification")
-    pars_bias("fb-test", 0, "Testing BICI on FB data")
-    pars_bias("fb-test-1e7", 0, "Testing BICI on FB data")
-    pars_bias("fb-qtest", 0, "Testing BICI on FB data")
-    pars_bias("sim-base-inf", 0, "Validating BICI")
-    pars_bias("sim-base-inf", 1:2, "Validating BICI - Base models", "base")
-    pars_bias("sim-base-inf", 1:12, "Validating BICI - Misspecifying model", "misspecify")
-    # pars_bias("sim-base-inf", c(1:2, 13:20), "Validating BICI - convergence", "conv")
-    pars_bias("sim-test-inf", 0, "Validating BICI on Simulated data")
-    pars_bias("sim-test-inf", 1:10, "Validating BICI on Simulated data", "tr1")
-    pars_bias("sim-test-inf", 11:20, "Validating BICI on Simulated data", "tr12")
+    pars_bias("sim-test-inf1", 0, "Validating BICI on Simulated data")
+    pars_bias("sim-test-inf2", 0, "Validating BICI on Simulated data")
+    pars_bias("sim-events", 0, "Testing BICI's handling of events")
 }
