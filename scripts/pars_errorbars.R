@@ -29,7 +29,6 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
             walk(dir.create)
     }
 
-
     is_sim <- str_detect(dataset, "sim")
 
     scens_str <- list.files(res_dir) |>
@@ -90,6 +89,7 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
     priors[, `:=`(val1 = min(val1, true_val),
                   val2 = max(val2, true_val)),
            parameter]
+    priors[str_starts(parameter, "h2"), `:=`(val1 = 0, val2 = 1)]
 
     x1 <- merge(x, priors[, .(scen, parameter, type)],
                 by = c("scen", "parameter"))
@@ -152,7 +152,7 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
 
         conv_breaks <- c("", "*", "**", "***", "NA")
         # conv_cols <- c("blue3", "green4", "yellow3","red2")
-        conv_values <- c("blue3", "blue3", "red2","red2", "grey50")
+        conv_values <- c("blue3", "blue3", "red2","red2", "grey30")
 
         true_line <- if (is_sim) {
             geom_segment(aes(x = scen - 0.5,xend = scen + 0.5,
@@ -265,10 +265,15 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
     if (str_length(alt) > 0) alt <- str_c("-", alt)
 
     plt_str <- str_glue("{gfx_dir}/{dataset}-all_hpdi{alt}")
+
     message(str_glue("plotted '{plt_str}'"))
 
-    ggsave(str_glue("{plt_str}.png"), plt, width = 4 * nc, height = 3 * (nr + 0.5))
-    ggsave(str_glue("{plt_str}.pdf"), plt, width = 4 * nc, height = 3 * (nr + 0.5))
+    ggsave(str_glue("{plt_str}.png"), plt,
+           width = 10 * nc, height = 7.5 * (nr + 0.5),
+           units = "cm")
+    ggsave(str_glue("{plt_str}.pdf"), plt,
+           width = 10 * nc, height = 7.5 * (nr + 0.5),
+           units = "cm")
 
     plt
 }

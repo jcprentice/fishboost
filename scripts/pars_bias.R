@@ -30,7 +30,6 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
             walk(dir.create)
     }
 
-
     is_sim <- str_detect(dataset, "sim")
 
     scens_str <- list.files(res_dir) |>
@@ -72,6 +71,8 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
 
     setorder(x, parameter, bias2)
 
+    l2p <- 1 / ggplot2::.pt
+
     plts <- map(pars, \(par) {
         if (FALSE) {
             i <- 1; par <- pars[[i]]
@@ -79,11 +80,12 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
         x1 <- x[parameter == par, .(scen, bias = bias2)]
         x2 <- x1[, .(mu  = mean(bias),
                      min = hdi(bias)[["lower"]],
-                     max = hdi(bias)[["upper"]])]
+                     max = hdi(bias)[["upper"]]),
+                 scen]
         mu_x1 <- x1[, .(mu = mean(bias)), scen]
         mu_x1[, scen := as.integer(scen)]
 
-        ggplot(x1) +
+        ggplot() +
             geom_errorbar(aes(x = scen, ymin = min, ymax = max),
                           x2,
                           colour = "red",
@@ -92,19 +94,6 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
                        x2,
                        colour = "red",
                        size = 2 * l2p) +
-            # geom_boxplot(aes(x = scen, y = bias),
-            #              x1,
-            #              fill = "tomato",
-            #              colour = "black",
-            #              staplewidth = 0.5,
-            #              linewidth = 0.35,
-            #              width = 0.3,
-            #              outliers = FALSE) +
-            # geom_segment(aes(x = scen - 0.4, xend = scen + 0.4,
-            #                  y = mu, yend = mu),
-            #              mu_x1,
-            #              colour = "blue",
-            #              linewidth = 0.35) +
             geom_hline(yintercept = 0,
                        linetype = "dashed",
                        linewidth = 0.5 * l2p) +
@@ -126,7 +115,6 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
     plts$empty <- ggplot() + theme_classic()
 
     if (as_grid) {
-
         sildt1 <- str_chars("sildt")
         sildt2 <- str_c(sildt1, sildt1)
         any_non_empty <- function(x) any(x != "empty")
@@ -160,7 +148,7 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
         plt_names[plt_names %notin% pars] <- "empty"
 
         # This clips any rows or columns that are entirely empty
-        plt_mat <- matrix(plt_names, nrow = 5, byrow = TRUE)
+        plt_mat <- matrix(plt_names, ncol = 5, byrow = TRUE)
         plt_mat <- plt_mat[
             which(apply(plt_mat, 1, any_non_empty)),
             which(apply(plt_mat, 2, any_non_empty))
@@ -193,8 +181,15 @@ pars_bias <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_
     plt_str <- str_glue("{gfx_dir}/{dataset}-all_bias{alt}")
 
     message(str_glue("plotted '{plt_str}'"))
-    ggsave(str_glue("{plt_str}.png"), plt, width = 4 * nc, height = 3 * (nr + 0.75))
-    ggsave(str_glue("{plt_str}.pdf"), plt, width = 4 * nc, height = 3 * (nr + 0.75))
+
+    ggsave(str_glue("{plt_str}.png"), plt,
+           width = 10 * nc,
+           height = 7.5 * (nr + 0.75),
+           units = "cm")
+    ggsave(str_glue("{plt_str}.pdf"), plt,
+           width = 10 * nc,
+           height = 7.5 * (nr + 0.75),
+           units = "cm")
 
     plt
 }
