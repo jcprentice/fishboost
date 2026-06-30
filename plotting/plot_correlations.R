@@ -4,6 +4,8 @@
     library(purrr)
     library(ggplot2)
     library(ggcorrplot)
+
+    source("utils.R")
 }
 
 plot_correlations <- function(dataset = "fb-test", scen = 1, rep = 1) {
@@ -63,7 +65,7 @@ plot_correlations <- function(dataset = "fb-test", scen = 1, rep = 1) {
     GVs <- str_subset(nx, "_G_")
     EVs <- str_subset(nx, "_E_")
     # parameter associated with each fixed effect
-    sildt <- c("s", "i", "l", "d", "t")
+    sildt <- str_chars("sildt")
     fe_par <- setNames(c("beta", "beta", "LP", "DP", "RP"),
                        sildt)
     # FE names

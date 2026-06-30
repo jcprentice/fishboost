@@ -2,6 +2,7 @@
     library(purrr)
     library(stringr)
     source("plotting/plot_tornadoes.R")
+    source("utils.R")
 }
 
 tornadoes <- function(dataset = "fb-test", scens = 0, combine = TRUE) {
@@ -41,7 +42,7 @@ tornadoes <- function(dataset = "fb-test", scens = 0, combine = TRUE) {
 
     # Create a plot with subplots aligned by trait
     empty <- ggplot() + theme_classic()
-    sildt1 <- c("s", "i", "l", "d", "t")
+    sildt1 <- str_chars("sildt")
     sildt2 <- str_c(sildt1, sildt1)
     any_non_empty <- function(x) any(x != "empty")
 

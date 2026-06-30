@@ -5,6 +5,7 @@
     library(ggplot2)
     library(cowplot)
 
+    source("utils.R")
     source("rename_pars.R")
 }
 
@@ -83,7 +84,7 @@ pars_boxplots <- function(dataset = "fb-final", scens = 0, st_str = "") {
 
     plts$empty <- ggplot() + theme_classic()
 
-    sildt1 <- c("s", "i", "l", "d", "t")
+    sildt1 <- str_chars("sildt")
     sildt2 <- str_c(sildt1, sildt1)
     any_non_empty <- function(x) any(x != "empty")
 

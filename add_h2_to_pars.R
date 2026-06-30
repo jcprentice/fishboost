@@ -14,7 +14,7 @@ library(stringr)
 add_h2_to_pars <- function(x, pars) {
 
     # # Prefer working with SIRE's naming scheme
-    # y <- data.table(expand.grid(sit = c("s", "i", "t"), ae = c("a", "e")))
+    # y <- data.table(expand.grid(sit = str_chars("sit"), ae = c("a", "e")))
     # y[, `:=`(bici = str_c("\\Omega^", sit, ae, ",", sit, ae),
     #          sire = str_c("cov_", fifelse(ae == "a", "G", "E"), "_", sit, sit))]
     # setnames(x, y$bici, y$sire, skip_absent = TRUE)

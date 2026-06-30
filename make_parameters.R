@@ -196,19 +196,19 @@ make_parameters <- function(
                model_traits <- all_traits
                timings <- c("Tinf", "Tinc", "Tsign", "Tdeath")
            }, "SIDR" = {
-               model_traits <- all_traits[c("s", "i", "d", "t")]
+               model_traits <- all_traits[str_chars("sidt")]
                timings <- c("Tinf", "Tsign", "Tdeath")
            }, "SEIR" = {
-               model_traits <- all_traits[c("s", "i", "l", "t")]
+               model_traits <- all_traits[str_chars("silt")]
                timings <- c("Tinf", "Tsign", "Tdeath")
            }, "SIR" = {
-               model_traits <- all_traits[c("s", "i", "t")]
+               model_traits <- all_traits[str_chars("sit")]
                timings <- c("Tinf", "Tdeath")
            }, "SIS" = {
-               model_traits <- all_traits[c("s", "i", "t")]
+               model_traits <- all_traits[str_chars("sit")]
                timings <- c("Tinf", "Tdeath")
            }, "SI" = {
-               model_traits <- all_traits[c("s", "i")]
+               model_traits <- all_traits[str_chars("si")]
                timings <- c("Tinf")
            }, {
                stop("- Unknown model!")

@@ -3,6 +3,7 @@
     library(stringr)
     library(purrr)
     library(cowplot)
+    source("utils.R")
     source("plotting/plot_posteriors.R")
 }
 
@@ -33,7 +34,7 @@ get_posterior <- function(dataset = "fb-final", scen = 1, rep = 1,
 
     # Create a plot with subplots aligned by trait
     empty <- ggplot() + theme_classic()
-    sildt1 <- c("s", "i", "l", "d", "t")
+    sildt1 <- str_chars("sildt")
     sildt2 <- str_c(sildt1, sildt1)
     any_non_empty <- function(x) any(x != "empty")
 

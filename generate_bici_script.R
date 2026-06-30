@@ -7,6 +7,8 @@
 #'
 #' @returns A character vector of lines of BICI script
 
+source("utils.R")
+source("discretise_time_bici.R")
 
 generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
     if (FALSE) {
@@ -355,7 +357,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
 
         ## Individual Effects ----
 
-        sildt <- c("s", "i", "l", "d", "t")
+        sildt <- str_chars("sildt")
 
 
         x$comment_ies <- "Individual effects"

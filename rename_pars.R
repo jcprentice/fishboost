@@ -1,4 +1,5 @@
 library(stringr)
+source("utils.R")
 
 #' Take BICI parameters and make them consistent with internal parameter names,
 #' e.g.
@@ -114,11 +115,11 @@ pretty_names <- function(pars) {
 }
 
 sildt <- c("Susceptibility", "Infectivity", "Latency", "Detectability", "Tolerance")
-sildt1 <- c("s", "i", "l", "d", "t")
-sildt2 <- c("ss", "ii", "ll", "dd", "tt")
+sildt1 <- str_chars("sildt")
+sildt2 <- str_c(sildt1, sildt1)
 xy <- c("si", "sl", "sd", "st", "il", "id", "it", "ld", "lt", "dt")
 
-fes <- expand.grid(c("s", "i", "l", "d", "t"),
+fes <- expand.grid(sildt,
                    c("trial", "donor", "txd", "weight", "weight1", "weight2")) |>
     rev() |> apply(1, str_flatten, "_")
 
