@@ -26,6 +26,7 @@ protocol <- rbind(
     data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d8, (Underfitting SITTT to Cors=0)"), # 5
     data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d7, (Underfitting SITTT to SILDT)"),  # 6
     data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit d1, (Underfitting none to SIT)"),     # 7
+    data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit d2, (Underfitting none to SITTT)"),   # 8
 
     fill = TRUE
 )
