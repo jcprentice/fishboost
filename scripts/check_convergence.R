@@ -35,7 +35,7 @@ check_convergence <- function(dataset = "fb-test") {
         reps <- files |> str_split_i("/", 4) |> str_split_i("-", 3) |>
             str_remove_all(".rds") |> as.integer()
         descriptions <- map(files, readRDS) |> map("params") |> map_chr("description") |>
-            str_remove_all(", GRM \\w*|, convergence")
+            str_remove_all(", GRM \\w*|, convergence|, coverage")
 
         pes[, `:=`(scen = scens[file],
                    rep = reps[file],
@@ -52,13 +52,14 @@ check_convergence <- function(dataset = "fb-test") {
         setcolorder(pes, c("scen", "rep", "GEV"))
     }
 
-    pes2 <- pes[, .(desc = first(desc),
-                    # GEV = first(GEV),
-                    # FE = first(FE),
-                    mean_ESS = mean(ESS, na.rm = TRUE) |> round(),
-                    min_ESS = ESS |> min(na.rm = TRUE),
-                    mean_GR = mean(GR, na.rm = TRUE) |> round(2),
-                    max_GR = GR |> max(na.rm = TRUE) |> round(2)),
+    pes2 <- pes[!str_detect(parameter, "_P_|h2_"),
+                .(desc = first(desc),
+                  # GEV = first(GEV),
+                  # FE = first(FE),
+                  mean_ESS = ESS |> mean(na.rm = TRUE) |> round(),
+                  min_ESS = ESS |> min(na.rm = TRUE),
+                  mean_GR = mean(GR, na.rm = TRUE) |> round(2),
+                  max_GR = GR |> max(na.rm = TRUE) |> round(2)),
                 .(scen, rep)]
     pes2[, nsample := format(nsamples, scientific = FALSE, big.mark = ",")]
     pes2[, converged := fcase(min_ESS >= 500 & max_GR < 1.05, "***",
