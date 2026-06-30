@@ -7,7 +7,7 @@ widen_priors <- function(priors) {
                 val2 = pmax(val2, ceiling(true_val + 1), na.rm = TRUE))]
 
     priors[str_starts(parameter, "r_"),
-           `:=`(val1 = -0.95, val2 = 0.95)]
+           `:=`(val1 = -1, val2 = 1)]
 
     priors[str_detect(parameter, "period|beta|sigma"),
            `:=`(val1 = 0,
