@@ -9,7 +9,7 @@
     library(cowplot)
 
     source("rename_pars.R")
-    source("figures/theme_jamie.R")
+    source("figures/theme_natcom.R")
 }
 
 fig_tornadoes <- function(dataset = "sim-test-inf1", scen = 1) {
@@ -146,7 +146,7 @@ fig_tornadoes <- function(dataset = "sim-test-inf1", scen = 1) {
             labs(x = "Value",
                  y = NULL,
                  title = html_par) +
-            theme_jamie() +
+            theme_natcom() +
             easy_remove_y_axis()
     }) |>
         setNames(pars)

@@ -7,7 +7,7 @@
     library(ggtext)
 
     source("rename_pars.R")
-    source("figures/theme_jamie.R")
+    source("figures/theme_natcom.R")
 }
 
 fig_pars_errorbars <- function(dataset = "fb-test", scens = 0) {
@@ -164,7 +164,7 @@ fig_pars_errorbars <- function(dataset = "fb-test", scens = 0) {
             labs(x = NULL,
                  y = NULL,
                  title = html_pars[[par]]) +
-            theme_jamie()
+            theme_natcom()
                   # axis.text.x = element_text(angle = 0, hjust = 1))
     }) |> setNames(pars)
 

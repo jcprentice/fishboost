@@ -13,7 +13,7 @@
     source("rename_pars.R")
     source("add_h2_to_pars.R")
     source("utils.R")
-    source("figures/theme_jamie.R")
+    source("figures/theme_natcom.R")
 }
 
 
@@ -249,7 +249,7 @@ fig_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1) {
             labs(x = "value",
                  y = "density",
                  title = html_par) +
-            theme_jamie() +
+            theme_natcom() +
             theme(legend.position = "none") +
             easy_remove_y_axis()
         p

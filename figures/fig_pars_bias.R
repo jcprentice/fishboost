@@ -8,7 +8,7 @@
     library(ggtext)
 
     source("rename_pars.R")
-    source("figures/theme_jamie.R")
+    source("figures/theme_natcom.R")
 }
 
 fig_pars_bias <- function(dataset = "sim-test-inf1", scens = 0) {
@@ -133,7 +133,7 @@ fig_pars_bias <- function(dataset = "sim-test-inf1", scens = 0) {
             labs(x = NULL,
                  y = NULL,
                  title = html_pars[[par]]) +
-            theme_jamie()
+            theme_natcom()
     }) |> setNames(pars)
 
     trials <- str_extract(pars, "beta_Tr(.)", group = 1) |>

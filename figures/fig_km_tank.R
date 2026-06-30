@@ -7,7 +7,7 @@
     library(ggtext)
     library(cowplot)
 
-    source("figures/theme_jamie.R")
+    source("figures/theme_natcom.R")
 }
 
 fig_km_tank <- function(dataset = "fb-test",
@@ -200,7 +200,7 @@ fig_km_tank <- function(dataset = "fb-test",
              x = "Time (days)",
              y = "Survival (%)",
              title = title_str) +
-        theme_jamie()
+        theme_natcom()
     plt
 }
 

@@ -1,7 +1,7 @@
 library(ggplot2)
 library(ggtext)
 
-theme_jamie <- function() {
+theme_natcom <- function() {
     theme_classic() +
     theme(legend.position = "none",
           text = element_text(size = 5),

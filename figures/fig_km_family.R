@@ -7,7 +7,7 @@
     library(ggtext)
     library(cowplot)
 
-    source("figures/theme_jamie.R")
+    source("figures/theme_natcom.R")
 }
 
 fig_km_family <- function(dataset = "fb-test",
@@ -231,7 +231,7 @@ fig_km_family <- function(dataset = "fb-test",
              x = "Time (days)",
              y = "Survival (%)",
              title = title_str) +
-        theme_jamie()
+        theme_natcom()
     plt
 }
 
@@ -327,7 +327,7 @@ ggsave("gfx/km_plots.png", plt,
         scale_colour_manual(breaks = scm2$breaks,
                             labels = scm2$labels,
                             values = scm2$values) +
-        theme_jamie() +
+        theme_natcom() +
         theme(legend.position = "bottom")
     p_leg2
     p_legend2 <- get_legend(p_leg2)
