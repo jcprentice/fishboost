@@ -23,6 +23,9 @@ get_ds_times <- function(dataset = "fb-final", mult = 1) {
     }
 
     x <- map(files, \(f) {
+        if (FALSE) {
+            f <- files[[1]]
+        }
         # "../scen-1-1.rds" -> "1-1"
         tmp <- str_split_i(f, "/", 4) |>
             str_remove_all("scen-|.rds") |>
