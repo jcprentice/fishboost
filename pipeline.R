@@ -26,7 +26,7 @@ run_from_script <- length(cmd_args) > 0
         dataset = "testing",
         name = "scen-1-1",
         setup = "fb_12_rpw", # chris, small, fb_12, fb_1, fb_2, single
-        use_traits = "all", # "all", "none", "sit", "si" etc.
+        use_traits = "sit", # "all", "none", "sit", "si" etc.
         vars = 0.5, # c(0.5, 1.5, 0, 0, 0.5)
         cors = 0.2, # c(0.2, ..., 0.2)
         group_layout = "fishboost", # "random", "family", "striped", "fishboost"
@@ -59,7 +59,7 @@ run_from_script <- length(cmd_args) > 0
     params$use_weight <- "log"
     params$use_grm <- "pedigree" # "HG_inv"
     params$weight_is_nested <- TRUE
-    params$trans_tree <- "on"
+    params$trans_tree <- "off"
     # params$fix_donors <- c(params$fix_donors, "set_to_R")
 
     # Tidy up LP, DP, RP, including rate, shape, and priors
