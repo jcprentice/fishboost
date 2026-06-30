@@ -5,6 +5,7 @@
 }
 
 datasets <- c("fb-test",
+              "sim-events",
               "sim-test-inf1",
               "sim-test-inf2")
 
@@ -13,7 +14,5 @@ walk(datasets, \(ds) {
         str_remove_all(".rds") |>
         str_sort(numeric = TRUE)
 
-    walk(names, \(name) {
-        rebuild_bici_posteriors(ds, name)
-    })
+    walk(names, ~ rebuild_bici_posteriors(ds, .x))
 })
