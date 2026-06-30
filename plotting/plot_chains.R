@@ -85,8 +85,10 @@ plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
                        colour = "green")
         }
 
+        lp2 <- 1 / ggplot2::.pt
+
         ggplot(X, aes(x, y, group = par, colour = chain)) +
-            geom_point(size = 0.1) +
+            geom_point(size = 0.8 * lp2) +
             p_true +
             scale_colour_manual(values = rep(brewer.pal(4, "Set1"),
                                              length = nchains)) +
@@ -110,7 +112,7 @@ plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
 
     cov_pars <- c(str_c("cov_G_", sildt2),
                   "r_G_si", "r_G_st", "empty", "empty", "r_G_it",
-                  str_c("cov_E_", sildt2), str_c("cov_P_", sildt2))
+                  str_c("cov_E_", sildt2))
 
     model_pars <- c(
         "sigma",  "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
@@ -137,14 +139,17 @@ plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
     plt_names[plt_names %notin% pars] <- "empty"
 
     # This clips any rows or columns that are entirely empty
-    plt_mat <- matrix(plt_names, nrow = 5)
+    plt_mat <- matrix(plt_names, ncol = 5, byrow = TRUE)
     plt_mat <- plt_mat[
         which(apply(plt_mat, 1, any_non_empty)),
         which(apply(plt_mat, 2, any_non_empty))
     ]
-    plt_names <- c(plt_mat)
+    plt_names <- c(t(plt_mat))
 
     pltlst <- with(plts, mget(plt_names))
+
+    nc <- ncol(plt_mat)
+    nr <- nrow(plt_mat)
 
     title_plt <- ggplot() +
         labs(title = str_glue("{dataset} / s{scen}-{rep}"),
@@ -155,20 +160,24 @@ plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
 
     plt <- plot_grid(title_plt,
                      plot_grid(plotlist = pltlst,
-                               ncol = nrow(plt_mat),
-                               align = "v"),
-                     ncol = 1, rel_heights = c(0.08, 1))
+                               nrow = nr, ncol = nc,
+                               byrow = TRUE, align = "v"),
+                     ncol = 1, rel_heights = c(0.5 / nr, 1))
 
     # PDFs are huge here
-    ggsave(str_glue("{chains_dir}/{dataset}-s{scen}-{rep}-chains.png"),
-           plt, height = 9, width = 12)
+    plt_str <- str_glue("{chains_dir}/{dataset}-s{scen}-{rep}-chains.png")
+    ggsave(plt_str, plt,
+           width = 4 * nc,
+           height = 2 * (nr + 0.5))
     plt
 }
 
 if (FALSE) {
-    dataset <- "fb-qtest"
-    scens <- str_glue("datasets/{dataset}/results") |>
-        list.files() |> str_split_i("-", 2) |> as.integer() |> sort() |> unique()
+    dataset <- "sim-test-inf1"
+    files <- str_glue("datasets/{dataset}/results") |>
+        list.files() |> str_sort(numeric = TRUE)
+    scens <- files |> str_extract("scen-(\\d+)-", 1) |> as.integer()
+    reps <- files |> str_extract("scen-\\d+-(\\d+).rds", 1) |> as.integer()
 
-    walk(scens, ~ plot_chains(dataset, .x, 1))
+    walk2(scens, reps, \(scen, rep) plot_chains(dataset, scen, rep))
 }
