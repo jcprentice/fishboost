@@ -1,4 +1,5 @@
 library(MASS)
+source("utils.R")
 
 # This is a faster version using arrays and no loops
 make_traits_from_pedigree <- function(popn, params) {
