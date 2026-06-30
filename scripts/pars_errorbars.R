@@ -6,6 +6,7 @@
     library(ggtext)
     library(cowplot)
 
+    source("utils.R")
     source("rename_pars.R")
     source("fes_to_vals.R")
 }
@@ -101,22 +102,37 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
 
     # Set lvl names
     lvls <- if (dataset == "fb-test") {
-        expand.grid(c("SS End", "MS End", "No Var"),
-                    c("Tr1", "Tr2", "Tr1+2")) |>
-            apply(1, str_flatten, collapse = "\n")
+        c("SS End\nTr1", "MS End\nTr1", "No Var\nTr1",
+          "SS End\nTr2", "MS End\nTr2", "No Var\nTr2",
+          "SS End\nTr1+2", "MS End\nTr1+2", "No Var\nTr1+2")
     } else if (dataset == "sim-test-inf1") {
-        expand.grid(c("SS End", "MS End"),
-                    c("Tr1", "Tr1+2")) |>
-            apply(1, str_flatten, collapse = "\n")
+        c("SS End\nTr1", "MS End\nTr1", "SS End\nTr1+2", "MS End\nTr1+2")
     } else if (dataset == "sim-test-inf2") {
-        c("Overfitting MS End to No Var", "Overfitting MS End to Inf only",
-          "Underfitting MS End to All vars", "Underfitting MS End to Cors=0",
-          "Underfitting none to SS End", "Testing h2=0")
+        c("Correct model",
+          "Overfitting MSE to No Vars",
+          "Overfitting MSE to ST",
+          "Testing h2=0",
+          "Underfitting MSE to Cors=0",
+          "Underfitting MSE to All vars",
+          "Underfitting none to SSE")
     } else {
         levels(x1$scen)
     }
     setattr(x1$scen, "levels" , lvls)
     setattr(priors$scen, "levels" , lvls)
+
+
+    # Sort out phenotypic variance and heritability
+    x1[str_detect(parameter, "_P_|h2_"), convergence := "NA"]
+    walk(c("ss", "ii", "tt"), \(xx) {
+       G <- priors[str_detect(parameter, str_c("_G_", xx)), true_val]
+       E <- priors[str_detect(parameter, str_c("_E_", xx)), true_val]
+       P <- G + E
+       h2 <- G / P
+       priors[str_detect(parameter, str_c("_P_", xx)), true_val := P]
+       priors[str_detect(parameter, str_c("h2_", xx)), true_val := h2]
+    })
+
 
 
     plts <- map(pars, \(par) {
@@ -134,9 +150,9 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
 
         # Colour = type vs colour = convergence
 
-        conv_breaks <- c("", "*", "**", "***")
+        conv_breaks <- c("", "*", "**", "***", "NA")
         # conv_cols <- c("blue3", "green4", "yellow3","red2")
-        conv_values <- c("blue3", "blue3", "red2","red2")
+        conv_values <- c("blue3", "blue3", "red2","red2", "grey50")
 
         true_line <- if (is_sim) {
             geom_segment(aes(x = scen - 0.5,xend = scen + 0.5,
@@ -185,14 +201,14 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
     plts$empty <- ggplot() + theme_classic()
 
     if (as_grid) {
-        sildt1 <- c("s", "i", "l", "d", "t")
+        sildt1 <- str_chars("sildt")
         sildt2 <- str_c(sildt1, sildt1)
         any_non_empty <- function(x) any(x != "empty")
 
         cov_pars <- c(str_c("cov_G_", sildt2),
                       "r_G_si", "r_G_st", "empty", "empty", "r_G_it",
-                      str_c("cov_E_", sildt2),
-                      str_c("cov_P_", sildt2))
+                      str_c("cov_E_", sildt2))
+        # cov_pars <- c(cov_pars, str_c("cov_P_", sildt2), str_c("h2_", sildt2))
 
         model_pars <- c(
             "sigma",  "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
@@ -218,38 +234,48 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
         plt_names[plt_names %notin% pars] <- "empty"
 
         # This clips any rows or columns that are entirely empty
-        plt_mat <- matrix(plt_names, nrow = 5)
+        plt_mat <- matrix(plt_names, ncol = 5, byrow = TRUE)
         plt_mat <- plt_mat[
             which(apply(plt_mat, 1, any_non_empty)),
             which(apply(plt_mat, 2, any_non_empty))
         ]
-        plt_names <- c(plt_mat)
+        plt_names <- c(t(plt_mat))
 
         pltlst <- with(plts, mget(plt_names))
 
+        nc <- ncol(plt_mat)
+        nr <- nrow(plt_mat)
+
         plt <- plot_grid(title_plt,
                          plot_grid(plotlist = pltlst,
-                                   ncol = nrow(plt_mat),
-                                   align = "v"),
-                         ncol = 1, rel_heights = c(0.06, 1))
+                                   nrow = nr, ncol = nc,
+                                   byrow = TRUE, align = "v"),
+                         ncol = 1, rel_heights = c(0.5 / nr, 1))
     } else {
+        nc <- 5
+        nr <- ceiling(length(plts) / nc)
+
         plt <- plot_grid(title_plt,
                          plot_grid(plotlist = plts,
-                                   align = "v"),
-                         ncol = 1, rel_heights = c(0.06, 1))
+                                   nrow = nr, ncol = nc,
+                                   byrow = TRUE, align = "v"),
+                         ncol = 1, rel_heights = c(1 / nr, 1))
     }
 
     if (str_length(alt) > 0) alt <- str_c("-", alt)
+
     plt_str <- str_glue("{gfx_dir}/{dataset}-all_hpdi{alt}")
+    message(str_glue("plotted '{plt_str}'"))
 
-    ggsave(str_glue("{plt_str}.png"), plt, width = 20, height = 25)
-    ggsave(str_glue("{plt_str}.pdf"), plt, width = 20, height = 25)
+    ggsave(str_glue("{plt_str}.png"), plt, width = 4 * nc, height = 3 * (nr + 0.5))
+    ggsave(str_glue("{plt_str}.pdf"), plt, width = 4 * nc, height = 3 * (nr + 0.5))
 
-    mget(c("plt", "plts", "dataset", "scens"))
+    plt
 }
 
 if (FALSE) {
     pars_errorbars("fb-test", 0, "Testing BICI on FB data")
     pars_errorbars("sim-test-inf1", 0, "Validating BICI on Simulated data")
     pars_errorbars("sim-test-inf2", 0, "Validating BICI on Simulated data")
+    pars_errorbars("sim-events", 0, "Testing BICI's handling of events")
 }
