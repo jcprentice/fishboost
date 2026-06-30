@@ -54,23 +54,26 @@ rebuild_bici_posteriors <- function(dataset = "fb-test",
         map(~ .x[, .SD, .SDcols = !patterns("L\\^|N\\^|Prior")]) |>
         map(~ setnames(.x, rename_bici_pars))
 
+    sildt <- str_chars("sildt")
+
     walk(x, \(xi) {
         if (FALSE) {
             xi <- copy(x[[1]])
         }
 
-        walk(c("s", "i", "l", "d", "t"), \(t1) {
+        walk(sildt, \(t1) {
             gt <- str_c("cov_G_", t1, t1)
             et <- str_c("cov_E_", t1, t1)
             pt <- str_c("cov_P_", t1, t1)
             ht <- str_c("h2_", t1, t1)
             if (all(c(gt, et) %in% names(xi))) {
                 xi[, (pt) := get(gt) + get(et)]
-                xi[, (ht) := get(gt) + get(pt)]
+                xi[, (ht) := get(gt) / get(pt)]
             }
         })
 
-        pnames <- names(xi) |> str_subset("_P_|h2_") |> str_sort()
+        pnames <- c(str_subset(names(xi), "_P_"),
+                    str_subset(names(xi), "h2_"))
         if (length(pnames) > 0) {
             setcolorder(xi, pnames,
                         after = last(str_subset(names(xi), "_[GE]_")),
@@ -185,12 +188,14 @@ rebuild_sire_posteriors <- function(dataset = "fb-final",
         map(~ .x[, .SD, .SDcols = !patterns("^L_|Prior|Posterior|Number|log")]) |>
         map(~ setnames(.x, \(x) str_replace(x, "Group effect ", "G_")))
 
+    sildt <- str_chars("sildt")
+
     walk(x, \(xi) {
         if (FALSE) {
             xi <- copy(x[[1]])
         }
 
-        walk(c("s", "i", "l", "d", "t"), \(t1) {
+        walk(sildt, \(t1) {
             gt <- str_c("cov_G_", t1, t1)
             et <- str_c("cov_E_", t1, t1)
             pt <- str_c("cov_P_", t1, t1)
@@ -201,7 +206,8 @@ rebuild_sire_posteriors <- function(dataset = "fb-final",
             }
         })
 
-        pnames <- names(xi) |> str_subset("_P_|h2_") |> str_sort()
+        pnames <- c(str_subset(names(xi), "_P_"),
+                    str_subset(names(xi), "h2_"))
         if (length(pnames) > 0) {
             setcolorder(xi, pnames,
                         after = last(str_subset(names(xi), "_[GE]_")),
