@@ -120,7 +120,7 @@ fig_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1) {
     x[, names(.SD) := map(.SD, as.numeric)]
 
     # Calculate heritability
-    if (!any(str_detect(pars, "h2"))) {
+    if (!any(str_detect(pars, "h2")) && any(str_detect(pars, "_G_"))) {
         message(str_glue("- No heritability found, suggest running\n",
                          "> rebuild_bici_posteriors(\"{x}\", \"{y}\")",
                          x = dataset, y = str_glue("scen-{name}")))
