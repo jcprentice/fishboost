@@ -298,7 +298,7 @@ plt1 <- plot_grid(p1 + theme(legend.position = "none"),
                   align = "hv", ncol = 3)
 
 plt <- plot_grid(plt1, p_legend,
-                 ncol = 1, rel_heights = c(1, 0.08))
+                 ncol = 1, rel_heights = c(2, 0.16))
 plt
 
 ggsave("gfx/km_plots.pdf", plt,
