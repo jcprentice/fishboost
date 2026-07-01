@@ -124,7 +124,7 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
     x[, names(.SD) := map(.SD, as.numeric)]
 
     # Calculate heritability
-    if (!any(str_detect(pars, "h2"))) {
+    if (!any(str_detect(pars, "h2")) && any(str_detect(pars, "_G_"))) {
         message(str_glue("- No heritability found, suggest running\n",
                          "> rebuild_bici_posteriors(\"{x}\", \"{y}\")",
                          x = dataset, y = str_glue("scen-{name}")))
@@ -274,14 +274,10 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
         labs(title = title_plot_str) +
         theme_classic()
 
-    # plt_pars <- plot_grid(
-    #     title_plt,
-    #     plot_grid(plotlist = plts), #ncol = 3),
-    #     ncol = 1, rel_heights = c(0.06, 1))
+    plts$empty <- ggplot() + theme_classic()
 
     list(title_plt = title_plt,
          plts = plts,
-         # pars = plt_pars,
          dataset = dataset,
          scenario = scen)
 }
