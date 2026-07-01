@@ -24,6 +24,7 @@ run_all_tests <- function(dataset = "fb-test",
                           km = FALSE) {
     if (FALSE) {
         dataset <- "fb-test"
+        dataset <- "sim-test-inf1"
         dataset <- "sim-test-inf2"
         dataset <- "sim-events"
         km <- FALSE
