@@ -7,6 +7,7 @@
     library(ggtext)
 
     source("rename_pars.R")
+    source("get_plot_matrix.R")
     source("figures/theme_natcom.R")
 }
 
@@ -169,38 +170,23 @@ fig_pars_errorbars <- function(dataset = "fb-test", scens = 0) {
     }) |> setNames(pars)
 
 
-    # May need to rename weights if only 1 trial
-    trials <- str_extract(pars, "beta_Tr(.)", group = 1) |>
-        discard(is.na) |> unique() |> as.integer() |> sort()
+    pmat <- get_plot_matrix(pars, "compact")
 
-    plt_names <- c(
-        "cov_G_ss", "cov_G_ii", "cov_G_tt", "r_G_si", "r_G_st", "r_G_it",
-        "cov_E_ss", "cov_E_ii", "cov_E_tt", "r_E_si", "r_E_st", "r_E_it",
-        if (identical(trials, 1L)) {
-            c("LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don", "weight1_s", "weight1_i", "weight1_t",
-              "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec", "beta_Tr1",  "infrat",    "sigma")
-        } else if (identical(trials, 2L)) {
-            c("LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don", "weight2_s", "weight2_i", "weight2_t",
-              "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec", "beta_Tr2",  "infrat",    "sigma")
-        } else {
-            c("LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don", "weight1_s", "weight1_i", "weight1_t",
-              "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec", "weight2_s", "weight2_i", "weight2_t",
-              "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don", "beta_Tr1",  "beta_Tr2",  "infrat",
-              "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec", "sigma")
-        }
-    )
-
-    plt <- plot_grid(plotlist = plts[plt_names],
-                     ncol = 6, align = "v")
+    plt <- plot_grid(plotlist = plts[pmat$plt_names],
+                     nrow = pmat$nr,
+                     ncol = pmat$nc,
+                     align = "v")
     plt
 
-    ht <- if (length(trials) == 1) 12 else 17
+    # Need height <= 170 mm when there are 6 rows, and proportional with 4 rows
+    width <- 18.3
+    height <- 17 / 6 * pmat$nr
 
     plot_str <- str_glue("gfx/{dataset}-pars-errorbars")
     ggsave(str_glue("{plot_str}.pdf"), plt,
-           width = 18.3, height = ht, units = "cm")
+           width = width, height = height, units = "cm")
     ggsave(str_glue("{plot_str}.png"), plt,
-           width = 18.3, height = ht, units = "cm", dpi = "print")
+           width = width, height = height, units = "cm")
 
     plt
 }

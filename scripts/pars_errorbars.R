@@ -7,15 +7,21 @@
     library(cowplot)
 
     source("utils.R")
+    source("get_plot_matrix.R")
     source("rename_pars.R")
     source("fes_to_vals.R")
 }
 
-pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = "", as_grid = TRUE) {
+pars_errorbars <- function(dataset = "fb-test",
+                           scens = 0,
+                           st_str = "",
+                           alt = "",
+                           plt_shape = "traits",
+                           output = "pdf") {
     if (FALSE) {
-        dataset <- "fb-test"; scens <- 0; st_str = ""; alt <- ""
-        dataset <- "sim-test-inf1"; scens <- 0; st_str <- "Validating BICI"; alt <- ""
-        as_grid <- TRUE
+        dataset <- "fb-test"; scens <- 0; st_str = ""
+        dataset <- "sim-test-inf1"; scens <- 0; st_str <- "Validating BICI"
+        alt <- ""; plt_shape <- "traits"; output <- "pdf"
     }
 
     {
@@ -155,11 +161,11 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
         conv_values <- c("blue3", "blue3", "red2","red2", "grey30")
 
         true_line <- if (is_sim) {
-            geom_segment(aes(x = scen - 0.5,xend = scen + 0.5,
+            geom_segment(aes(x = scen - 0.5, xend = scen + 0.5,
                              y = true_val, yend = true_val),
                          priors2,
                          colour = "green",
-                         linewidth = 0.5,
+                         linewidth = 0.5 / .pt,
                          linetype = "dashed")
         }
 
@@ -167,11 +173,12 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
             aes(x = scen, y = median, group = scen, colour = convergence) +
             # geom_boxplot() +
             geom_errorbar(aes(ymin = hdi95min, ymax = hdi95max),
-                          position = position_dodge2(),
+                          position = position_dodge2(), # <-- does this need width?
+                          linewidth = 0.5 / .pt,
                           width = 0.5) +
             true_line +
             geom_point(position = position_dodge2(width = 0.5),
-                       size = 1) +
+                       size = 1 / .pt) +
             # geom_hline(yintercept = y_rng[[2]],
             #            colour = "grey", linewidth = 0.5, linetype = "dashed") +
             # scale_colour_manual(breaks = c("uniform", "inverse", "constant"),
@@ -200,67 +207,15 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
 
     plts$empty <- ggplot() + theme_classic()
 
-    if (as_grid) {
-        sildt1 <- str_chars("sildt")
-        sildt2 <- str_c(sildt1, sildt1)
-        any_non_empty <- function(x) any(x != "empty")
+    pmat <- get_plot_matrix(pars, plt_shape)
 
-        cov_pars <- c(str_c("cov_G_", sildt2),
-                      "r_G_si", "r_G_st", "empty", "empty", "r_G_it",
-                      str_c("cov_E_", sildt2))
-        # cov_pars <- c(cov_pars, str_c("cov_P_", sildt2), str_c("h2_", sildt2))
-
-        model_pars <- c(
-            "sigma",  "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
-            "infrat", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
-            "sigma",  "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
-            "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec")
-
-        # Remove repeated sigma and infrat
-        beta_in <- str_subset(pars, "beta")
-        if (beta_in[[1]] == "beta_Tr2") {
-            model_pars[c(1, 6)] <- "empty"
-        } else {
-            model_pars[c(11, 16)] <- "empty"
-        }
-
-        fes <- expand.grid(sildt1,
-                           c("trial", "donor", "txd", "weight", "weight1", "weight2")) |>
-            rev() |> apply(1, str_flatten, "_")
-
-        plt_names <- c(cov_pars, model_pars, fes)
-
-        # Some entries like "trial_s" might be missing
-        plt_names[plt_names %notin% pars] <- "empty"
-
-        # This clips any rows or columns that are entirely empty
-        plt_mat <- matrix(plt_names, ncol = 5, byrow = TRUE)
-        plt_mat <- plt_mat[
-            which(apply(plt_mat, 1, any_non_empty)),
-            which(apply(plt_mat, 2, any_non_empty))
-        ]
-        plt_names <- c(t(plt_mat))
-
-        pltlst <- with(plts, mget(plt_names))
-
-        nc <- ncol(plt_mat)
-        nr <- nrow(plt_mat)
-
-        plt <- plot_grid(title_plt,
-                         plot_grid(plotlist = pltlst,
-                                   nrow = nr, ncol = nc,
-                                   byrow = TRUE, align = "v"),
-                         ncol = 1, rel_heights = c(0.5 / nr, 1))
-    } else {
-        nc <- 5
-        nr <- ceiling(length(plts) / nc)
-
-        plt <- plot_grid(title_plt,
-                         plot_grid(plotlist = plts,
-                                   nrow = nr, ncol = nc,
-                                   byrow = TRUE, align = "v"),
-                         ncol = 1, rel_heights = c(1 / nr, 1))
-    }
+    plt <- plot_grid(title_plt,
+                     plot_grid(plotlist = plts[pmat$plt_names],
+                               nrow = pmat$nr,
+                               ncol = pmat$nc,
+                               align = "hv"),
+                     ncol = 1,
+                     rel_heights = c(0.5, pmat$nr))
 
     if (str_length(alt) > 0) alt <- str_c("-", alt)
 
@@ -268,12 +223,11 @@ pars_errorbars <- function(dataset = "fb-test", scens = 0, st_str = "", alt = ""
 
     message(str_glue("plotted '{plt_str}'"))
 
-    ggsave(str_glue("{plt_str}.png"), plt,
-           width = 10 * nc, height = 7.5 * (nr + 0.5),
-           units = "cm")
-    ggsave(str_glue("{plt_str}.pdf"), plt,
-           width = 10 * nc, height = 7.5 * (nr + 0.5),
-           units = "cm")
+    walk(output, \(op) {
+        ggsave(str_glue("{plt_str}.{op}"), plt,
+               width = 3 * pmat$nc,
+               height = 2 * (pmat$nr + 0.5))
+    })
 
     plt
 }

@@ -6,12 +6,20 @@
     library(cowplot)
 
     source("utils.R")
+    source("get_plot_matrix.R")
     source("rename_pars.R")
 }
 
-pars_boxplots <- function(dataset = "fb-final", scens = 0, st_str = "") {
-    # dataset <- "fb-lp3"; scens <- 1:12
-    # st_str = ""
+pars_boxplots <- function(dataset = "fb-test",
+                          scens = 0,
+                          st_str = "",
+                          plt_shape = "traits",
+                          output = "pdf") {
+    if (FALSE) {
+        dataset <- "fb-test"; scens <- 0
+        st_str <- ""
+        plt_shape <- "traits"; output <- "pdf"
+    }
 
     data_dir <- str_glue("datasets/{dataset}/data")
     res_dir  <- str_glue("datasets/{dataset}/results")
@@ -25,6 +33,10 @@ pars_boxplots <- function(dataset = "fb-final", scens = 0, st_str = "") {
         files <- files |>
             keep(~ .x |> str_split_i("/", 4) |> str_split_i("-", 2) |>
                      as.integer() |> is.element(scens))
+    } else {
+        scens <- files |>
+            str_extract("scen-(\\d+)-", 1) |>
+            as.integer()
     }
 
     x <- map(files, ~ {
@@ -37,36 +49,34 @@ pars_boxplots <- function(dataset = "fb-final", scens = 0, st_str = "") {
         rbindlist(idcol = "scen", fill = TRUE) |>
         melt(id.vars = "scen",
              variable.name = "parameter",
-             variable.factor = FALSE) |>
-        split(by = "parameter") |>
-        map(~ {
-            .x[, `:=`(scen = ordered(str_c("s", scens[scen]),
-                                     levels = rev(str_c("s", unique(scens)))),
-                      parameter = NULL)]
-        })
+             variable.factor = FALSE)
 
-    pars <- names(x)
+    x[, scen := as.factor(str_c("s", scens[scen]))]
+
+    pars <- unique(x$parameter)
     html_pars <- setNames(html_names(pars), pars)
 
     f <- list.files(str_glue("{res_dir}"), "scen", full.names = TRUE)[[1]]
     priors <- readRDS(f)$params$priors
 
-    lims <- map(x, ~ .x[, .(min_val = min(value), max_val = max(value))]) |>
-        rbindlist(idcol = "parameter")
+    lims <- x[, .(min = min(value, na.rm = TRUE),
+                  max = max(value, na.rm = TRUE)),
+              parameter]
 
     plts <- map(pars, \(par) {
-        # par <- "beta"
-        xp <- x[[par]]
-        rng <- lims[parameter == par,
-                    .(min = min(c(min_val, xp$value)),
-                      max = max(c(min_val, xp$value)))] |> as.list()
+        if (FALSE) {
+            i <- 1; par <- pars[[1]]
+        }
+        xp <- x[parameter == par]
+        rng <- lims[parameter == par, .(min, max)] |>
+            unlist() |> unname()
 
-        ggplot(xp, aes(x = scen, y = value)) +
+        ggplot(xp) +
+            aes(x = scen, y = value) +
             geom_boxplot(fill = "tomato",
                          outliers = FALSE,
                          staplewidth = 1) +
-            scale_y_continuous(limits = ~ range(.x, 0)) +
-            ylim(rng$min, rng$max) +
+            scale_y_continuous(limits = ~ range(.x, 0, rng)) +
             # coord_flip() +
             labs(x = "Scenario",
                  y = "Value",
@@ -84,52 +94,27 @@ pars_boxplots <- function(dataset = "fb-final", scens = 0, st_str = "") {
 
     plts$empty <- ggplot() + theme_classic()
 
-    sildt1 <- str_chars("sildt")
-    sildt2 <- str_c(sildt1, sildt1)
-    any_non_empty <- function(x) any(x != "empty")
-
-    cov_pars <- c(str_c("cov_G_", sildt2),
-                  "r_G_si", "r_G_st", "empty", "empty", "r_G_it",
-                  str_c("cov_E_", sildt2),
-                  str_c("cov_P_", sildt2))
-
-    model_pars <- c(
-        "sigma", "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
-        "empty", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
-        "empty", "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
-        "empty", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec")
-
-    fes <- expand.grid(sildt1,
-                       c("trial", "donor", "txd", "weight", "weight1", "weight2")) |>
-        rev() |> apply(1, str_flatten, "_")
-
-    plt_names <- c(cov_pars, model_pars, fes)
-
-    # Some entries like "trial_s" might be missing
-    plt_names[plt_names %notin% pars] <- "empty"
-
-    # This clips any rows or columns that are entirely empty
-    plt_mat <- matrix(plt_names, nrow = 5)
-    plt_mat <- plt_mat[
-        which(apply(plt_mat, 1, any_non_empty)),
-        which(apply(plt_mat, 2, any_non_empty))
-    ]
-    plt_names <- c(plt_mat)
-
-    pltlst <- with(plts, mget(plt_names))
+    pmat <- get_plot_matrix(pars, plt_shape)
 
     plt <- plot_grid(title_plt,
-                     plot_grid(plotlist = pltlst, ncol = nrow(plt_mat)),
-                     ncol = 1, rel_heights = c(0.06, 1))
+                     plot_grid(plotlist = plts[pmat$plt_names],
+                               nrow = pmat$nr,
+                               ncol = pmat$nc,
+                               align = "hv"),
+                     ncol = 1,
+                     rel_heights = c(0.5, pmat$nr))
 
-    ggsave(str_glue("{gfx_dir}/{dataset}-all_boxplots.png"), plt,
-           width = 15, height = 18)
-    ggsave(str_glue("{gfx_dir}/{dataset}-all_boxplots.pdf"), plt,
-           width = 15, height = 18)
+    walk(output, \(op) {
+        ggsave(str_glue("{gfx_dir}/{dataset}-all_boxplots.{op}"), plt,
+               width = 3 * pmat$nc,
+               height = 2 * (pmat$nr + 0.5))
+    })
+
+    plt
 }
 
 if (FALSE) {
-    pars_boxplots("fb-test", 1:5, "Testing BICI on FB data")
+    pars_boxplots("fb-test", c(1,2,7,8), "Testing BICI on FB data")
     # pars_boxplots("fb-final", 1:8, "Testing Unlinked vs Linked Traits and FEs")
     # pars_boxplots("fb-final2", 1:4, "Testing Unlinked vs Linked Traits and FEs")
     # pars_boxplots("fb-lp", 1:12, "Testing varying the LP")

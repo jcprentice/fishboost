@@ -12,10 +12,13 @@
     source("rename_pars.R")
 }
 
-plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
+plot_chains <- function(dataset = "fb-test",
+                        scen = 1, rep = 1,
+                        plt_shape = "traits") {
     if (FALSE) {
         dataset <- "sim-test-inf1"; scen <- 1; rep <- 1
         dataset <- "fb-test"; scen <- 7; rep <- 1
+        plt_shape <- "traits"
     }
 
     message(str_glue("plotting chain for '{dataset}' / s{scen}-{rep}"))
@@ -104,71 +107,30 @@ plot_chains <- function(dataset = "fb-test", scen = 1, rep = 1) {
     }) |>
         setNames(pars)
 
-    plts$empty <- ggplot() + theme_classic()
-
-    sildt1 <- str_chars("sildt")
-    sildt2 <- str_c(sildt1, sildt1)
-    any_non_empty <- function(x) any(x != "empty")
-
-    cov_pars <- c(str_c("cov_G_", sildt2),
-                  "r_G_si", "r_G_st", "empty", "empty", "r_G_it",
-                  str_c("cov_E_", sildt2))
-
-    model_pars <- c(
-        "sigma",  "beta_Tr1", "LP_Tr1,Don", "DP_Tr1,Don", "RP_Tr1,Don",
-        "infrat", "empty",    "LP_Tr1,Rec", "DP_Tr1,Rec", "RP_Tr1,Rec",
-        "sigma",  "beta_Tr2", "LP_Tr2,Don", "DP_Tr2,Don", "RP_Tr2,Don",
-        "infrat", "empty",    "LP_Tr2,Rec", "DP_Tr2,Rec", "RP_Tr2,Rec")
-
-    fes <- expand.grid(sildt1,
-                       c("trial", "donor", "txd", "weight", "weight1", "weight2")) |>
-        rev() |> apply(1, str_flatten, "_")
-
-    plt_names <- c(cov_pars, model_pars, fes)
-
-    if ("beta_Tr1" %notin% pars) {
-        idx <- str_which(plt_names, "sigma")[[1]]
-        plt_names[seq(idx, idx + 9)] <- "empty"
-    }
-    if ("beta_Tr2" %notin% pars) {
-        idx <- str_which(plt_names, "sigma")[[2]]
-        plt_names[seq(idx, idx + 9)] <- "empty"
-    }
-
-    # Some entries like "trial_s" might be missing
-    plt_names[plt_names %notin% pars] <- "empty"
-
-    # This clips any rows or columns that are entirely empty
-    plt_mat <- matrix(plt_names, ncol = 5, byrow = TRUE)
-    plt_mat <- plt_mat[
-        which(apply(plt_mat, 1, any_non_empty)),
-        which(apply(plt_mat, 2, any_non_empty))
-    ]
-    plt_names <- c(t(plt_mat))
-
-    pltlst <- with(plts, mget(plt_names))
-
-    nc <- ncol(plt_mat)
-    nr <- nrow(plt_mat)
-
     title_plt <- ggplot() +
         labs(title = str_glue("{dataset} / s{scen}-{rep}"),
              subtitle = description) +
         theme_classic()
-    theme(plot.title = element_text(size = 12),
-          plot.subtitle = element_text(size = 10))
+        # theme_classic() +
+        # theme(plot.title = element_text(size = 12),
+        #       plot.subtitle = element_text(size = 10))
+
+    plts$empty <- ggplot() + theme_classic()
+
+    pmat <- get_plot_matrix(pars, plt_shape)
 
     plt <- plot_grid(title_plt,
-                     plot_grid(plotlist = pltlst,
-                               nrow = nr, ncol = nc,
-                               byrow = TRUE, align = "v"),
-                     ncol = 1, rel_heights = c(0.5 / nr, 1))
+                     plot_grid(plotlist = plts[pmat$plt_names],
+                               nrow = pmat$nr,
+                               ncol = pmat$nc,
+                               align = "v"),
+                     ncol = 1, rel_heights = c(0.5, pmat$nr))
 
     # PDFs are huge here
     plt_str <- str_glue("{chains_dir}/{dataset}-s{scen}-{rep}-chains.png")
     ggsave(plt_str, plt,
-           width = 4 * nc,
-           height = 2 * (nr + 0.5))
+           width = 4 * pmat$nc,
+           height = 2 * (pmat$nr + 0.5))
     plt
 }
 
