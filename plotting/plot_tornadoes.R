@@ -2,31 +2,21 @@
     library(data.table)
     library(purrr)
     library(stringr)
-    library(lubridate)
-    library(HDInterval)
     library(ggplot2)
     library(ggtext)
     library(ggeasy)
     library(cowplot)
-    library(extrafont)
 
     source("rename_pars.R")
-    source("add_h2_to_pars.R")
     source("utils.R")
 }
 
-plot_tornadoes <- function(dataset = "sim-test",
-                           scen = 1,
-                           sort_by = "median",
-                           use_hpdi = TRUE,
-                           combine = TRUE) {
+plot_tornadoes <- function(dataset = "sim-test-inf1",
+                           scen = 2) {
 
     if (FALSE) {
         dataset <- "sim-test-inf1"
         scen <- 2
-        sort_by <- "median"
-        use_hpdi <- TRUE
-        combine <- TRUE
     }
 
     message(str_glue("Generating tornado plots for {dataset} / s{scen} ..."))
@@ -39,184 +29,61 @@ plot_tornadoes <- function(dataset = "sim-test",
                               full.names = TRUE) |>
         str_sort(numeric = TRUE)
 
-    nres <- length(res_files)
-    if (nres == 0) {
-        message(str_glue("No results files available for Scenario {scen}!"))
-        return(NULL)
-    }
-    message(str_glue("Found {nres} results file{s}",
-                     s = if (nres != 1) "s" else ""))
+    x <- res_files |>
+        map(readRDS) |>
+        map("parameter_estimates") |>
+        rbindlist(idcol = "id") |>
+        _[!str_starts(parameter, "G_"),
+           .(id, parameter, true_val, median, hdi95min, hdi95max)]
 
-    trace_files <- list.files(data_dir,
-                              pattern = "trace",
-                              full.names = TRUE,
-                              recursive = TRUE) |>
-        str_subset(str_glue("scen-{scen}-")) |>
-        str_subset("extended", negate = TRUE) |>
-        str_sort(numeric = TRUE)
-
-    if (is_empty(trace_files)) {
-        message(str_glue("No trace files available for Scenario {scen}!"))
-        return(NULL)
-    }
-
+    pars <- unique(x$parameter)
+    html_pars <- html_names(pars) |> setNames(pars)
 
     params <- readRDS(res_files[[1]])$params
-
-    # Get list of parameters ----
-    parameters <- readRDS(res_files[[1]])$parameter_estimates$parameter |>
-        # discard group effect and shape
-        str_subset("^Group|^G_", negate = TRUE)
+    priors <- params$priors
 
 
-    # Combine trace files into X ----
-
-    # burnin period is 1:(burnin/thin), need to start from (burnin/thin)+1
-    burn_prop <- if ("burnprop" %in% names(params)) {
-        params$burnprop
-    } else {
-        with(params, burnin / nsample)
-    }
-
-    # Some older runs only had a single trace
-    if (!any(str_detect(trace_files, "combine"))) combine <- FALSE
-    # burnin already discarded in trace_combine
-    if (combine) burn_prop <- 0
-    trace_files <- str_subset(trace_files, "combine", negate = !combine)
-
-    X <- map(trace_files, \(f) {
-        # f <- trace_files[[1]]
-        tmp <- fread(f)[seq(burn_prop * .N + 1L, .N)]
-        tmp[, str_subset(names(tmp), "state|State|^G|^L_|Prior|phi|Number") := NULL]
-
-        # Ensure at least 10% of the samples succeeded
-        # min_samples <- if (combine) 800 * params$nchains else 800
-        # if (nrow(tmp) < min_samples) {
-        #     message(str_glue("Too few samples ({nrow(tmp)}) in trace file '{f}'"))
-        #     return(NULL)
-        # }
-
-        tmpx = data.table(parameter = parameters,
-                          mean   = tmp[, map(.SD, mean)]   |> unlist() |> unname(),
-                          median = tmp[, map(.SD, median)] |> unlist() |> unname())
-
-        CIs <- if (use_hpdi) {
-            # 95% Highest Density Posterior Interval
-            tmp[, map(.SD, hdi, credMass = 0.95)]
-        } else {
-            # 95% Credible Interval (with 2.5% tails)
-            tmp[, map(.SD, quantile, c(0.025, 0.975))]
-        }
-        tmpx[, `:=`(ci_min = CIs[1] |> unlist() |> unname(),
-                    ci_max = CIs[2] |> unlist() |> unname())]
-        tmpx
-    }) |>
-        rbindlist(idcol = "chain")
-
-
-    # Tidy and sort X ----
-    if (sort_by %in% c("mean", "median")) {
-        setorderv(X, cols = c("parameter", sort_by))
-    } else {
-        setorder(X, "parameter")
-    }
-    X[, chain := seq(.N), by = parameter] |>
-        setnames("chain", "id", skip_absent = TRUE)
-
-
-    # Get true and posterior means ----
-
-    Xtab <- data.table(parameter = parameters, xmin = NA_real_, xmax = NA_real_,
-                       true_val = NA_real_, est_val = NA_real_,
-                       hdi1 = NA_real_, hdi2 = NA_real_, id = X[.N, id + 1L])
-
-    iwalk(parameters, \(par, i) {
-        # html_par <- str_remove_all(par, "_Tr.*")
-        X_mu <- X[parameter == par, mean(mean)]
-        X_hdi <-  X[parameter == par, hdi(mean)][c("lower", "upper")]
-        set(Xtab, i, c("xmin", "xmax", "true_val", "est_val", "hdi1", "hdi2"),
-            c(params$priors[parameter == par, .(val1, val2, true_val)], X_mu, X_hdi))
-    })
-
-    # Set X-axis limits ----
-    Xtab[str_starts(parameter, "cov_"), `:=`(xmin = 0, xmax = pmax(1, xmax))]
-    Xtab[str_starts(parameter, "r_"), `:=`(xmin = -1, xmax = 1)]
-    Xtab[str_detect(parameter, "beta|period|shape|period"), xmin := 0]
-
-    # print(Xtab)
-
-    # Prevent drawing green "true" line if using experimental data
-    if (str_detect(dataset, "fb")) Xtab[, true_val := NA_real_]
-
-    # Make these nice to read when plotted
-    html_pars <- setNames(html_names(parameters), parameters)
-
-    l2p <- 1 / ggplot2::.pt
-
-    # Plot parameters ----
-    plts <- map(parameters, \(par) {
+    plts <- map(pars, \(par) {
         if (FALSE) {
-            i <- 1; par <- parameters[[i]]
+            i <- 1; par <- pars[[i]]
         }
-        html_par <- html_pars[[par]]
-        x1 <- Xtab[parameter == par, .SD, .SDcols = -"parameter"] |> unlist()
 
-        ggplot(data = X[parameter == par]) +
-            # credible interval
-            geom_segment(aes(x = ci_min, xend = ci_max, y = id, yend = id, colour = par)) +
-            # mean
-            geom_point(aes(x = mean, y = id),
-                       colour = "red", size = 1) +
-            # true parameter value
-            geom_vline(xintercept = x1[c("true_val", "est_val", "hdi1", "hdi2")],
+        xp <- x[parameter == par, .(mu = median, true_val, hdi95min, hdi95max)] |>
+            setorder(mu)
+        xp[, id := .I]
+
+        xlines <- c(xp$true_val[[1]], mean(xp$mu),
+                    hdi(xp$mu)[c("lower", "upper")])
+
+        prior <- priors[parameter == par, .(val1, val2)] |> unlist()
+
+        ggplot(xp) +
+            geom_segment(aes(x = hdi95min, xend = hdi95max,
+                             y = id),
+                         colour = "red") +
+            geom_point(aes(x = mu,
+                           y = id),
+                       colour = "red") +
+            geom_vline(xintercept = xlines,
                        colour = c("green", "blue", "blue", "blue"),
-                       linewidth = c(1, 1, 0.5, 0.5) * l2p,
-                       linetype = c("solid", "solid", "dashed", "dashed")) +
-            scale_x_continuous(limits = ~ range(.x, 0, x1[c("true_val", "xmin", "xmax")])) +
-            labs(title = html_par, x = "Value", y = "id") +
+                       linewidth = c(1, 1, 0.5, 0.5),
+                       linetype = c("solid", "solid", "dashed", "dashed"),
+                       show.legend = FALSE) +
+            scale_x_continuous(limits = ~ range(.x, prior, 0)) +
+            labs(x = "Value",
+                 title = html_pars[[par]]) +
             theme_classic() +
-            theme(plot.title = element_markdown(size = 10)) +
-            easy_remove_legend() +
+            theme(plot.title = element_markdown()) +
             easy_remove_y_axis()
     }) |>
-        setNames(parameters)
+        setNames(pars)
 
-
-    label <- params$label %||% scen
-    description <- params$description |>
-        str_split_1(", ") |>
-        str_subset("coverage|convergence", negate = TRUE) |>
-        str_flatten_comma()
-
-    title_plt <- ggplot() +
-        labs(title = str_glue("{dataset} / {label}: {description}")) +
+    plts$title_plt <- ggplot() +
+        labs(title = str_glue("{dataset} / s{scen}: {params$description}")) +
         theme_classic()
 
+    plts$empty <- ggplot() + theme_classic()
 
-    # Combine plots into grid ----
-
-    plt_pars <- plot_grid(
-        title_plt,
-        plot_grid(plotlist = plts), # ncol = 3?
-        ncol = 1, rel_heights = c(0.05, 1))
-
-    # return
-    list(X = X,
-         title_plt = title_plt,
-         plts = plts,
-         pars = plt_pars)
+    plts
 }
-
-
-# https://ben-williams.github.io/updated_ggplot_figures.html
-
-# font_import() only do this one time - it takes a while
-# loadfonts(device = "pdf")
-
-
-# For the WCGALP abstract:
-#
-# theme_set(theme_bw(base_size = 12, base_family = "Times New Roman") +
-#               theme(panel.grid.major = element_blank(),
-#                     panel.grid.minor = element_blank()))
 
