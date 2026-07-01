@@ -109,7 +109,7 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 1, rep = 1, parents_
               plot.subtitle = element_text(size = 16))
 
     plt <- plot_grid(title_plt, p,
-                     ncol = 1, rel_heights = c(0.2, 1))
+                     ncol = 1, rel_heights = c(0.5, 3))
 
     ggsave(str_glue("{pa_dir}/{name}-pa{parents}.pdf",
                     parents = if (parents_only) "_parents" else ""),
