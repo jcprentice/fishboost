@@ -55,7 +55,7 @@ plot_tornadoes <- function(dataset = "sim-test-inf1",
         xlines <- c(xp$true_val[[1]], mean(xp$mu),
                     hdi(xp$mu)[c("lower", "upper")])
 
-        prior <- priors[parameter == par, .(val1, val2)] |> unlist()
+        prior <- priors[parameter == par, .(val1, val2)] |> as.numeric()
 
         ggplot(xp) +
             geom_segment(aes(x = hdi95min, xend = hdi95max,
