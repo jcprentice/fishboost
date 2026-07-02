@@ -11,7 +11,7 @@ get_subgroup_vals <- function(dataset = "fb-test", scen = 1) {
 
     f <- str_glue("datasets/{dataset}/results/scen-{scen}-1.rds")
     popn <- readRDS(f)$popn
-    pe <- readRDS(f)$parameter_estimates
+    pe <- readRDS(f)$parameter_estimates[str_starts(parameter, "beta|.P"), .(parameter, mean)]
 
     x <- popn[sdp == "progeny",
               .(id, trial, donor = fifelse(donor == 1, "Don", "Rec"))] |>
@@ -19,7 +19,7 @@ get_subgroup_vals <- function(dataset = "fb-test", scen = 1) {
 
     x[, `:=`(p = N / sum(N), N = NULL)] # should be 0.5, 0.5
     x[, `:=`(
-        beta = rep(pe[str_starts(parameter, "beta"), mean], each = 2),
+        beta = pe[str_starts(parameter, "beta"), mean] |> rep(each = 2),
         LP   = pe[str_starts(parameter, "LP"), mean],
         DP   = pe[str_starts(parameter, "DP"), mean],
         RP   = pe[str_starts(parameter, "RP"), mean]
