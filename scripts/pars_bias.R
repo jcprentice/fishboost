@@ -114,8 +114,8 @@ pars_bias <- function(dataset = "fb-test",
         labs(title = str_glue("Dataset: '{dataset}'"),
              subtitle = st_str) +
         theme_classic() +
-        theme(plot.title = element_text(size = 22),
-              plot.subtitle = element_text(size = 16))
+        theme(plot.title = element_text(size = 12),
+              plot.subtitle = element_text(size = 10))
 
     plts$empty <- ggplot() + theme_classic()
 
@@ -127,7 +127,7 @@ pars_bias <- function(dataset = "fb-test",
                                ncol = pmat$nc,
                                align = "hv"),
                      ncol = 1,
-                     rel_heights = c(0.75, pmat$nr))
+                     rel_heights = c(0.5, pmat$nr))
 
     if (str_length(alt) > 0) alt <- str_c("-", alt)
 
@@ -135,10 +135,14 @@ pars_bias <- function(dataset = "fb-test",
 
     message(str_glue("plotted '{plt_str}'"))
 
+    pscale <- 0.5
+    wh <- list(width = pscale * 3 * pmat$nc,
+               height = pscale * 2 * (pmat$nr + 0.75))
+
     walk(output, \(op) {
         ggsave(str_glue("{plt_str}.{op}"), plt,
-               width = 4 * pmat$nc,
-               height = 3 * (pmat$nr + 0.75))
+               width = wh$width,
+               height = wh$height)
     })
 
     plt
