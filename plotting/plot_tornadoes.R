@@ -15,18 +15,14 @@ plot_tornadoes <- function(dataset = "sim-test-inf1",
                            scen = 2) {
 
     if (FALSE) {
-        dataset <- "sim-test-inf1"
-        scen <- 2
+        dataset <- "sim-test-inf1"; scen <- 2
     }
 
     message(str_glue("Generating tornado plots for {dataset} / s{scen} ..."))
 
-    # Directories and list of files to scan
-    data_dir    <- str_glue("datasets/{dataset}/data")
-    results_dir <- str_glue("datasets/{dataset}/results")
-    res_files   <- list.files(results_dir,
-                              pattern = str_glue("scen-{scen}-"),
-                              full.names = TRUE) |>
+    res_files <- list.files(str_glue("datasets/{dataset}/results"),
+                            str_glue("scen-{scen}-"),
+                            full.names = TRUE) |>
         str_sort(numeric = TRUE)
 
     x <- res_files |>
@@ -34,7 +30,7 @@ plot_tornadoes <- function(dataset = "sim-test-inf1",
         map("parameter_estimates") |>
         rbindlist(idcol = "id") |>
         _[!str_starts(parameter, "G_"),
-           .(id, parameter, true_val, median, hdi95min, hdi95max)]
+          .(id, parameter, true_val, median, hdi95min, hdi95max)]
 
     pars <- unique(x$parameter)
     html_pars <- html_names(pars) |> setNames(pars)
