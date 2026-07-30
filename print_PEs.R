@@ -3,6 +3,7 @@
     library(stringr)
     library(purrr)
     library(DT)
+    library(xtable)
 
     source("rename_pars.R")
 }
@@ -57,7 +58,13 @@ print_PEs <- function(dataset = "fb-test", scen = 2) {
 
     p3 <- p2[, .(Parameter, Prior, Mean, Median, `95% HDI`)]
     fwrite(p3, file = "parameter_estimates.tsv", sep = "\t")
-    p3
+    print(xtable(p3, align = c("c", "l", "l", "S[table-format=3.2]", "S[table-format=3.2]", "c"),
+                 caption = "Parameters and derived parameters in the Genetic-Epidemiological model."),
+          include.rownames = FALSE,
+          table.placement = "!htpb",
+          booktabs = TRUE) |>
+        writeLines("figures/parameter_estimates.tex")
+
 }
 
 print_PEs()
