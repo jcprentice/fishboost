@@ -6,7 +6,7 @@
 #  runtime limit of 5 minutes: -l h_rt
 #  memory limit of 1 Gbyte: -l h_vmem
 #$ -N sim-ti2
-#$ -pe sharedmem 8
+#$ -pe sharedmem 16
 #$ -t 1-60
 #$ -R y
 #$ -P roslin_wilson
