@@ -201,10 +201,10 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
     setorder(fit, scen, variable)
 
     fit_summary <- fit |> dcast(scen ~ ..., value.var = "value")
-    fit_summary[, map(.SD, ~ {if (is.numeric(.x)) round(.x, 1) else .x})]
+    fit_summary[, map_if(.SD, is.numeric, round, 1)]
 
     fit_wide <- fit |> dcast(... ~ type, value.var = "value")
-    fit_wide[, map(.SD, ~ {if (is.numeric(.x)) round(.x, 2) else .x})]
+    fit_summary[, map_if(.SD, is.numeric, round, 2)]
 
     fit_wide[, trial := fcase(str_detect(scen, "[123]"), "Trial 1",
                               str_detect(scen, "[456]"), "Trial 2",
