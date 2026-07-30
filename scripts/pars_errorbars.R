@@ -10,6 +10,7 @@
     source("get_plot_matrix.R")
     source("rename_pars.R")
     source("fes_to_vals.R")
+    source("figures/theme_natcom.R")
 }
 
 pars_errorbars <- function(dataset = "fb-test",
