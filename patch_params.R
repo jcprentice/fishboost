@@ -154,9 +154,7 @@ patch_params <- function(params, trace_row = 0) {
                 "ies" = "^(cov|r)_[GE]_",
                 "var" = "^cov_[GE]_",
                 "cor" = "^r_[GE]_",
-                "infrat" = "infrat",
                 "fes" = "trial|donor|txd",
-                "weight" = "weight",
                 "all" = ".",
                 x
             ), negate = TRUE)
