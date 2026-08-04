@@ -70,11 +70,11 @@ model_SIS <- function(popn, params) {
                 # randomly select individual
                 id_next_event <- samp1(X$inf_rate)
 
-                infectives <- X[status == "I", .(.I, status, inf)]
-                infd_by <- safe_sample(x = infectives$I,
+                infectives <- X[status == "I", .(id, status, inf, generation)]
+                infd_by <- safe_sample(x = infectives$id,
                                        size = 1L,
                                        prob = infectives$inf)
-                next_gen <- X$generation[[infd_by]] + 1L
+                next_gen <- infectives[id == infd_by, generation + 1L]
 
                 sis_path <- generate_sis_path(epi_time, X, id_next_event, params)
                 X[id_next_event, `:=`(

@@ -65,11 +65,11 @@ model_SEIDR_old <- function(popn, params) {
                 # randomly select individual
                 id_next_event <- samp1(X$inf_rate)
 
-                infectives <- X[status %in% c("I", "D"), .(.I, status, inf)]
-                infd_by <- safe_sample(x = infectives$I,
+                infectives <- X[status %in% c("I", "D"), .(id, status, inf, generation)]
+                infd_by <- safe_sample(x = infectives$id,
                                        size = 1L,
                                        prob = infectives$inf)
-                next_gen <- X$generation[[infd_by]] + 1L
+                next_gen <- infectives[id == infd_by, generation + 1L]
 
                 set(X, id_next_event, c("status", "Tinf", "Tinc", "Tsign", "Tdeath"),
                     generate_seidr_path(epi_time, X, id_next_event, params))
