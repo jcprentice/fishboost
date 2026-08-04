@@ -52,11 +52,7 @@ model_SEIDR <- function(popn, params) {
             total_inf_rate <- sum(X$inf_rate)
 
             # calculate dt if infections event rate > 0
-            dt <- if (total_inf_rate > 0.0) {
-                rexp(1L, rate = total_inf_rate)
-            } else {
-                Inf
-            }
+            dt <- rexp(1L) / total_inf_rate
 
             if (DEBUG) message("Total infections event rate = ", signif(total_inf_rate, 5))
 
