@@ -41,7 +41,7 @@ set_use_flags <- function(params) {
         if ("t" %in% used) "RP",
         if ("l" %in% used && LP_dist == "gamma") "LP_shape",
         if ("d" %in% used && DP_dist == "gamma") "DP_shape",
-        if ("p" %in% used && RP_dist == "gamma") "RP_shape",
+        if ("t" %in% used && RP_dist == "gamma") "RP_shape",
         if (group_effect > 0) "sigma"
     )
     priors[parameter %in% use_parameters, use := TRUE]
