@@ -39,10 +39,10 @@ model_SIRS <- function(popn, params) {
             if (DEBUG) message("time = ", signif(epi_time, 5))
 
             # Calculate infection rates in each group ----
-            X[, group_inf := r_beta * GE * mean(fifelse(status == "I", inf, 0.0))]
+            X[, group_inf := r_beta * GE * mean(inf * (status == "I"))]
 
             # if S, infection at rate beta SI
-            X[, inf_rate := fifelse(status == "S", sus * group_inf, 0.0)]
+            X[, inf_rate := sus * group_inf * (status == "S")]
 
             # id and time of next non-infection event
             t_next_event  <- ni_events$time[[1]]
@@ -70,11 +70,11 @@ model_SIRS <- function(popn, params) {
                 # randomly select individual
                 id_next_event <- samp1(X$inf_rate)
 
-                infectives <- X[status == "I", .(id, status, inf, generation)]
-                infd_by <- safe_sample(x = infectives$id,
-                                       size = 1L,
-                                       prob = infectives$inf)
-                next_gen <- infectives[id == infd_by, generation + 1L]
+                xi <- X[, sample(x = .N,
+                                 size = 1L,
+                                 prob = inf * (status == "I"))]
+                infd_by <- X$id[[xi]]
+                next_gen <- X$generation[[xi]] + 1L
 
                 sirs_path <- generate_sirs_path(epi_time, X, id_next_event, params)
                 X[id_next_event, `:=`(

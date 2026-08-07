@@ -34,10 +34,10 @@ model_SIDR <- function(popn, params) {
             if (DEBUG) message("time = ", signif(epi_time, 5))
 
             # Calculate infection rates in each group ----
-            X[, group_inf := r_beta * GE * mean(fifelse(status %in% c("I", "D"), inf, 0.0))]
+            X[, group_inf := r_beta * GE * mean(inf * (status %in% c("I", "D")))]
 
             # if S, infection at rate beta SI
-            X[, inf_rate := fifelse(status == "S", sus * group_inf, 0.0)]
+            X[, inf_rate := sus * group_inf * (status == "S")]
 
             # id and time of next non-infection event
             t_next_event  <- ni_events$time[[1]]
@@ -65,11 +65,11 @@ model_SIDR <- function(popn, params) {
                 # randomly select individual
                 id_next_event <- samp1(X$inf_rate)
 
-                infectives <- X[status %in% c("I", "D"), .(id, status, inf, generation)]
-                infd_by <- safe_sample(x = infectives$id,
-                                       size = 1L,
-                                       prob = infectives$inf)
-                next_gen <- infectives[id == infd_by, generation + 1L]
+                xi <- X[, sample(x = .N,
+                                 size = 1L,
+                                 prob = inf * (status %in% c("I", "D")))]
+                infd_by <- X$id[[xi]]
+                next_gen <- X$generation[[xi]] + 1L
 
                 sidr_path <- generate_sidr_path(epi_time, X, id_next_event, params)
                 set(X, id_next_event, c("status", "Tinf", "Tsign", "Tdeath"), sidr_path)
