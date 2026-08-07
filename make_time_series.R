@@ -25,7 +25,7 @@ make_time_series_seidr <- function(popn, params) {
     X <- rbind(
         data.table(event = factor("start", c("start", "infection", "incubation", "detection", "removal", "end")),
                    time = 0.0),
-        data.table(event = "infection",  time = popn2$Tinf[popn2$Tinf > 0]),
+        data.table(event = "infection",  time = popn2$Tinf),
         data.table(event = "incubation", time = popn2$Tinc),
         data.table(event = "detection",  time = popn2$Tsign),
         data.table(event = "removal",    time = popn2$Tdeath),
@@ -50,9 +50,9 @@ make_time_series_seidr <- function(popn, params) {
     X[, R := cumsum(R)]
     X[, ID := I + D]
 
-    X <- X[time <= tmax]
-
-    X
+    rbind(X[time == 0][.N],
+          X[time > 0 & time <= tmax]) |>
+        melt("time")
 }
 
 
@@ -70,7 +70,7 @@ make_time_series_sidr <- function(popn, params) {
     X <- rbind(
         data.table(event = factor("start", c("start", "infection", "detection", "removal", "end")),
                    time = 0.0),
-        data.table(event = "infection", time = popn2$Tinf[popn2$Tinf > 0]),
+        data.table(event = "infection", time = popn2$Tinf),
         data.table(event = "detection", time = popn2$Tsign),
         data.table(event = "removal",   time = popn2$Tdeath),
         data.table(event = "end",       time = tmax))
@@ -92,9 +92,9 @@ make_time_series_sidr <- function(popn, params) {
     X[, R := cumsum(R)]
     X[, ID := I + D]
 
-    X <- X[time <= tmax]
-
-    X
+    rbind(X[time == 0][.N],
+          X[time > 0 & time <= tmax]) |>
+        melt("time")
 }
 
 
@@ -112,7 +112,7 @@ make_time_series_seir <- function(popn, params) {
     X <- rbind(
         data.table(event = factor("start", c("start", "infection", "incubation", "removal", "end")),
                    time = 0.0),
-        data.table(event = "infection",  time = popn2$Tinf[popn2$Tinf > 0]),
+        data.table(event = "infection",  time = popn2$Tinf),
         data.table(event = "incubation", time = popn2$Tsign),
         data.table(event = "removal",    time = popn2$Tdeath),
         data.table(event = "end",        time = tmax))
@@ -120,7 +120,7 @@ make_time_series_seir <- function(popn, params) {
     X <- X[is.finite(time)]
 
     setorder(X, time)
-
+    #                                                S    E    I    R
     X[event == "start",      (compartments) := list(+N,  +0L, +0L, +0L)]
     X[event == "infection",  (compartments) := list(-1L, +1L, +0L, +0L)]
     X[event == "incubation", (compartments) := list(+0L, -1L, +1L, +0L)]
@@ -133,9 +133,9 @@ make_time_series_seir <- function(popn, params) {
     X[, I := cumsum(I)]
     X[, R := cumsum(R)]
 
-    X <- X[time <= tmax]
-
-    X
+    rbind(X[time == 0][.N],
+          X[time > 0 & time <= tmax]) |>
+        melt("time")
 }
 
 
@@ -152,14 +152,14 @@ make_time_series_sir <- function(popn, params) {
     X <- rbind(
         data.table(event = factor("start", c("start", "infection", "removal", "end")),
                    time = 0.0),
-        data.table(event = "infection", time = popn2$Tinf[popn2$Tinf > 0]),
+        data.table(event = "infection", time = popn2$Tinf),
         data.table(event = "removal",   time = popn2$Tdeath),
         data.table(event = "end",       time = tmax))
 
     X <- X[is.finite(time)]
 
     setorder(X, time)
-
+    #                                               S    I    R
     X[event == "start",     (compartments) := list(+N,  +0L, +0L)]
     X[event == "infection", (compartments) := list(-1L, +1L, +0L)]
     X[event == "removal",   (compartments) := list(+0L, -1L, +1L)]
@@ -170,9 +170,9 @@ make_time_series_sir <- function(popn, params) {
     X[, I := cumsum(I)]
     X[, R := cumsum(R)]
 
-    X <- X[time <= tmax]
-
-    X
+    rbind(X[time == 0][.N],
+          X[time > 0 & time <= tmax]) |>
+        melt("time")
 }
 
 make_time_series_sis <- function(popn, params) {
@@ -186,14 +186,14 @@ make_time_series_sis <- function(popn, params) {
     X <- rbind(
         data.table(event = factor("start", c("start", "infection", "removal", "end")),
                    time = 0.0),
-        data.table(event = "infection", time = popn$Tinf[popn2$Tinf > 0]),
+        data.table(event = "infection", time = popn$Tinf),
         data.table(event = "removal",   time = popn$Tdeath),
         data.table(event = "end",       time = tmax))
 
     X <- X[is.finite(time)]
 
     setorder(X, time)
-
+    #                                               S    I
     X[event == "start",     (compartments) := list(+N,  +0L)]
     X[event == "infection", (compartments) := list(-1L, +1L)]
     X[event == "removal",   (compartments) := list(+1L, -1L)]
@@ -203,7 +203,7 @@ make_time_series_sis <- function(popn, params) {
     X[, S := cumsum(S)]
     X[, I := cumsum(I)]
 
-    X <- X[time <= tmax]
-
-    X
+    rbind(X[time == 0][.N],
+          X[time > 0 & time <= tmax]) |>
+        melt("time")
 }

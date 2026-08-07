@@ -50,21 +50,23 @@ plot_SEIDR <- function(popn, params) {
 
     events <- make_time_series_seidr(popn, params)
 
-    ggplot(events, aes(x = time)) +
-        geom_line(aes(y = S / N,  colour = "Susceptible"),  linewidth = 1.2) +
-        geom_line(aes(y = E / N,  colour = "Exposed"),      linewidth = 1.2) +
-        geom_line(aes(y = I / N,  colour = "Undetectable"), linewidth = 0.6) +
-        geom_line(aes(y = D / N,  colour = "Detectable"),   linewidth = 0.6) +
-        geom_line(aes(y = ID / N, colour = "Infectious"),   linewidth = 1.2) +
-        geom_line(aes(y = R / N,  colour = "Removed"),      linewidth = 1.2) +
+    ggplot(events) +
+        aes(x = time,
+            y = value / N,
+            colour = variable) +
+        geom_line(linewidth = 1.2) +
         scale_colour_manual("Compartments",
-                            breaks = c("Susceptible", "Exposed", "Undetectable",
-                                       "Detectable", "Infectious", "Removed"),
-                            values = c(viridis(5), "red")) +
-        labs(title = "SEIDR", x = "Time (days)", y = "Proportion") +
+                            breaks = c("S", "E", "I", "D", "ID", "R"),
+                            labels = c("Susceptible (S)", "Exposed (E)",
+                                       "Undetectable (I)", "Detectable (D)",
+                                       "Infectious (I+D)", "Removed (R)"),
+                            values = c("blue", "gold", "green3", "green4", "green", "red")) +
+                            # values = c(viridisLite::viridis(5), "red")) +
         coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
-        theme_bw() +
-        theme(legend.position = "bottom")
+        labs(x = "Time (days)",
+             y = "Proportion",
+             title = "SEIDR model") +
+        theme_bw()
 }
 
 
@@ -76,19 +78,22 @@ plot_SIDR <- function(popn, params) {
 
     events <- make_time_series_sidr(popn, params)
 
-    ggplot(events, aes(x = time)) +
-        geom_line(aes(y = S / N,  colour = "Susceptible"),  linewidth = 1.2) +
-        geom_line(aes(y = I / N,  colour = "Undetectable"), linewidth = 0.6) +
-        geom_line(aes(y = D / N,  colour = "Detectable"),   linewidth = 0.6) +
-        geom_line(aes(y = ID / N, colour = "Infectious"),   linewidth = 1.2) +
-        geom_line(aes(y = R / N,  colour = "Removed"),      linewidth = 1.2) +
-        scale_colour_manual("Compartments",
-                            breaks = c("Susceptible", "Undetectable", "Detectable", "Infectious", "Removed"),
-                            values = c("blue", "mediumpurple", "purple", "red", "green")) +
-        labs(title = "SIDR", x = "Time (days)", y = "Proportion") +
-        coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
-        theme_bw() +
-        theme(legend.position = "bottom")
+    ggplot(events) +
+    aes(x = time,
+        y = value / N,
+        colour = variable) +
+    geom_line(linewidth = 1.2) +
+    scale_colour_manual("Compartments",
+                        breaks = c("S", "I", "D", "ID", "R"),
+                        labels = c("Susceptible (S)", "Undetectable (I)",
+                                   "Detectable (D)", "Infectious (I+D)",
+                                   "Removed (R)"),
+                        values = c("blue", "mediumpurple", "purple", "red", "green")) +
+    coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
+    labs(x = "Time (days)",
+         y = "Proportion",
+         title = "SIDR model") +
+    theme_bw()
 }
 
 
@@ -100,18 +105,20 @@ plot_SEIR <- function(popn, params) {
 
     events <- make_time_series_seir(popn, params)
 
-    ggplot(events, aes(x = time)) +
-        geom_line(aes(y = S / N, colour = "Susceptible"), linewidth = 1.2) +
-        geom_line(aes(y = E / N, colour = "Exposed"),     linewidth = 1.2) +
-        geom_line(aes(y = I / N, colour = "Infectious"),  linewidth = 1.2) +
-        geom_line(aes(y = R / N, colour = "Removed"),     linewidth = 1.2) +
+    ggplot(events) +
+        aes(x = time,
+            y = value / N,
+            colour = variable) +
+        geom_line(linewidth = 1.2) +
         scale_colour_manual("Compartments",
+                            breaks = c("S", "E", "I", "R"),
                             breaks = c("Susceptible", "Exposed", "Infectious", "Removed"),
                             values = c("blue", "pink", "red", "green")) +
-        labs(title = "SEIR", x = "Time (days)", y = "Proportion") +
         coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
-        theme_bw() +
-        theme(legend.position = "bottom")
+        labs(x = "Time (days)",
+             y = "Proportion",
+             title = "SEIR model") +
+        theme_bw()
 }
 
 
@@ -123,18 +130,20 @@ plot_SIR <- function(popn, params) {
 
     events <- make_time_series_sir(popn, params)
 
-    ggplot(events, aes(x = time)) +
-        # geom_line(linewidth = 1.2) +
-        geom_line(aes(y = S / N, colour = "Susceptible"), linewidth = 1.2) +
-        geom_line(aes(y = I / N, colour = "Infectious"),  linewidth = 1.2) +
-        geom_line(aes(y = R / N, colour = "Removed"),     linewidth = 1.2) +
+    ggplot(events) +
+        aes(x = time,
+            y = value / N,
+            colour = variable) +
+        geom_line(linewidth = 1.2) +
         scale_colour_manual("Compartments",
+                            breaks = c("S", "I", "R"),
                             breaks = c("Susceptible", "Infectious", "Removed"),
                             values = c("blue", "red", "green")) +
-        labs(title = "SIR", x = "Time (days)", y = "Proportion") +
         coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
-        theme_bw() +
-        theme(legend.position = "bottom")
+        labs(x = "Time (days)",
+             y = "Proportion",
+             title = "SIR model") +
+        theme_bw()
 }
 
 
@@ -146,15 +155,18 @@ plot_SIS <- function(popn, params) {
 
     events <- make_time_series_sis(popn, params)
 
-    ggplot(events, aes(x = time)) +
-        # geom_line(linewidth = 1.2) +
-        geom_line(aes(y = S / N, colour = "Susceptible"), linewidth = 1.2) +
-        geom_line(aes(y = I / N, colour = "Infectious"),  linewidth = 1.2) +
+    ggplot(events) +
+        aes(x = time,
+            y = value / N,
+            colour = variable) +
+        geom_line(linewidth = 1.2) +
         scale_colour_manual("Compartments",
+                            breaks = c("S", "I"),
                             breaks = c("Susceptible", "Infectious"),
                             values = c("blue", "red")) +
-        labs(title = "SIR", x = "Time (days)", y = "Proportion") +
         coord_cartesian(xlim = c(0, min(tmax, max(events$time), na.rm = TRUE))) +
-        theme_bw() +
-        theme(legend.position = "bottom")
+        labs(x = "Time (days)",
+             y = "Proportion",
+             title = "SIS model") +
+        theme_bw()
 }
