@@ -40,7 +40,7 @@ message(nrow(protocol), " scenarios")
 source("param_gen/common2.R")
 
 common <- list(weight_is_nested = TRUE,
-               use_traits = "",
+               IEs = "",
                use_weight = "log",
                # expand_priors = 4,
                group_effect = 1.0,

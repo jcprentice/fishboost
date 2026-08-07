@@ -21,8 +21,8 @@ if (run_from_script) {
     pname <- cmd_args[[1]]
     row_no <- as.integer(cmd_args[[2]])
 } else {
-    pname <- "sim-events"
-    row_no <- 61L
+    pname <- "fb-test"
+    row_no <- 1L
 }
 
 {
@@ -57,7 +57,7 @@ if (run_from_script) {
 
         # Skip any values already provided to make_pars()
         if (param %in% c("model_type", "dataset", "name", "setup", "group_effect",
-                         "use_traits", "h2", "vars", "cors",
+                         "IEs", "h2", "vars", "cors",
                          "trial_fe", "donor_fe", "txd_fe", "weight_fe") ||
             (length(value) == 1 && is.na(value))) {
             return()

@@ -33,7 +33,7 @@ protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
 source("param_gen/common2.R")
 
 common <- list(sim_new_data = "summary_sim",
-               use_traits = "sildt",
+               IEs = "sildt",
                link_traits = "sittt",
                use_grm = "pedigree", # "HG_inv",
                inf_model = "S=pC",

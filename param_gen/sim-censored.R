@@ -30,7 +30,7 @@ protocol[, censor := get_part(d, "censor") |> as.numeric(), .I]
 
 # Common options
 protocol[, `:=`(setup = "fb1",
-                use_traits = "sit",
+                IEs = "sit",
                 cors = 0.2,
                 donor_fe = "ildt",
                 sim_link_donor = "sittt",
@@ -56,7 +56,7 @@ protocol[, dataset := dataset]
 # Save params along with protocol so we know the defaults for all entries
 params <- make_parameters(model_type = "SEIDR",
                           setup = "fb1",
-                          use_traits = "",
+                          IEs = "",
                           vars = 1.0,
                           cors = 0,
                           group_layout = "fb1",
@@ -97,7 +97,7 @@ replace_NAs <- function(col) {
     }
 }
 
-missing_cols <- c("model_type", "dataset", "name", "use_traits", "vars", "cors",
+missing_cols <- c("model_type", "dataset", "name", "IEs", "vars", "cors",
                   "setup", "group_effect", "trial_fe", "donor_fe", "txd_fe", "seed",
                   "weight_is_nested",
                   "nsample_per_gen", "anneal", "anneal_power",

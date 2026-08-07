@@ -34,7 +34,7 @@ protocol[, group_effect := get_part(d, "GE") |> as.numeric(), .I]
 # Common options ----
 source("param_gen/common2.R")
 
-common <- list(use_traits = "sit",
+common <- list(IEs = "sit",
                donor_fe = "ildt") |>
     safe_merge(common2)
 

@@ -1,7 +1,7 @@
 # Return EBVs ranked, show rank distance vs true ranks
 get_ranks <- function(popn, estimated_BVs, params, verbose = FALSE) {
     {
-        use_traits   <- params$use_traits
+        IEs   <- params$IEs
     }
 
     # make a copy of this so we can add missing columns
@@ -14,15 +14,15 @@ get_ranks <- function(popn, estimated_BVs, params, verbose = FALSE) {
     setnames(estimated_BVs, ie_names, c("sus", "inf", "tol"), skip_absent = TRUE)
 
     # add missing columns
-    if (!str_detect(use_traits, "s")) {
+    if (!str_detect(IEs, "s")) {
         estimated_BVs[, sus := 0]
         popn2[, sus_g := 0]
     }
-    if (!str_detect(use_traits, "i")) {
+    if (!str_detect(IEs, "i")) {
         estimated_BVs[, inf := 0]
         popn2[, inf_g := 0]
     }
-    if (!str_detect(use_traits, "t")) {
+    if (!str_detect(IEs, "t")) {
         estimated_BVs[, tol := 0]
         popn2[, tol_g := 0]
     }

@@ -45,8 +45,8 @@ protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
 
 # Handle Genetic & Environmental Variance (GEV)
 protocol[, GEV := get_part(d, "GEV") |> str_to_lower(), .I]
-protocol[, use_traits := GEV]
-protocol[GEV == "sittt", `:=`(use_traits = "sildt", link_traits = "sittt")]
+protocol[, IEs := GEV]
+protocol[GEV == "sittt", `:=`(IEs = "sildt", link_traits = "sittt")]
 protocol[, GEV := NULL]
 
 # Handle GRM

@@ -35,9 +35,9 @@ protocol <- rbind(
 
 protocol[, setup := d |> str_split_i(", ", 1) |> str_to_lower(), .I]
 
-protocol[, use_traits := get_lpart(d, "GEV"), .I]
+protocol[, IEs := get_lpart(d, "GEV"), .I]
 protocol[str_detect(d, "GEV SITTT"), `:=`(
-    use_traits = "sildt",
+    IEs = "sildt",
     link_traits = "sittt"
 )]
 

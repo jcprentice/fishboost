@@ -46,7 +46,7 @@ protocol[, weight_is_nested := str_detect(d, "Weight nested")]
 # Common options ----
 source("param_gen/common2.R")
 
-common <- list(use_traits = "sit",
+common <- list(IEs = "sit",
                fix_donors = "no_Tsign_survivors",
                use_weight = "log",
                # use_grm = "",

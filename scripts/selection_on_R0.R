@@ -14,7 +14,7 @@
         model_type = "SEIDR", # "SIR", "SEIR", "SIDR", or "SEIDR"
         name = "expt1",
         setup = "single", # chris, small, fishboost, fb1, fb2, single
-        use_traits = "sit", # "all", "none", "sit", "si" etc.
+        IEs = "sit", # "all", "none", "sit", "si" etc.
         vars = 0.5, # c(0.5, 1.2, 0.5)
         cors = 0.2, # 0.2, "positive", "negative", "mixed", "sit_only" etc.
         group_layout = "family", # "random", "family", "striped", "fishboost"
@@ -25,7 +25,7 @@
         weight_is_nested = TRUE,
         sim_new_data = "r"
     )
-    
+
     params$traits_source <- "pedigree"
     params$patch_dataset <- "fb-final"
     params$patch_name <- "scen-1-1"
@@ -59,20 +59,20 @@ prop <- 0.8
     tic()
     for (i in seq_len(N)) {
         message("\n", str_glue("Pop {i} / {N}..."), "\n")
-        
+
         params <- params_base |>
             patch_params() |>
             fix_weight_fes() |>
             apply_links()
-        
+
         popn <- make_pedigree(params) |>
             set_traits(params) |>
             set_groups(params) |>
             apply_fixed_effects(params)
-        
+
         # Add in R0
         popn[, r0 := sus_g + inf_g + tol_g]
-        
+
         # crop, set groups, and apply FEs
         popn_s  <- crop(popn, trait = "sus_g", prop = prop) |>
             reset_donors(params)
@@ -80,7 +80,7 @@ prop <- 0.8
             reset_donors(params)
         popn <- popn |>
             reset_donors(params)
-        
+
         R0s[[i]]    <- simulate_epidemic(popn,    params) |> get_R0()
         R0s_s[[i]]  <- simulate_epidemic(popn_s,  params) |> get_R0()
         R0s_r0[[i]] <- simulate_epidemic(popn_r0, params) |> get_R0()

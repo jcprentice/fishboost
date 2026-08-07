@@ -33,8 +33,8 @@ protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
 
 # Genetic & Environmental Variance
 protocol[, GEV := get_part(d, "GEV ") |> str_to_lower(), .I]
-protocol[GEV == "sittt", `:=`(use_traits = "sildt", link_traits = "sittt")]
-protocol[GEV != "sittt", use_traits := GEV]
+protocol[GEV == "sittt", `:=`(IEs = "sildt", link_traits = "sittt")]
+protocol[GEV != "sittt", IEs := GEV]
 protocol[, GEV := NULL]
 
 

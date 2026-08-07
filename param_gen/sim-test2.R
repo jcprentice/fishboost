@@ -27,7 +27,7 @@ protocol <- rbind(
     fill = TRUE
 )
 
-protocol[, use_traits := get_part(d, "Traits") |> str_to_lower(), .I]
+protocol[, IEs := get_part(d, "Traits") |> str_to_lower(), .I]
 
 protocol[, setup := d |> str_split_i(", ", 1) |> str_to_lower(), .I]
 

@@ -40,8 +40,8 @@ protocol[, use_grm := get_part(d, "GRM"), .I]
 
 # Handle Genetic & Environmental Variance (GEV)
 protocol[, GEV := get_part(d, "GEV") |> str_to_lower(), .I]
-protocol[, use_traits := GEV]
-protocol[GEV == "sittt", `:=`(use_traits = "sildt", link_traits = "sittt")]
+protocol[, IEs := GEV]
+protocol[GEV == "sittt", `:=`(IEs = "sildt", link_traits = "sittt")]
 protocol[, GEV := NULL]
 protocol[str_detect(d, "h2"), h2 := get_part(d, "h2") |> as.numeric(), .I]
 protocol[str_detect(d, "h2"), override_h2 := TRUE]

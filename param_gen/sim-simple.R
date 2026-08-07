@@ -33,7 +33,7 @@ protocol <- rbind(
     fill = TRUE
 )
 
-protocol[, use_traits := fifelse(str_detect(d, "IEs SIT"), "sit", "")]
+protocol[, IEs := fifelse(str_detect(d, "IEs SIT"), "sit", "")]
 protocol[str_detect(d, "FEs SIT"),
          `:=`(trial_fe = "ildt", donor_fe = "ildt", txd_fe = "ildt", weight_fe = "sildt")]
 protocol[, pass_events := fifelse(str_detect(d, "Pass all events"), "all", NA)]
@@ -81,7 +81,7 @@ protocol[, dataset := dataset]
 # Save params along with protocol so we know the defaults for all entries
 params <- make_parameters(model_type = "SEIDR",
                           setup = "fb_12",
-                          use_traits = "sit",
+                          IEs = "sit",
                           vars = 1.0,
                           cors = 0,
                           group_layout = "fishboost",
@@ -122,7 +122,7 @@ replace_NAs <- function(col) {
     }
 }
 
-missing_cols <- c("model_type", "dataset", "name", "use_traits", "vars", "cors",
+missing_cols <- c("model_type", "dataset", "name", "IEs", "vars", "cors",
                   "sim_new_data", "setup", "group_effect", "trial_fe", "donor_fe", "txd_fe",
                   "weight_is_nested",
                   "seed", "nsample_per_gen", #"anneal", "anneal_power",

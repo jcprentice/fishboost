@@ -19,7 +19,7 @@ patch_params <- function(params, trace_row = 0) {
         patch_type    <- params$patch_type %||% "median"
         patch_state   <- params$patch_state %||% FALSE
         model_traits  <- params$model_traits
-        use_traits    <- params$use_traits
+        IEs           <- params$IEs
         skip_patches  <- params$skip_patches
         sim_new_data  <- params$sim_new_data
         msgs          <- params$msgs
@@ -195,7 +195,7 @@ patch_params <- function(params, trace_row = 0) {
         out <- make_matrices_from_priors(priors1, params)
 
         # Copy the used values, discarding the rest (even if non-zero)
-        used <- model_traits[str_chars(use_traits)]
+        used <- model_traits[str_chars(IEs)]
 
         params2$Sigma_G[used, used] <- out$Sigma_G[used, used]
         params2$Sigma_E[used, used] <- out$Sigma_E[used, used]

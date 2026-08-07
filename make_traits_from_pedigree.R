@@ -8,12 +8,12 @@ make_traits_from_pedigree <- function(popn, params) {
     # Extract parameters
     {
         model_traits <- params$model_traits
-        use_traits   <- params$use_traits
-        traitnames   <- model_traits[intersect(str_chars(use_traits),
+        IEs          <- params$IEs
+        traitnames   <- model_traits[intersect(str_chars(IEs),
                                                names(model_traits))]
         cov_G        <- params$cov_G[traitnames, traitnames]
         cov_E        <- params$cov_E[traitnames, traitnames]
-        n_traits     <- use_traits |> str_chars() |> unique() |> length()
+        n_traits     <- IEs |> str_chars() |> unique() |> length()
         use_weight   <- params$use_weight
     }
 
@@ -43,7 +43,7 @@ make_traits_from_pedigree <- function(popn, params) {
     traits_e <- str_c(traitnames, "_e")
 
     # Check for positive definite matrix
-    if (any(eigen(cov_G)$values <= 0)) {
+    if (any(eigen(cov_G)$values < 0)) {
         message("- Matrix is not positive definite, shrinking correlations")
         n <- 0
         while (n < 50 && any(eigen(cov_G)$values < 0)) {

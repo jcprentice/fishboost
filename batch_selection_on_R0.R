@@ -24,7 +24,7 @@ set.seed(my_seed)
         model_type = "SEIDR", # "SIR", "SEIR", "SIDR", or "SEIDR"
         name = "expt1",
         setup = "fb_12", # chris, small, fb_12, fb_1, fb_2, single
-        use_traits = "sit", # "all", "none", "sit", "si" etc.
+        IEs = "sit", # "all", "none", "sit", "si" etc.
         vars = 1, # c(0.5, 1.2, 0.5)
         cors = cors, # 0.2, "positive", "negative", "mixed", "sit_only" etc.
         group_layout = "fishboost", # "random", "family", "striped", "fishboost"
@@ -35,7 +35,7 @@ set.seed(my_seed)
         weight_is_nested = TRUE,
         sim_new_data = "r"
     )
-    
+
     params$traits_source <- "pedigree"
     params$patch_dataset <- if (cv_type == 2) "fb-notraits" else "fb-final"
     params$patch_name <- "scen-1-1"

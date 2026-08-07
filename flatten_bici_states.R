@@ -237,7 +237,7 @@ flatten_bici_states <- function(params) {
 
             popn <- merge(base_popn, transitions, by = "id", all = TRUE)
 
-            if (params$use_traits %notin% c("none", "", NA)) {
+            if (params$IEs %notin% c("none", "", NA)) {
                 i_lines <- get_section(lines1, headers, "INDIVIDUALS") |>
                     str_squish() |>
                     str_subset(".+")

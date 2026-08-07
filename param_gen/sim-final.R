@@ -48,7 +48,7 @@ protocol[, `:=`(sim_new_data = "r",
                 txd_fe = "ildt",
                 weight_fe = "sildt",
                 weight_is_nested = TRUE,
-                use_traits = "sit",
+                IEs = "sit",
                 fix_donors = "no_Tsign_survivors",
                 use_weight = "log",
                 # use_grm = "",
@@ -84,7 +84,7 @@ protocol[, dataset := dataset]
 # Save params along with protocol so we know the defaults for all entries
 params <- make_parameters(model_type = "SEIDR",
                           setup = "fb_12",
-                          use_traits = "sit",
+                          IEs = "sit",
                           vars = 1.0,
                           cors = 0,
                           group_layout = "fishboost",
@@ -125,7 +125,7 @@ replace_NAs <- function(col) {
     }
 }
 
-missing_cols <- c("model_type", "dataset", "name", "use_traits", "vars", "cors",
+missing_cols <- c("model_type", "dataset", "name", "IEs", "vars", "cors",
                   "sim_new_data", "setup", "group_effect", "trial_fe", "donor_fe", "txd_fe",
                   "weight_is_nested",
                   "seed", "nsample_per_gen", #"anneal", "anneal_power",

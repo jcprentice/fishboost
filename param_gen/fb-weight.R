@@ -44,7 +44,7 @@ protocol[str_detect(d, "FEs ITTT"),
 # Common options ----
 source("param_gen/common2.R")
 
-common <- list(use_traits = "sit",
+common <- list(IEs = "sit",
                # trial_fe = "ildt",
                # txd_fe = "ildt",
                donor_fe = "ildt",

@@ -4,7 +4,7 @@ set_use_flags <- function(params) {
     {
         all_traits    <- params$all_traits
         model_traits  <- params$model_traits
-        use_traits    <- params$use_traits
+        IEs           <- params$IEs
         setup         <- params$setup
         LP_dist       <- params$LP_dist
         DP_dist       <- params$DP_dist
@@ -54,7 +54,7 @@ set_use_flags <- function(params) {
 
     # Only use traits if in used AND in link_traits
     GE_traits <- intersect(used,
-                           intersect(str_chars(use_traits),
+                           intersect(str_chars(IEs),
                                      str_chars(link_traits)))
 
     pwalk(expand.grid(x = used, y = used), \(x, y) {

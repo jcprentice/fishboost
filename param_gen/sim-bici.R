@@ -33,7 +33,7 @@ source("param_gen/common2.R")
 
 common <- list(sim_new_data = "summary_sim",
                setup = "fb_12_rpw",
-               use_traits = "sit",
+               IEs = "sit",
                trial_fe = "ildt",
                donor_fe = "ildt",
                txd_fe = "ildt",

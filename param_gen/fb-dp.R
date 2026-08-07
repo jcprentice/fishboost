@@ -32,9 +32,9 @@ message(nrow(protocol), " scenarios")
 
 # Set traits to SIT or SITTT
 protocol[str_detect(d, "Traits SIT"),
-         use_traits := "sit"]
+         IEs := "sit"]
 protocol[str_detect(d, "Traits SITTT"),
-         `:=`(use_traits = "all", link_traits = "sittt")]
+         `:=`(IEs = "all", link_traits = "sittt")]
 
 # Set LP
 f <- function(x) x

@@ -51,7 +51,7 @@ protocol[, fix_donors := fcase(str_detect(d, "leave donors"), "",
 # Common options ----
 source("param_gen/common2.R")
 
-common <- list(use_traits = "sit",
+common <- list(IEs = "sit",
                group_effect = 1.0,
                weight_is_nested = TRUE,
                use_weight = "log",

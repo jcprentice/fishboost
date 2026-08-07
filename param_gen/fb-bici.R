@@ -30,9 +30,9 @@ protocol[, setup := get_part(d, "FB") |> str_to_lower(), .I]
 protocol[, use_grm := get_part(d, "GRM"), .I]
 
 protocol[str_detect(d, "Traits SIT"),
-         use_traits := "sit"]
+         IEs := "sit"]
 protocol[str_detect(d, "Traits SITTT"),
-         `:=`(use_traits = "sildt", link_traits = "sittt")]
+         `:=`(IEs = "sildt", link_traits = "sittt")]
 
 
 # Common options ----

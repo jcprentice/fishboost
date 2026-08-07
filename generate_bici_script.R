@@ -380,11 +380,11 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
         ## Additive genetic effects ----
 
         # IEs as "sg,ig,tg". We use this several times, so keep it.
-        ies_str <- str_c(intersect(str_chars(use_traits),
+        ies_str <- str_c(intersect(str_chars(IEs),
                                    str_chars(link_traits)),
                          "g", collapse = ",")
 
-        if (use_traits %notin% c("", "none")) {
+        if (IEs %notin% c("", "none")) {
 
             # BICI can only handle one of inverse or sparse, prefer inverse
             if (str_detect(use_grm, "H.*inv.*nz")) {
@@ -466,7 +466,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
 
         ## True BVs ----
         if (provide_ies) {
-            traits_to_fit <- model_traits[intersect(str_chars(use_traits),
+            traits_to_fit <- model_traits[intersect(str_chars(IEs),
                                                     str_chars(link_traits))]
             ie_names <- expand.grid(traits_to_fit, c("g", "e")) |>
                 apply(1, str_flatten, "_")
@@ -549,7 +549,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
 
         get_IEs <- function(trait) {
             t1 <- str_1st(trait)
-            if (str_detect(use_traits, t1)) {
+            if (str_detect(IEs, t1)) {
                 iex <- get_LE(link_traits, t1)
                 str_glue("[{iex}g][{iex}e]")
             } else {
@@ -718,7 +718,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
 
         ## Cov priors ----
 
-        if (use_traits %notin% c("", "none", NA)) {
+        if (IEs %notin% c("", "none", NA)) {
             if (!exists("cov_prior")) {
                 cov_prior <- list(type = "default", vals = c())
             }
@@ -742,7 +742,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
             )
 
             # Possibly already defined, maybe not
-            traits_to_fit <- model_traits[intersect(str_chars(use_traits),
+            traits_to_fit <- model_traits[intersect(str_chars(IEs),
                                                     str_chars(link_traits))]
 
             XG <- Sigma_G[traits_to_fit, traits_to_fit] |> round(5)

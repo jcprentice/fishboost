@@ -17,13 +17,13 @@ cov2sigma <- function(cx) {
 
 # Construct cov_mat and Sigma matrices using var and cor components
 make_matrices <- function(model_traits,
-                          use_traits = "sit",
+                          IEs = "sit",
                           h2 = 0.5,
                           vars = 1,
                           cors = 0.2) {
     if (FALSE) {
         model_traits <- c(s = "sus", i = "inf", l = "lat", d = "det", t = "tol")
-        use_traits <- "sit"
+        IEs <- "sit"
         h2 <- 0.5
         h2 <- params$h2; vars <- params$vars; cors <- params$cors
         vars <- 1; cors <- 0.2
@@ -77,8 +77,8 @@ make_matrices <- function(model_traits,
         }
     }
 
-    # Apply use_traits (zero out unused traits)
-    unused_traits <- model_traits[setdiff(traits1, str_chars(use_traits))]
+    # Apply IEs (zero out unused traits)
+    unused_traits <- model_traits[setdiff(traits1, str_chars(IEs))]
     for (i in unused_traits) {
         Sigma[i, ] <- 0
         Sigma[, i] <- 0

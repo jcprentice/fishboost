@@ -36,9 +36,9 @@ protocol <- rbind(
 protocol[, setup := d |> str_split_i(", ", 1) |> str_to_lower(), .I]
 
 protocol[str_detect(d, "GEV SIT"),
-         use_traits := "sit"]
+         IEs := "sit"]
 protocol[str_detect(d, "GEV SITTT"),
-         `:=`(use_traits = "sildt", link_traits = "sittt")]
+         `:=`(IEs = "sildt", link_traits = "sittt")]
 
 protocol[, link_weight := fifelse(str_detect(d, "Weight SITTT"), "sittt", "sildt")]
 

@@ -36,7 +36,7 @@ protocol[, group_effect := get_part(d, "GE") |> as.numeric(), .I]
 source("param_gen/common2.R")
 
 common <- list(setup = "fb_12",
-               use_traits = "sit",
+               IEs = "sit",
                trial_fe = "ildt",
                donor_fe = "ildt",
                txd_fe = "ildt",
