@@ -16,15 +16,17 @@ init_popn <- function(popn, params) {
                  generation = NA_integer_)]
 
     # Handle donors
-    popn2[donor == 1L, `:=`(generation = 1L,
-                            infected_by = 0L)]
+    popn2[, `:=`(generation  = fifelse(donor == 1L, 1L, NA),
+                 infected_by = fifelse(donor == 1L, 0L, NA))]
 
     # Select appropriate path generating function
     gp <- get(str_c("generate_", str_to_lower(model_type), "_path"))
 
     # Generate paths for donors
     walk(popn2[, .I[donor == 1L]], \(i) {
-        set(popn2, i, c("status", timings), gp(0.0, popn2, i, params))
+        set(popn2, i, c("status", timings),
+            c(compartments[[2]], 0.0,
+              as.list(gp(0.0, popn2, i, params))))
     })
 
     popn2
