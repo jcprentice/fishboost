@@ -3,8 +3,7 @@
 ## Load libraries and source files ----
 
 suppressPackageStartupMessages({
-    source("libraries.R")
-    source("source_files.R")
+    safe_source("libraries.R", "source_files.R")
 })
 
 time_start <- now()
@@ -83,10 +82,10 @@ if (run_from_script) {
                 true_val = max(value, 0))]
 
         } else if (str_starts(param, "fe_")) {
-            # fe_trial_inf -> fe_vals["trial", "inf"]
+            # fe_trial_inf -> FE_vals["trial", "inf"]
             p1 <- str_split_1(param, "_")[-1]
             td <- p1[[1]]; tr <- p1[[2]]; tr1 <- str_sub(tr, 1, 1)
-            params$fe_vals[[td, tr]] <<- value
+            params$FE_vals[[td, tr]] <<- value
             params$priors[parameter == str_c(td, "_", tr1),
                           `:=`(val1 = min(value - 2, val1),
                                val2 = max(value + 2, val2),

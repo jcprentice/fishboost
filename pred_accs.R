@@ -219,3 +219,7 @@ if (FALSE) {
     saveRDS(PAs, str_glue("datasets/{dataset}/meta/PAs{parents}.rds",
                           parents = if (parents_only) "-parents" else ""))
 }
+
+
+source_is_loaded <- union(source_is_loaded, "pred_accs.R")
+

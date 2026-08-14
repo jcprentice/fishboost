@@ -86,3 +86,7 @@ make_traits_from_grm <- function(popn, params) {
 
     popn2
 }
+
+
+source_is_loaded <- union(source_is_loaded, "make_traits_from_grm.R")
+

@@ -6,8 +6,8 @@
 ## Load libraries and source files ----
 
 suppressPackageStartupMessages({
-    source("libraries.R")
-    source("source_files.R")
+    safe_source("libraries.R",
+                "source_files.R")
 })
 
 time_start <- now()
@@ -32,7 +32,7 @@ run_from_script <- length(cmd_args) > 0
         group_layout = "fishboost", # "random", "family", "striped", "fishboost"
         FEs = list(trial = "_ittt", donor = "_ittt", txd = "_ittt", weight = "sittt"),
         weight_is_nested = TRUE,
-        sim_new_data = "bici" # "no", "r", "bici", "summary_sim", "summary_inf"
+        sim_new_data = "r" # "no", "r", "bici", "summary_sim", "summary_inf"
     )
 
     params$select_on <- "none" # "inf"

@@ -15,6 +15,10 @@ inc_seed <- function(params) {
     seed <- str_split_i(part, "=", 2) |> as.numeric()
     parts[[n2]] <- str_c("seed=", seed + 100)
     lines[[n1]] <- str_flatten(parts, " ")
-    
+
     writeLines(lines, f)
 }
+
+
+source_is_loaded <- union(source_is_loaded, "inc_seed.R")
+

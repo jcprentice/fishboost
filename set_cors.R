@@ -3,7 +3,7 @@ library(stringr)
 set_cors <- function(X, cors) {
     sit <- c("susceptibility", "infectivity", "tolerance")
     nx <- rownames(X)
-    
+
     for (i in seq_len(nrow(X))) for (j in seq(i, ncol(X))) {
         if (i == j) {
             next()
@@ -15,3 +15,7 @@ set_cors <- function(X, cors) {
     }
     X
 }
+
+
+source_is_loaded <- union(source_is_loaded, "set_cors.R")
+

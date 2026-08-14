@@ -45,3 +45,6 @@ make_pedigree <- function(params) {
     pedigree
 }
 
+
+source_is_loaded <- union(source_is_loaded, "make_pedigree.R")
+

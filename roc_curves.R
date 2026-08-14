@@ -1,11 +1,13 @@
-library(data.table)
-library(stringr)
-library(pROC)
-library(ggplot2)
-library(cowplot)
-# library(gganimate)
+{
+    library(data.table)
+    library(stringr)
+    library(pROC)
+    library(ggplot2)
+    library(cowplot)
+    # library(gganimate)
 
-source("get_roc.R")
+    safe_source("get_roc.R")
+}
 
 x <- 1:100
 y <- x + rnorm(100, 0, 20)
@@ -84,3 +86,7 @@ for (slider in seq(0L, 100L, by = 10L)) {
     ggsave(str_glue("gfx/roc{slider}.png"),
            plts, width = 1000, height = 500, units = "px")
 }
+
+
+source_is_loaded <- union(source_is_loaded, "roc_curves.R")
+

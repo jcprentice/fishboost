@@ -2,7 +2,7 @@
     library(purrr)
     library(stringr)
 
-    source("flatten_bici_states.R")
+    safe_source("flatten_bici_states.R")
 }
 
 cmd_args <- commandArgs(trailingOnly = TRUE)

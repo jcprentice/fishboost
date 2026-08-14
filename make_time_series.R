@@ -207,3 +207,7 @@ make_time_series_sis <- function(popn, params) {
           X[time > 0 & time <= tmax]) |>
         melt("time")
 }
+
+
+source_is_loaded <- union(source_is_loaded, "make_time_series.R")
+

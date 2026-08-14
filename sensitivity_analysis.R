@@ -15,20 +15,20 @@
 
 # Load source files ----
 {
-    source("make_parameters.R")
-    source("get_R0.R")
-    source("make_pedigree.R")
-    source("make_grm.R")
-    source("make_traits_from_grm.R")
-    source("make_traits_from_pedigree.R")
-    source("set_groups.R")
-    source("simulate_epidemic.R")
-    source("init_populations.R")
-    source("prepare_data.R")
-    source("generate_sire_xml.R")
-    source("make_time_series.R")
-    source("make_plots.R")
-    source("utils.R")
+    safe_source("make_parameters.R",
+                "get_R0.R",
+                "make_pedigree.R",
+                "make_grm.R",
+                "make_traits_from_grm.R",
+                "make_traits_from_pedigree.R",
+                "set_groups.R",
+                "simulate_epidemic.R",
+                "init_populations.R",
+                "prepare_data.R",
+                "generate_sire_xml.R",
+                "make_time_series.R",
+                "make_plots.R",
+                "utils.R")
 }
 
 # Helper functions ----

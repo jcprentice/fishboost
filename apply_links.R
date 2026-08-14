@@ -1,12 +1,12 @@
 #' Ensure linked traits are correctly applied
 #'
 #' @description Take `params` and ensure that linked traits are correct by
-#'   setting `Sigma_G`, `priors`, and `fe_vals.`
+#'   setting `Sigma_G`, `priors`, and `FE_vals.`
 #'
 #' @param params The list of model parameters
 #' @returns A new modified model parameters
 
-source("map_idxs.R")
+safe_source("map_idxs.R")
 
 apply_links <- function(params) {
     {
@@ -14,7 +14,7 @@ apply_links <- function(params) {
         IEs <- params$IEs
         FEs <- params$FEs
         weight_is_nested <- params$weight_is_nested
-        fe_vals <- params$fe_vals
+        FE_vals <- params$FE_vals
         Sigma_G <- params$Sigma_G
         Sigma_E <- params$Sigma_E
         cov_G <- params$cov_G
@@ -26,7 +26,7 @@ apply_links <- function(params) {
     params2 <- copy(params)
 
     # These should start at 0
-    params2$fe_vals <- fe_vals * 0
+    params2$FE_vals <- FE_vals * 0
     params2$Sigma_G <- Sigma_G * 0
     params2$Sigma_E <- Sigma_E * 0
     params2$cov_G <- cov_G * 0
@@ -99,13 +99,13 @@ apply_links <- function(params) {
         i1 <- get_lidx(FEs[[FE]], model_traits)
         i2 <- get_idx(FEs[[FE]], model_traits)
 
-        params2$fe_vals[FE, i2] <<- params$fe_vals[FE, i1] |> unname()
+        params2$FE_vals[FE, i2] <<- params$FE_vals[FE, i1] |> unname()
 
         used <- get_priors(FE)
         priors[str_starts(parameter, str_c(FE, "_")),
                use := parameter %in% used]
         priors[parameter %in% used,
-               true_val := params$fe_vals[FE, unique(i1)] |> unname()]
+               true_val := params$FE_vals[FE, unique(i1)] |> unname()]
     })
 
     # Ensure weight_is_nested is respected
@@ -113,8 +113,9 @@ apply_links <- function(params) {
     priors[str_starts(parameter, wt), use := FALSE]
 
     # Copy updated values back into params2
-    params2$fe_vals <- fe_vals
+    params2$FE_vals <- FE_vals
 
     params2
 }
 
+source_is_loaded <- c(source_is_loaded, "apply_links.R")

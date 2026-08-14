@@ -5,7 +5,7 @@
     library(DT)
     library(xtable)
 
-    source("rename_pars.R")
+    safe_source("rename_pars.R")
 }
 
 print_PEs <- function(dataset = "fb-test", scen = 2) {
@@ -68,3 +68,7 @@ print_PEs <- function(dataset = "fb-test", scen = 2) {
 }
 
 print_PEs()
+
+
+source_is_loaded <- union(source_is_loaded, "print_PEs.R")
+

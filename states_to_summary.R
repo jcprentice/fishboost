@@ -2,7 +2,7 @@ library(data.table)
 library(purrr)
 library(stringr)
 
-source("read_sire_state_file.R")
+safe_source("read_sire_state_file.R")
 
 states_to_etc <- function(dataset = "fb-final", scens = 0) {
     # dataset <- "fb-final"; scens <- 0

@@ -194,3 +194,7 @@ get_lpart <- function(x, y) {
         str_split_i(" ", 2) |>
         str_to_lower()
 }
+
+
+source_is_loaded <- union(source_is_loaded, "utils.R")
+

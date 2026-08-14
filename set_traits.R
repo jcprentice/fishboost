@@ -6,3 +6,7 @@ set_traits <- function(popn, params) {
            popn)
 }
 
+
+
+source_is_loaded <- union(source_is_loaded, "set_traits.R")
+

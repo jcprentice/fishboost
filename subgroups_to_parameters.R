@@ -34,3 +34,7 @@ get_pars <- function(dataset = "testing", scen = 1) {
 
 get_pars("fb-test", 2)
 
+
+
+source_is_loaded <- union(source_is_loaded, "subgroups_to_parameters.R")
+

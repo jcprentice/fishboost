@@ -7,7 +7,7 @@ sigma2f <- function(sigma = 1, q = 0.95) {
 
 # Numerical result
 check_s2f <- function(sigma = 1, q = 0.95) {
-   # Sample some values with sigma 
+   # Sample some values with sigma
    x <- rnorm(1e6, 0, sd = sigma)
    # Note that the distribution is symmetrical,
    # so only require top q, as top_q = - bottom_q
@@ -24,4 +24,8 @@ q <- 0.95
 
 sigma2f(sigma, q)
 check_s2f(sigma, q)
+
+
+
+source_is_loaded <- union(source_is_loaded, "sigma_factor.R")
 

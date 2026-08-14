@@ -40,3 +40,5 @@ add_h2_to_pars <- function(x, pars) {
     pars
 }
 
+source_is_loaded <- union(source_is_loaded, "add_h2_to_pars.R")
+

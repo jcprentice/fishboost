@@ -170,3 +170,7 @@ plot_SIS <- function(popn, params) {
              title = "SIS model") +
         theme_bw()
 }
+
+
+source_is_loaded <- union(source_is_loaded, "make_plots.R")
+

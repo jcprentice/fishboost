@@ -62,3 +62,6 @@ fix_fb_data <- function(popn, params) {
 
     popn2
 }
+
+source_is_loaded <- union(source_is_loaded, "fix_fb_data.R")
+

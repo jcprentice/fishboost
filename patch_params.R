@@ -3,9 +3,9 @@
     library(stringr)
     library(purrr)
 
-    source("utils.R")
-    source("widen_priors.R")
-    source("remove_bici_fes.R")
+    safe_source("utils.R",
+                "widen_priors.R",
+                "remove_bici_fes.R")
 }
 
 # This will read an existing fitted dataset and apply either the mean or median
@@ -217,7 +217,7 @@ patch_params <- function(params, trace_row = 0) {
             params2$r_beta <- patch_vals$beta
         } else if ("beta_Tr1" %in% pp && "beta_Tr2" %in% pp) {
             params2$r_beta <- with(patch_vals, sqrt(beta_Tr1 * beta_Tr2))
-            params2$fe_vals["trial", "inf"] <- with(patch_vals, log(beta_Tr2 / beta_Tr1))
+            params2$FE_vals["trial", "inf"] <- with(patch_vals, log(beta_Tr2 / beta_Tr1))
         } else if ("beta_Tr1" %in% pp) {
             params2$r_beta <- patch_vals$beta_Tr1
         } else if ("beta_Tr2" %in% pp) {
@@ -227,7 +227,7 @@ patch_params <- function(params, trace_row = 0) {
     }
     if ("infrat" %in% pp) {
         params2$inf_ratio <- patch_vals$infrat
-        params2$fe_vals["donor", "inf"] <- log(patch_vals$infrat)
+        params2$FE_vals["donor", "inf"] <- log(patch_vals$infrat)
         pars_patched <- c(pars_patched, "infection ratio")
     }
     if ("LP" %in% pp) {
@@ -282,7 +282,7 @@ patch_params <- function(params, trace_row = 0) {
             # build name e.g. trial_l
             fe_name <- str_c(fe_type, "_", str_1st(fe_trait))
             if (fe_name %in% pp) {
-                params2$fe_vals[fe_type, fe_trait] <- patch_vals[[fe_name]]
+                params2$FE_vals[fe_type, fe_trait] <- patch_vals[[fe_name]]
                 pars_patched <- c(pars_patched, fe_name)
             }
         }
@@ -316,3 +316,7 @@ patch_params <- function(params, trace_row = 0) {
 
     params2
 }
+
+
+source_is_loaded <- union(source_is_loaded, "patch_params.R")
+

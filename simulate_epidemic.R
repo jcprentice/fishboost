@@ -5,7 +5,11 @@ simulate_epidemic <- function(popn, params) {
     if (!file.exists(sf)) {
         stop(str_glue("Sorry, {model_type} not yet implemented!"))
     }
-    source(sf)
+    safe_source(sf)
     get(f)(popn, params)
 }
+
+
+
+source_is_loaded <- union(source_is_loaded, "simulate_epidemic.R")
 

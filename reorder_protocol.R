@@ -9,3 +9,7 @@ reorder_protocol <- function(protocol) {
     }
     protocol
 }
+
+
+source_is_loaded <- union(source_is_loaded, "reorder_protocol.R")
+

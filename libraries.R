@@ -35,3 +35,7 @@ install_base <- function() {
                        "gganimate", "ggcorrplot", "cowplot", "pROC", "pipebind",
                        "microbenchmark"))
 }
+
+
+source_is_loaded <- union(source_is_loaded, "libraries.R")
+

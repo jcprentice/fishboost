@@ -1,7 +1,7 @@
 {
-    source("libraries.R")
-    source("source_files.R")
-    source("get_Tinfs.R")
+    safe_source("libraries.R",
+                "source_files.R",
+                "get_Tinfs.R")
 }
 
 # Generate data sets ----
@@ -76,9 +76,9 @@ generate_km_data_sire <- function(dataset = "fb-final",
         params$msgs          <- FALSE
 
         # Check if weight1 and weight2 missing, if so add them
-        if ("weight1" %notin% rownames(params$fe_vals)) {
-            params$fe_vals <- with(params, rbind(fe_vals, fe_vals[rep("weight", 2),]))
-            rownames(params$fe_vals)[5:6] <- str_c("weight", 1:2)
+        if ("weight1" %notin% rownames(params$FE_vals)) {
+            params$FE_vals <- with(params, rbind(FE_vals, FE_vals[rep("weight", 2),]))
+            rownames(params$FE_vals)[5:6] <- str_c("weight", 1:2)
         }
 
         params_base <- copy(params)
@@ -126,4 +126,7 @@ generate_km_data_sire <- function(dataset = "fb-final",
                   scen = scen,
                   opts))
 }
+
+
+source_is_loaded <- union(source_is_loaded, "generate_km_data_sire.R")
 

@@ -1,7 +1,8 @@
 {
     library(stringr)
     library(purrr)
-    source("run_bici_sim.R")
+
+    safe_source("run_bici_sim.R")
 }
 
 # Call Rscript "sim-base-inf" 1
@@ -12,7 +13,7 @@ run_from_script <- length(cmd_args) > 0
 dataset <- if (run_from_script) cmd_args[[1L]] else "fb-test"
 
 scens <- if (run_from_script) {
-    as.integer(cmd_args[[2L]]) 
+    as.integer(cmd_args[[2L]])
 } else {
     list.files(str_glue("datasets/{dataset}/results")) |>
         str_split_i("-", 2) |>
@@ -25,13 +26,13 @@ for (scen in scens) {
         str_remove_all("scen-.*-|.rds") |>
         as.integer() |>
         sort()
-    
+
     for (rep in reps) {
         out <- run_bici_sim(dataset = dataset,
                             name = str_glue("scen-{scen}-{rep}"),
                             bici_cmd = "post-sim",
                             nreps = 50L)
-        
+
         if (!is.null(out)) break
     }
 }

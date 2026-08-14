@@ -32,3 +32,6 @@ init_popn <- function(popn, params) {
     popn2
 }
 
+
+source_is_loaded <- union(source_is_loaded, "init_populations.R")
+

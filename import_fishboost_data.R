@@ -268,3 +268,7 @@ import_fishboost_data <- function() {
 
     fb_data
 }
+
+
+source_is_loaded <- union(source_is_loaded, "import_fishboost_data.R")
+

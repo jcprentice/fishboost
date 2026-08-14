@@ -2,7 +2,8 @@
     library(purrr)
     library(data.table)
     library(stringr)
-    source("utils.R")
+
+    safe_source("utils.R")
 }
 
 fes_to_vals <- function(dataset = "fb-lp", scen = 1, rep = 1) {
@@ -75,3 +76,7 @@ fes_to_vals <- function(dataset = "fb-lp", scen = 1, rep = 1) {
 #                DP = params$DP,
 #                RP = params$RP)]
 # }
+
+
+source_is_loaded <- union(source_is_loaded, "fes_to_vals.R")
+

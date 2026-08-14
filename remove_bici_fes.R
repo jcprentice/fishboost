@@ -59,3 +59,7 @@ remove_bici_fes <- function(params) {
 
     params2
 }
+
+
+source_is_loaded <- union(source_is_loaded, "remove_bici_fes.R")
+

@@ -38,3 +38,7 @@ get_median_Tinfs <- function(params) {
     popn[is.na(Tinf), Tinf := Inf]
     popn[sdp == "progeny", .(Tinf = median(Tinf)), id][, Tinf]
 }
+
+
+source_is_loaded <- union(source_is_loaded, "get_Tinfs.R")
+

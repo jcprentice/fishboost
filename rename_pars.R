@@ -1,5 +1,7 @@
-library(stringr)
-source("utils.R")
+{
+    library(stringr)
+    safe_source("utils.R")
+}
 
 #' Take BICI parameters and make them consistent with internal parameter names,
 #' e.g.
@@ -137,4 +139,7 @@ param_order <- c(
 )
 
 full_param_order <- pretty_names(param_order)
+
+
+source_is_loaded <- union(source_is_loaded, "rename_pars.R")
 

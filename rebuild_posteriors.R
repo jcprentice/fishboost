@@ -5,8 +5,8 @@
     library(coda)
     library(HDInterval)
 
-    source("rename_pars.R")
-    source("utils.R")
+    safe_source("rename_pars.R",
+                "utils.R")
 }
 
 
@@ -277,4 +277,6 @@ rebuild_sire_posteriors <- function(dataset = "fb-final",
     xp
 }
 
+
+source_is_loaded <- union(source_is_loaded, "rebuild_posteriors.R")
 

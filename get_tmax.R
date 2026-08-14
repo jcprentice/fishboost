@@ -25,3 +25,7 @@ get_tmax <- function(popn, params) {
 
     tmax
 }
+
+
+source_is_loaded <- union(source_is_loaded, "get_tmax.R")
+

@@ -1,7 +1,7 @@
 {
     library(stringr)
     library(purrr)
-    source("run_bici_sim.R")
+    safe_source("run_bici_sim.R")
 }
 
 # Generate data sets ----
@@ -67,3 +67,7 @@ generate_km_data_bici <- function(dataset = "fb-test",
                   scen = scen, rep = rep,
                   opts))
 }
+
+
+source_is_loaded <- union(source_is_loaded, "generate_km_data_bici.R")
+

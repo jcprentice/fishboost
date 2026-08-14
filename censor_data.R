@@ -8,3 +8,7 @@ censor_data <- function(popn, params) {
 
     popn2
 }
+
+
+source_is_loaded <- union(source_is_loaded, "censor_data.R")
+

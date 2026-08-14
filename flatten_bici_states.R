@@ -4,8 +4,8 @@
     library(stringr)
     library(lubridate)
 
-    source("utils.R")
-    source("rename_pars.R")
+    safe_source("utils.R",
+                "rename_pars.R")
 }
 
 # Take the BICI state files and create an `summary.rds` file that contains all the
@@ -312,3 +312,8 @@ flatten_bici_states <- function(params) {
 # out <- flatten_bici_states("fb-test", "scen-1-1", "inf")
 # out <- flatten_bici_states("testing", "scen-1-1", "sim")
 # out <- flatten_bici_states("testing", "scen-1-1", "post-sim")
+
+
+
+source_is_loaded <- union(source_is_loaded, "flatten_bici_states.R")
+

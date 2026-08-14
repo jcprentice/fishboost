@@ -97,3 +97,6 @@ basic_km <- function(popn, params) {
               legend.position = "bottom")
     plt
 }
+
+source_is_loaded <- union(source_is_loaded, "basic_km.R")
+

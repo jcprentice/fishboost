@@ -1,7 +1,7 @@
 {
     library(purrr)
     library(stringr)
-    source("rebuild_posteriors.R")
+    safe_source("rebuild_posteriors.R")
 }
 
 datasets <- c("fb-test",

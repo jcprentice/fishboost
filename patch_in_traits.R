@@ -109,3 +109,7 @@ patch_in_traits <- function(popn, params) {
 
     popn2
 }
+
+
+source_is_loaded <- union(source_is_loaded, "patch_in_traits.R")
+

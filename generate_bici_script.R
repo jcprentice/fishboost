@@ -7,8 +7,7 @@
 #'
 #' @returns A character vector of lines of BICI script
 
-source("utils.R")
-source("discretise_time_bici.R")
+safe_source("utils.R", "discretise_time_bici.R")
 
 generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
     if (FALSE) {
@@ -869,3 +868,5 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
         invisible(x)
     })
 }
+
+source_is_loaded <- union(source_is_loaded, "generate_bici_script")

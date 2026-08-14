@@ -4,9 +4,9 @@
     library(purrr)
     library(pipebind)
 
-    source("make_matrices.R")
-    source("widen_priors.R")
-    source("utils.R")
+    safe_source("make_matrices.R",
+                "widen_priors.R",
+                "utils.R")
 }
 
 #' Generate a list of parameters
@@ -307,7 +307,7 @@ make_parameters <- function(
     })
 
     # A default set of FEs
-    fe_vals <- matrix(0, ncol = 5, nrow = 6, byrow = TRUE,
+    FE_vals <- matrix(0, nrow = 6, ncol = 5,
                       dimnames = list(fe = c("trial", "donor", "txd",
                                              "weight", "weight1", "weight2"),
                                       traits = unname(all_traits)))
@@ -405,7 +405,7 @@ make_parameters <- function(
         }
     }
 
-    fes <- colnames(fe_vals)
+    fes <- colnames(FE_vals)
     fe_p <- expand.grid(t1, fes) |> rev() |> apply(1, str_flatten, "_")
     fe_priors <- data.table(parameter = fe_p, true_val = 0,
                             type = "uniform", val1 = -4, val2 = 4)
@@ -544,7 +544,7 @@ make_parameters <- function(
           "LP", "LP_shape", "LP_scale", "LP_dist", # latency
           "DP", "DP_shape", "DP_scale", "DP_dist", # detection
           "RP", "RP_shape", "RP_scale", "RP_dist", # removal
-          "FEs", "fe_vals", "weight_is_nested",
+          "FEs", "FE_vals", "weight_is_nested",
           # Files and directories
           "data_dir", "results_dir", "gfx_dir", "meta_dir", "output_dir",
           "states_dir", "config",
@@ -562,3 +562,7 @@ make_parameters <- function(
 
     params
 }
+
+
+source_is_loaded <- union(source_is_loaded, "make_parameters.R")
+

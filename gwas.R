@@ -2,6 +2,8 @@
     library(data.table)
     library(stringr)
     library(purrr)
+
+    safe_source("get_fb_map.R")
 }
 
 # Load and sample EBV files ----
@@ -54,8 +56,6 @@ gwas <- function(dataset = "fb-test", scen = 1, rep = 1) {
 
 
     # Maps ----
-    source("get_fb_map.R")
-
     # Load the PrunedPed file
     pp <- fread("Hinv_drop71/sequence/PrunedPed.txt") |>
         setnames(c("id1", "sire1", "dam1", "fb_id", "fb_sire", "fb_dam"))
@@ -113,3 +113,7 @@ gwas <- function(dataset = "fb-test", scen = 1, rep = 1) {
         fwrite(out[[bv]], f)
     })
 }
+
+
+source_is_loaded <- union(source_is_loaded, "gwas.R")
+

@@ -100,3 +100,7 @@ discretise_time_bici <- function(popn, params) {
         data.frame(ID = i, t = times1[idxs], DS = states[idxs])
     }) |> rbindlist()
 }
+
+
+source_is_loaded <- union(source_is_loaded, "discretise_time_bici.R")
+

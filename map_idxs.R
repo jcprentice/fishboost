@@ -1,6 +1,7 @@
-library(stringr)
-
-source("utils.R")
+{
+    library(stringr)
+    safe_source("utils.R")
+}
 
 # Map "sit" -> c("s", "i", "t"), "si_tt" -> c("s", "i", "t", "t")
 get_l1 <- function(tr, traits) {
@@ -57,3 +58,7 @@ if (FALSE) {
         setup = {tr <- sample(test, 1L)}
     )
 }
+
+
+source_is_loaded <- union(source_is_loaded, "map_idxs.R")
+

@@ -5,7 +5,7 @@ library(stringr)
 #'
 #' @description `set_phenotypes()` takes a population data.table and a
 #'   parameters list and applies all the fixed effects defined by `sim_X_fe`
-#'   according to the FE values contained in `fe_vals`.
+#'   according to the FE values contained in `FE_vals`.
 #'
 #' @param popn A population data.table
 #' @param params A list of parameters
@@ -16,7 +16,7 @@ set_phenotypes <- function(popn, params) {
     {
         model_traits     <- params$model_traits
         FEs              <- params$FEs
-        fe_vals          <- params$fe_vals
+        FE_vals          <- params$FE_vals
         use_weight       <- params$use_weight
         weight_is_nested <- params$weight_is_nested
     }
@@ -69,16 +69,16 @@ set_phenotypes <- function(popn, params) {
                  )] |>
         as.matrix()
 
-    sildt <- colnames(fe_vals) |> str_1st()
+    sildt <- colnames(FE_vals) |> str_1st()
 
     if (weight_is_nested) {
-        fe_vals["weight", ] <- 0
+        FE_vals["weight", ] <- 0
     } else {
-        fe_vals[c("weight1", "weight2"), ] <- 0
+        FE_vals[c("weight1", "weight2"), ] <- 0
     }
 
 
-    mat_fe <- mat %*% fe_vals[, model_traits]
+    mat_fe <- mat %*% FE_vals[, model_traits]
 
     mat_g <- popn2[sdp == "progeny", ..traits_g] |> as.matrix()
     mat_e <- popn2[sdp == "progeny", ..traits_e] |> as.matrix()
@@ -93,3 +93,7 @@ set_phenotypes <- function(popn, params) {
 
     popn2
 }
+
+
+source_is_loaded <- union(source_is_loaded, "set_phenotypes.R")
+

@@ -1,11 +1,13 @@
-library(data.table)
-library(ggplot2)
-library(cowplot)
+{
+    library(data.table)
+    library(ggplot2)
+    library(cowplot)
 
-source("make_parameters.R")
-source("make_time_series.R")
-source("make_plots.R")
-source("add_latency.R")
+    safe_source("make_parameters.R",
+                "make_time_series.R",
+                "make_plots.R",
+                "add_latency.R")
+}
 
 fb_data <- readRDS("fb_data/fb_12.rds")
 
