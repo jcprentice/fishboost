@@ -57,8 +57,7 @@ if (run_from_script) {
 
         # Skip any values already provided to make_pars()
         if (param %in% c("model_type", "dataset", "name", "setup", "group_effect",
-                         "IEs", "h2", "vars", "cors",
-                         "trial_fe", "donor_fe", "txd_fe", "weight_fe") ||
+                         "IEs", "vars", "cors", "h2", "FEs") ||
             (length(value) == 1 && is.na(value))) {
             return()
         }
@@ -94,9 +93,7 @@ if (run_from_script) {
                                true_val = value)]
 
         } else if (str_ends(param, "_fe")) {
-            # These should already have been passed to make_params(), and don't
-            # want to overwrite "" with "none" or NA
-            return()
+            params$FEs[[str_remove(param, "_fe")]] <<- value
 
         } else if (param == "weight_is_nested") {
             params$weight_is_nested <<- if (params$ntrials == 1) {
@@ -194,7 +191,7 @@ if (run_from_script) {
     # params$DEBUG <- TRUE
 
     # Quick check of how things are looking
-    summarise_params(params)
+    summarise_parameters(params)
 }
 
 ## Generate pedigree and popn ----
@@ -205,7 +202,7 @@ if (params$sim_new_data %in% c("r", "bici")) {
         set_traits(params) |>
         set_weights(params) |>
         apply_selection(params) |>
-        apply_fixed_effects(params)
+        set_phenotypes(params)
 } else if (params$sim_new_data == "no") {
     # Load popn, pedigree, and GRM
     popn <- readRDS(str_glue("fb_data/{params$setup}.rds")) |>

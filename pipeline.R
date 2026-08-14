@@ -30,15 +30,13 @@ run_from_script <- length(cmd_args) > 0
         vars = 0.5, # c(0.5, 1.5, 0, 0, 0.5)
         cors = 0.2, # c(0.2, ..., 0.2)
         group_layout = "fishboost", # "random", "family", "striped", "fishboost"
-        trial_fe = "ildt",
-        donor_fe = "ildt",
-        txd_fe = "ildt",
-        weight_fe = "sildt",
+        FEs = list(trial = "_ittt", donor = "_ittt", txd = "_ittt",
+                   weight = "sittt", weight1 = "sittt", weight2 = "sittt"),
         weight_is_nested = TRUE,
-        sim_new_data = "summary_sim"
+        sim_new_data = "bici" # "no", "r", "bici", "summary_sim", "summary_inf"
     )
 
-    params$select_on <- "inf"
+    params$select_on <- "none" # "inf"
     params$select_top <- 0.2
 
     # Temporary override of some parameters
@@ -66,20 +64,21 @@ run_from_script <- length(cmd_args) > 0
     params <- tidy_up_periods(params)
 
     # Patch params with posterior mean values from data set/scenario
-    params$patch_dataset <- "sim-test"
+    params$patch_dataset <- "fb-test"
     params$patch_name <- "scen-1-1"
     params$traits_source <- "pedigree" # posterior
     params$patch_type <- "sampled"
     params$patch_state <- 1
     params$skip_patches <- c() #, "covariance")
 
-    params <- params |>
+    params2 <- params |>
         patch_params() |>  # Patch params with posteriors from dataset / scenario
         set_use_flags() |> # Ensure priors are correctly enabled
         apply_links()      # Fix any traits that need to be linked
+    params <- params2
 
     # Quick check of how things are looking
-    summarise_params(params)
+    summarise_parameters(params)
 }
 
 
@@ -91,7 +90,7 @@ if (params$sim_new_data %in% c("r", "bici")) {
         set_traits(params) |>
         set_weights(params) |>
         apply_selection(params) |>
-        apply_fixed_effects(params)
+        set_phenotypes(params)
 } else if (params$sim_new_data == "no") {
     # Load popn, pedigree, and GRM
     popn <- readRDS(str_glue("fb_data/{params$setup}.rds")) |>
@@ -118,7 +117,6 @@ GRM <- make_grm(popn, params$use_grm)
 
 if (params$sim_new_data == "r") {
     tic(); popn <- simulate_epidemic(popn, params); toc()
-    popn[sdp == "progeny", parasites := !is.na(Tinf)]
 
     params$estimated_R0 <- get_R0(popn)
     params$tmax <- get_tmax(popn, params)

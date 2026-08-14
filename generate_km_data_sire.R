@@ -95,10 +95,10 @@ generate_km_data_sire <- function(dataset = "fb-final",
             # popn <- make_pedigree(params) |>
             #     set_groups(params) |>
             #     set_traits(params) |>
-            #     apply_fixed_effects(params)
+            #     set_phenotypes(params)
             popn <- fb$popn |>
                 set_traits(params) |>
-                apply_fixed_effects(params)
+                set_phenotypes(params)
 
             # Simulate new data ----
             message(str_glue("{i} / {n_plots}"))

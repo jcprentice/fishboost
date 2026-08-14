@@ -8,62 +8,59 @@
 
 apply_links <- function(params) {
     {
-        IEs              <- params$IEs
-        model_traits     <- params$model_traits
-        sim_trial_fe     <- params$sim_trial_fe
-        sim_donor_fe     <- params$sim_donor_fe
-        sim_txd_fe       <- params$sim_txd_fe
-        sim_weight_fe    <- params$sim_weight_fe
-        trial_fe         <- params$trial_fe
-        donor_fe         <- params$donor_fe
-        txd_fe           <- params$txd_fe
-        weight_fe        <- params$weight_fe
+        model_traits <- params$model_traits
+        IEs <- params$IEs
+        FEs <- params$FEs
         weight_is_nested <- params$weight_is_nested
-        sim_link_traits  <- params$sim_link_traits
-        sim_link_trial   <- params$sim_link_trial
-        sim_link_donor   <- params$sim_link_donor
-        sim_link_txd     <- params$sim_link_txd
-        sim_link_weight  <- params$sim_link_weight
-        sim_link_shapes  <- params$sim_link_shapes
-        link_traits      <- params$link_traits
-        link_trial       <- params$link_trial
-        link_donor       <- params$link_donor
-        link_txd         <- params$link_txd
-        link_weight      <- params$link_weight
-        link_shapes      <- params$link_shapes
-        fe_vals          <- params$fe_vals
-        Sigma_G          <- params$Sigma_G
-        Sigma_E          <- params$Sigma_E
-        cov_G            <- params$cov_G
-        cov_E            <- params$cov_E
-        LP_shape         <- params$LP_shape %||% "ldt"
-        DP_shape         <- params$DP_shape %||% "ldt"
-        RP_shape         <- params$RP_shape %||% "ldt"
+        fe_vals <- params$fe_vals
+        Sigma_G <- params$Sigma_G
+        Sigma_E <- params$Sigma_E
+        cov_G <- params$cov_G
+        cov_E <- params$cov_E
     }
+
 
     # Make explicit copies because data.tables work by reference
     params2 <- copy(params)
 
-    # All changes made to priors also happen in params2 (because DT)
-    priors  <- params2$priors
+    # These should start at 0
+    params2$fe_vals <- fe_vals * 0
+    params2$Sigma_G <- Sigma_G * 0
+    params2$Sigma_E <- Sigma_E * 0
+    params2$cov_G <- cov_G * 0
+    params2$cov_E <- cov_E * 0
+
+    # All changes made to priors also happen in params2 (since DT works by
+    # reference)
+    priors <- params2$priors
 
     # Get the first letter of each model traitname for convenience
     t1 <- names(model_traits)
     ntraits <- length(model_traits)
 
-    get_idxs <- function(s) match(str_chars(s), t1)
+    # Turn "sit", "sittt", or "si__t" etc. into a map
+    get_idxs <- function(IEs) {
+        s <- str_chars(IEs)
+        i1 <- match(s, t1) |> discard(is.na)
+        i2 <- if (length(s) == ntraits) {
+            match(t1[str_detect(s, "_", negate = TRUE)], t1)
+        } else {
+            match(s, t1)
+        }
+        list(i1 = i1, i2 = i2)
+    }
 
     # Individual Effects ----
     if (IEs %notin% c("", "none", NA)) {
-        # Turn sim_link_traits into string vector
-        new_idxs <- get_idxs(sim_link_traits) |>
-            discard(is.na)
+        ids <- get_idxs(IEs)
+        i1 <- ids$i1
+        i2 <- ids$i2
 
         # Copy rows and columns in Sigma and cov matrix
-        params2$Sigma_G[] <- Sigma_G[new_idxs, new_idxs, drop = FALSE]
-        params2$Sigma_E[] <- Sigma_E[new_idxs, new_idxs, drop = FALSE]
-        params2$cov_G[] <- cov_G[new_idxs, new_idxs, drop = FALSE]
-        params2$cov_E[] <- cov_E[new_idxs, new_idxs, drop = FALSE]
+        params2$Sigma_G[i2, i2] <- Sigma_G[i1, i1, drop = FALSE]
+        params2$Sigma_E[i2, i2] <- Sigma_E[i1, i1, drop = FALSE]
+        params2$cov_G[i2, i2] <- cov_G[i1, i1, drop = FALSE]
+        params2$cov_E[i2, i2] <- cov_E[i1, i1, drop = FALSE]
 
         # Be careful here in case any traits aren't used
         set_diag_to_cov <- function(x) {
@@ -91,70 +88,32 @@ apply_links <- function(params) {
     }
 
     get_priors <- function(fe = "trial") {
-        str  <- get(str_c(fe, "_fe"))   |> str_chars() # ildtt
-        link <- get(str_c("link_", fe)) |> str_chars() # sittt
-        str_c(fe, "_", intersect(str, link)) # trial_i, trial_t
+        if (fe %notin% names(FEs)) return("XYZ")
+        FEs[[fe]] |> str_chars() |> unique() |> str_subset("_", negate = TRUE) |>
+            str_c(fe, "_", x = _)
     }
 
     # Fixed Effects ----
-    if (sim_trial_fe %notin% c("", "none")) {
-        # Copy FE values across, overwriting previous value
-        fe_vals["trial", ] <- fe_vals["trial", get_idxs(sim_link_trial)]
-    }
+    walk(names(FEs), \(FE) {
+        ix <- get_idxs(FEs[[FE]])
+        i1 <- ix$i1
+        i2 <- ix$i2
 
-    if (trial_fe %notin% c("", "none")) {
-        # sieve "sildt" for trial_fe, map, and convert into list of priors
-        priors[str_starts(parameter, "trial_"),
-               use := parameter %in% get_priors("trial")]
-    }
+        params2$fe_vals[FE, i2] <<- params$fe_vals[FE, i1] |> unname()
 
-    if (sim_donor_fe %notin% c("", "none")) {
-        fe_vals["donor", ] <- fe_vals["donor", get_idxs(sim_link_donor)]
-    }
+        used <- get_priors(FE)
+        priors[str_starts(parameter, str_c(FE, "_")),
+               use := parameter %in% used]
+        priors[parameter %in% used,
+               true_val := params$fe_vals[FE, unique(i1)] |> unname()]
+    })
 
-    if (donor_fe %notin% c("", "none")) {
-        priors[str_starts(parameter, "donor_"),
-               use := parameter %in% get_priors("donor")]
-    }
-
-    if (sim_txd_fe %notin% c("", "none")) {
-        fe_vals["txd", ] <- fe_vals["txd", get_idxs(sim_link_txd)]
-    }
-
-    if (txd_fe %notin% c("", "none")) {
-        priors[str_starts(parameter, "txd_"),
-               use := parameter %in% get_priors("txd")]
-    }
-
-    if (sim_weight_fe %notin% c("", "none")) {
-        wts <- str_subset(rownames(fe_vals), "weight")
-        fe_vals[wts, ] <- fe_vals[wts, get_idxs(sim_link_weight)]
-    }
-
-    if (weight_fe %notin% c("", "none")) {
-        wt <- get_priors("weight")
-        if (weight_is_nested) {
-            priors[str_starts(parameter, "weight1_"),
-                   use := parameter %in% str_replace(wt, "_", "1_")]
-            priors[str_starts(parameter, "weight2_"),
-                   use := parameter %in% str_replace(wt, "_", "2_")]
-        } else {
-            priors[str_starts(parameter, "weight_"), use := parameter %in% wt]
-        }
-    }
+    # Ensure weight_is_nested is respected
+    wt <- if (weight_is_nested) "weight\\d_" else "weight_"
+    priors[str_starts(parameter, wt), use := FALSE]
 
     # Copy updated values back into params2
     params2$fe_vals <- fe_vals
-
-    # Shape parameters ----
-    shapes <- c(l = LP_shape, d = DP_shape, t = RP_shape)
-    shape <- shapes[str_chars(sim_link_shapes)]
-    params2[c("LP_shape", "DP_shape", "RP_shape")] <- shape
-
-    # Set values in priors (be careful not to accidentally turn them back on if the type is "exp")
-    priors[parameter == "LP_shape", use := use && str_detect(link_shapes, "l")]
-    priors[parameter == "DP_shape", use := use && str_detect(link_shapes, "d")]
-    priors[parameter == "RP_shape", use := use && str_detect(link_shapes, "t")]
 
     params2
 }

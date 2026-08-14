@@ -24,14 +24,14 @@ set.seed(my_seed)
         model_type = "SEIDR", # "SIR", "SEIR", "SIDR", or "SEIDR"
         name = "expt1",
         setup = "fb_12", # chris, small, fb_12, fb_1, fb_2, single
-        IEs = "sit", # "all", "none", "sit", "si" etc.
+        IEs = "si__t", # "all", "none", "sit", "si" etc.
         vars = 1, # c(0.5, 1.2, 0.5)
         cors = cors, # 0.2, "positive", "negative", "mixed", "sit_only" etc.
         group_layout = "fishboost", # "random", "family", "striped", "fishboost"
-        trial_fe = "ildt",
-        donor_fe = "ildt",
-        txd_fe = "ildt",
-        weight_fe = "sildt",
+        FEs = list(trial = "_ildt",
+                   donor = "_ildt",
+                   txd = "_ildt",
+                   weight = "sildt"),
         weight_is_nested = TRUE,
         sim_new_data = "r"
     )
@@ -81,7 +81,7 @@ prop <- 0.2
 R0s <- map(c(none = "none", sus = "sus_g", r0 = "r0"),
            \(trait) popn |>
                crop(trait, prop) |>
-               apply_fixed_effects(params) |>
+               set_phenotypes(params) |>
                simulate_epidemic(params) |>
                get_R0())
 

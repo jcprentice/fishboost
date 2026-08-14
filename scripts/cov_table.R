@@ -24,10 +24,10 @@ x <- map(scens, \(i) {
 
     PEs[!str_starts(parameter, "G_|Group") & parameter != "LP",
               .(parameter, mean, ESS = as.numeric(ESS), GR, scenario, trial,
-                trial_fe = params$trial_fe,
-                donor_fe = params$donor_fe,
-                txd_fe = params$txd_fe,
-                weight_fe = params$weight_fe)]
+                trial_fe = params$FEs$trial,
+                donor_fe = params$FEs$donor,
+                txd_fe = params$FEs$txd,
+                weight_fe = params$FEs$weight)]
 }) |>
     rbindlist() |>
     setorder(parameter, scenario)

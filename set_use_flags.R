@@ -5,21 +5,11 @@ set_use_flags <- function(params) {
         all_traits    <- params$all_traits
         model_traits  <- params$model_traits
         IEs           <- params$IEs
+        FEs           <- params$FEs
         setup         <- params$setup
         LP_dist       <- params$LP_dist
         DP_dist       <- params$DP_dist
         RP_dist       <- params$RP_dist
-        trial_fe      <- params$trial_fe
-        donor_fe      <- params$donor_fe
-        txd_fe        <- params$txd_fe
-        weight_fe     <- params$weight_fe
-        link_traits   <- params$link_traits
-        link_trial    <- params$link_trial
-        link_donor    <- params$link_donor
-        link_txd      <- params$link_txd
-        link_weight   <- params$link_weight
-        setup         <- params$setup
-        weight_fe     <- params$weight_fe
         group_effect  <- params$group_effect
         # DTs are modified by reference, so this doesn't need to be copied back
         priors        <- params$priors
@@ -52,10 +42,8 @@ set_use_flags <- function(params) {
         params$weight_is_nested <- FALSE
     }
 
-    # Only use traits if in used AND in link_traits
-    GE_traits <- intersect(used,
-                           intersect(str_chars(IEs),
-                                     str_chars(link_traits)))
+    # Only use traits if in used
+    GE_traits <- intersect(used, str_chars(IEs))
 
     pwalk(expand.grid(x = used, y = used), \(x, y) {
         priors[str_ends(parameter, str_glue("_[GE]_{x}{y}")),
@@ -67,14 +55,12 @@ set_use_flags <- function(params) {
     fe_str <- function(base) {
         # fe_str("trial") -> "trial_[ildt]"
         # fe_str("weight") -> "weight[12]_[sildt]"
-        base_str <- get(str_glue("{base}_fe"))
-        link_str <- get(str_glue("link_{base}"))
+        base_str <- FEs[[base]]
 
         if (base_str %in% c("", "none")) return("XYZ")
 
         used |>
             intersect(str_chars(base_str)) |>
-            intersect(str_chars(link_str)) |>
             str_flatten() |>
             str_glue("{base}{wt}_[{fe}]",
                      fe = _,

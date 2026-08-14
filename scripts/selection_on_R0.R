@@ -18,10 +18,7 @@
         vars = 0.5, # c(0.5, 1.2, 0.5)
         cors = 0.2, # 0.2, "positive", "negative", "mixed", "sit_only" etc.
         group_layout = "family", # "random", "family", "striped", "fishboost"
-        trial_fe = "ildt",
-        donor_fe = "ildt",
-        txd_fe = "ildt",
-        weight_fe = "sildt",
+        FEs = list(trial = "ildt", donor = "ildt", txd = "ildt", weight = "sildt"),
         weight_is_nested = TRUE,
         sim_new_data = "r"
     )
@@ -68,7 +65,7 @@ prop <- 0.8
         popn <- make_pedigree(params) |>
             set_traits(params) |>
             set_groups(params) |>
-            apply_fixed_effects(params)
+            set_phenotypes(params)
 
         # Add in R0
         popn[, r0 := sus_g + inf_g + tol_g]

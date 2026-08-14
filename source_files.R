@@ -1,6 +1,7 @@
 {
     source("make_matrices.R")
     source("make_parameters.R")
+    source("summarise_parameters.R")
     source("get_R0.R")
     source("get_tmax.R")
     source("reorder_protocol.R")
@@ -19,7 +20,7 @@
     source("make_traits_from_pedigree.R")
     source("set_groups.R")
     source("apply_selection.R")
-    source("apply_fixed_effects.R")
+    source("set_phenotypes.R")
     source("simulate_epidemic.R")
     source("init_populations.R")
     source("clean_bici_files.R")

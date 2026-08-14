@@ -76,7 +76,7 @@ patch_params <- function(params, trace_row = 0) {
         if (msgs) message(str_glue("- using state: {patch_state}"))
 
         f <- str_glue("{patch_out_dir}/{summary_src}.rds")
-        tmp <- readRDS(f)$parameters[!str_starts(parameter, "^Group")]
+        tmp <- readRDS(f)$parameters[!str_starts(parameter, "Group|G_")]
         tmp <- if (patch_state == 0) {
             tmp[, .(value = get(patch_type)(value)), parameter]
         } else {
@@ -195,7 +195,8 @@ patch_params <- function(params, trace_row = 0) {
         out <- make_matrices_from_priors(priors1, params)
 
         # Copy the used values, discarding the rest (even if non-zero)
-        used <- model_traits[str_chars(IEs)]
+        used <- match(IEs |> str_remove_all("_") |> str_chars(),
+                      names(model_traits))
 
         params2$Sigma_G[used, used] <- out$Sigma_G[used, used]
         params2$Sigma_E[used, used] <- out$Sigma_E[used, used]
@@ -264,7 +265,7 @@ patch_params <- function(params, trace_row = 0) {
     # Fixed effects ----
 
     # Handle nested Weight FEs
-    weight_is_nested <- any(str_detect(names(patch_vals), "weight1"))
+    weight_is_nested <- any(str_detect(names(patch_vals), "weight\\d"))
     weight <- if (weight_is_nested) c("weight1", "weight2") else "weight"
 
     fe_types <- c(
@@ -298,19 +299,9 @@ patch_params <- function(params, trace_row = 0) {
             # FIXME: this seems to be breaking, so just skip it
 
             # Ensure FEs match
-            for (fe in fe_types) {
-                fe_type <- str_c(fe, "_fe")
-                if (fe_type %in% names(tmp_params)) {
-                    params2[[fe_type]] <- tmp_params[[fe_type]]
-                }
-            }
+            params2$FE_vals <- tmp_params$FE_vals
             pars_patched <- c(pars_patched, "fixed effects")
         }
-
-        # shape parameters
-        # params2$LP_shape <- tmp_params$LP_shape
-        # params2$DP_shape <- tmp_params$DP_shape
-        # params2$RP_shape <- tmp_params$RP_shape
 
         # I think this is necessary?
         params2$time_step <- tmp_params$time_step

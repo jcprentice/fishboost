@@ -13,7 +13,8 @@ make_traits_from_pedigree <- function(popn, params) {
                                                names(model_traits))]
         cov_G        <- params$cov_G[traitnames, traitnames]
         cov_E        <- params$cov_E[traitnames, traitnames]
-        n_traits     <- IEs |> str_chars() |> unique() |> length()
+        n_traits     <- IEs |> str_chars() |> unique() |>
+            str_subset("_", negate = TRUE) |> length()
         use_weight   <- params$use_weight
     }
 

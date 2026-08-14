@@ -192,10 +192,7 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
         # Transition period
         get_TP <- function(p = "l", dist_type = "exp") {
             m <- c(l = "LP", d = "DP", t = "RP")[[p]]
-            # link_shapes = "lll" means use "eta^shape" for det and tol
-            cv1 <- c(l = "LP^shape", d = "DP^shape", t = "RP^shape")
-            ldt <- names(cv1)
-            cv <- setNames(cv1[str_chars(link_shapes)], ldt)[[p]]
+            cv <- str_c(m, "^shape")
 
             switch(dist_type,
                    "gamma" = str_glue("gamma(mean:FE_IE_{m}_b,c, cv:{cv}_b,c)"),
@@ -380,9 +377,8 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
         ## Additive genetic effects ----
 
         # IEs as "sg,ig,tg". We use this several times, so keep it.
-        ies_str <- str_c(intersect(str_chars(IEs),
-                                   str_chars(link_traits)),
-                         "g", collapse = ",")
+        ies <- IEs |> str_chars() |> str_subset("_", negate = TRUE) |> unique()
+        ies_str <- str_c(ies, "g", collapse = ",")
 
         if (IEs %notin% c("", "none")) {
 
@@ -466,8 +462,8 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
 
         ## True BVs ----
         if (provide_ies) {
-            traits_to_fit <- model_traits[intersect(str_chars(IEs),
-                                                    str_chars(link_traits))]
+            ies <- IEs |> str_chars() |> str_subset("_", negate = TRUE) |> unique()
+            traits_to_fit <- model_traits[ies]
             ie_names <- expand.grid(traits_to_fit, c("g", "e")) |>
                 apply(1, str_flatten, "_")
             ie_vars <- expand.grid(str_1st(traits_to_fit),
@@ -531,27 +527,35 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
 
         x$comment_fe <- "Fixed effects"
 
-        # Get the appropriate linked effect for a given trait
-        get_LE <- function(links, t1) setNames(str_chars(links), sildt)[[t1]]
+        get_FEs <- function(t1) {
+            t1 <- str_1st(t1)
+            s <- str_chars(FEs$weight)
+            t2 <- if (length(s) == length(model_traits)) {
+                setNames(s, names(model_traits))[[t1]]
+            } else {
+                t1
+            }
 
-        get_FEs <- function(trait) {
-            t1 <- str_1st(trait)
-            fe <- if (str_detect(weight_fe, t1)) {
-                fex <- get_LE(link_weight, t1)
+            if (t2 != "_" && t2 %in% s) {
                 if (weight_is_nested && ntrials > 1) {
-                    str_glue("<weight1{fex}><weight2{fex}>")
+                    str_glue("<weight1{t2}><weight2{t2}>")
                 } else {
-                    str_glue("<weight{fex}>")
+                    str_glue("<weight{t2}>")
                 }
             } else ""
-            str_flatten(fe)
         }
 
-        get_IEs <- function(trait) {
-            t1 <- str_1st(trait)
-            if (str_detect(IEs, t1)) {
-                iex <- get_LE(link_traits, t1)
-                str_glue("[{iex}g][{iex}e]")
+        get_IEs <- function(t1) {
+            t1 <- str_1st(t1)
+            s <- str_chars(IEs)
+            t2 <- if (length(s) == length(model_traits)) {
+                setNames(s, names(model_traits))[[t1]]
+            } else {
+                t1
+            }
+
+            if (t2 != "_" && t2 %in% s) {
+                str_glue("[{t2}g][{t2}e]")
             } else {
                 ""
             }
@@ -560,9 +564,10 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
         if ("trans_inf" %in% names(x)) {
             x$trans_inf$value <- x$trans_inf$value |>
                 str_replace_all(c("GE_" = if (group_effect >= 0) "G_g*" else "",
-                                  "FEs_" = get_FEs("sus"), "IEs_" = get_IEs("sus"),
-                                  "FEi_" = get_FEs("inf"),
-                                  "IEi_" = get_IEs("inf")))
+                                  "FEs_" = get_FEs("s"),
+                                  "IEs_" = get_IEs("s"),
+                                  "FEi_" = get_FEs("i"),
+                                  "IEi_" = get_IEs("i")))
         }
 
         walk(c("lat", "det", "tol"), \(trait) {
@@ -591,14 +596,13 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
         })
 
         if ("weight" %in% names(popn)) {
-            rec_fn <- if (use_weight == "log") log_recentre else recentre
             if (weight_is_nested) {
                 popn[, `:=`(weight1_fe = 0, weight2_fe = 0)]
-                popn[trial == 1, weight1_fe := rec_fn(weight)]
-                popn[trial == 2, weight2_fe := rec_fn(weight)]
+                popn[trial == 1, weight1_fe := log_recentre(weight)]
+                popn[trial == 2, weight2_fe := log_recentre(weight)]
             } else {
                 popn[, weight_fe := 0]
-                popn[sdp == "progeny", weight_fe := rec_fn(weight)]
+                popn[sdp == "progeny", weight_fe := log_recentre(weight)]
             }
         }
 
@@ -742,8 +746,8 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
             )
 
             # Possibly already defined, maybe not
-            traits_to_fit <- model_traits[intersect(str_chars(IEs),
-                                                    str_chars(link_traits))]
+            ies <- str_chars(IEs) |> str_subset("_", negate = TRUE)
+            traits_to_fit <- model_traits[ies]
 
             XG <- Sigma_G[traits_to_fit, traits_to_fit] |> round(5)
             dimnames(XG) <- list(NULL, str_c(str_1st(traits_to_fit), "g"))
