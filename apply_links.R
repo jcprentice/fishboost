@@ -6,6 +6,8 @@
 #' @param params The list of model parameters
 #' @returns A new modified model parameters
 
+source("map_idxs.R")
+
 apply_links <- function(params) {
     {
         model_traits <- params$model_traits
@@ -52,9 +54,8 @@ apply_links <- function(params) {
 
     # Individual Effects ----
     if (IEs %notin% c("", "none", NA)) {
-        ids <- get_idxs(IEs)
-        i1 <- ids$i1
-        i2 <- ids$i2
+        i1 <- get_lidx(IEs, model_traits)
+        i2 <- get_idx(IEs, model_traits)
 
         # Copy rows and columns in Sigma and cov matrix
         params2$Sigma_G[i2, i2] <- Sigma_G[i1, i1, drop = FALSE]
@@ -95,9 +96,8 @@ apply_links <- function(params) {
 
     # Fixed Effects ----
     walk(names(FEs), \(FE) {
-        ix <- get_idxs(FEs[[FE]])
-        i1 <- ix$i1
-        i2 <- ix$i2
+        i1 <- get_lidx(FEs[[FE]], model_traits)
+        i2 <- get_idx(FEs[[FE]], model_traits)
 
         params2$fe_vals[FE, i2] <<- params$fe_vals[FE, i1] |> unname()
 
