@@ -1,3 +1,9 @@
+{
+    library(data.table)
+    library(stringr)
+    library(purrr)
+}
+
 # Quick first and last n
 first <- function(x, n = 1) x[seq(1, min(n, length(x)))]
 last <- function(x, n = 1) x[seq(max(length(x) - n + 1, 1), length(x))]
@@ -42,7 +48,7 @@ table_to_tsv_string <- function(x, row_names = FALSE, col_names = FALSE,
         {\(x) str_c("\n", x, "\n")}()
 }
 
-# message a list
+# Message a list
 capture_message <- function(x) {
     x |> print() |> capture.output() |> str_flatten("\n") |> message()
 }
