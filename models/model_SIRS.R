@@ -20,8 +20,10 @@ model_SIRS <- function(popn, params) {
     Xgroups <- init_popn(popn, params) |>
         split(by = "group")
 
-    # Each group is independent, so it seems to be about ~33% faster to split
-    # them by group, run them separately, then recombine them.
+    # function for appending to list unless only element is NA
+    nax <- function(x, y) {
+        if (length(x) == 1 && is.na(x[[1]])) y else c(x, y)
+    }
 
     Y <- map(Xgroups, \(X) {
         X[, names(.SD) := map(.SD, ~ map(.x, ~ .x)), .SDcols = c("Tinf", "Trec", "Tdeath")]
@@ -68,25 +70,24 @@ model_SIRS <- function(popn, params) {
                 epi_time <- epi_time + dt
 
                 # randomly select individual
-                id_next_event <- samp1(X$inf_rate)
+                id_next_event <- sample(nrow(X), 1L, prob = X$inf_rate)
 
-                xi <- X[, sample(x = .N,
-                                 size = 1L,
-                                 prob = inf * (status == "I"))]
+                xi <- X[, sample(.N, 1L, prob = inf * (status == "I"))]
                 infd_by <- X$id[[xi]]
                 next_gen <- X$generation[[xi]] + 1L
 
                 sirs_path <- generate_sirs_path(epi_time, X, id_next_event, params)
-                X[id_next_event, `:=`(
-                    status = "I",
-                    Tinf   = map(Tinf,   append, sirs_path[[2]]),
-                    Trec   = map(Tinf,   append, sirs_path[[3]]),
-                    Tdeath = map(Tdeath, append, sirs_path[[4]])
-                )]
 
-                ni_events[I == id_next_event, time := as.numeric(sirs_path[-(1:2)])]
+                set(X, id_next_event,
+                    c("status", "Tinf", "Trec", "Tdeath", "generation", "infected_by"),
+                    list("I",
+                         nax(X$Tinf[[id_next_event]], epi_time),
+                         nax(X$Trec[[id_next_event]], sirs_path[[1]]),
+                         nax(X$Tdeath[[id_next_event]], sirs_path[[2]]),
+                         nax(X$generation[[id_next_event]], next_gen),
+                         nax(X$infected_by[[id_next_event]], infd_by)))
 
-                set(X, id_next_event, c("generation", "infected_by"), list(next_gen, infd_by))
+                ni_events[I == id_next_event, time := sirs_path]
 
                 if (DEBUG) message("ID ", id_next_event, ": S -> I, infected by ID ", infd_by)
             } else {
@@ -138,7 +139,7 @@ model_SIRS <- function(popn, params) {
 
     # tidy up X
     Y[, c("group_inf", "inf_rate") := NULL]
-    Y[, parasites := !is.na(Tinf)]
+    Y[, parasites := !is.na(map_dbl(Tinf, last))]
 
     # fix generation
     # X[status == "R" & donor == 0L, generation := 2L]
@@ -151,11 +152,9 @@ model_SIRS <- function(popn, params) {
 # A Susceptible individual's future disease trajectory is fixed at the point of
 # exposure.
 generate_sirs_path <- function(epi_time, X, id, params) {
-    with(params, {
-        Tinf   <- epi_time
-        Trec   <- Tinf + rgamma(1L, RP_shape, scale = RP_scale * X$tol[[id]])
-        Tdeath <- Trec + rgamma(1L, RP_shape, scale = RP_scale * X$tol[[id]])
-
-        list("I", Tinf, TRec, Tdeath)
-    })
+    with(params,
+        rgamma(2L, c(RP_shape, RP_shape),
+               scale = c(RP_scale * X$tol[[id]],
+                         RP_scale * X$tol[[id]])) |>
+        cumsum() + epi_time)
 }

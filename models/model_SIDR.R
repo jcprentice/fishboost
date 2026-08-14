@@ -46,7 +46,7 @@ model_SIDR <- function(popn, params) {
             if (is.na(t_next_event)) t_next_event <- Inf
 
             if (DEBUG) message("Next NI event id = ", id_next_event,
-                " at t = ", signif(t_next_event, 5))
+                               " at t = ", signif(t_next_event, 5))
 
             # generate random timestep ----
             total_inf_rate <- sum(X$inf_rate)
@@ -63,20 +63,19 @@ model_SIDR <- function(popn, params) {
                 epi_time <- epi_time + dt
 
                 # randomly select individual
-                id_next_event <- samp1(X$inf_rate)
+                id_next_event <- sample(nrow(X), 1L, prob = X$inf_rate)
 
-                xi <- X[, sample(x = .N,
-                                 size = 1L,
-                                 prob = inf * (status %in% c("I", "D")))]
+                xi <- X[, sample(.N, 1L, prob = inf * (status %in% c("I", "D")))]
                 infd_by <- X$id[[xi]]
                 next_gen <- X$generation[[xi]] + 1L
 
                 sidr_path <- generate_sidr_path(epi_time, X, id_next_event, params)
-                set(X, id_next_event, c("status", "Tinf", "Tsign", "Tdeath"), sidr_path)
 
-                ni_events[I == id_next_event, time := as.numeric(sidr_path[-(1:2)])]
+                set(X, id_next_event,
+                    c("status", "Tinf", "Tsign", "Tdeath", "generation", "infected_by"),
+                    c("I", epi_time, as.list(sidr_path), next_gen, infd_by))
 
-                set(X, id_next_event, c("generation", "infected_by"), list(next_gen, infd_by))
+                ni_events[I == id_next_event, time := sidr_path]
 
                 if (DEBUG) message("ID ", id_next_event, ": S -> I, infected by ID ", infd_by)
             } else {
@@ -97,6 +96,7 @@ model_SIDR <- function(popn, params) {
                 } else {
                     message("status = ", status)
                     print(X[, .(group, donor, status, Tinf, Tsign, Tdeath, group_inf, inf_rate)])
+                    print(X[id_next_event, .(group, donor, status, Tinf, Tsign, Tdeath, group_inf, inf_rate)])
                     stop("selected ID ", id_next_event, "... unexpected event!")
                     break
                 }
@@ -133,11 +133,10 @@ model_SIDR <- function(popn, params) {
 # A Susceptible individual's future disease trajectory is fixed at the point of
 # exposure.
 generate_sidr_path <- function(epi_time, X, id, params) {
-    with(params, {
-        Tinf   <- epi_time
-        Tsign  <- Tinf  + rgamma(1L, DP_shape, scale = DP_scale * X$det[[id]])
-        Tdeath <- Tsign + rgamma(1L, RP_shape, scale = RP_scale * X$tol[[id]])
-
-        list("I", Tinf, Tsign, Tdeath)
-    })
+    with(params,
+         rgamma(2L, c(DP_shape, RP_shape),
+                scale = c(DP_scale * X$det[[id]],
+                          RP_scale * X$tol[[id]])) |>
+             cumsum() + epi_time)
 }
+
