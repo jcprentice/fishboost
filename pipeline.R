@@ -30,8 +30,7 @@ run_from_script <- length(cmd_args) > 0
         vars = 0.5, # c(0.5, 1.5, 0, 0, 0.5)
         cors = 0.2, # c(0.2, ..., 0.2)
         group_layout = "fishboost", # "random", "family", "striped", "fishboost"
-        FEs = list(trial = "_ittt", donor = "_ittt", txd = "_ittt",
-                   weight = "sittt", weight1 = "sittt", weight2 = "sittt"),
+        FEs = list(trial = "_ittt", donor = "_ittt", txd = "_ittt", weight = "sittt"),
         weight_is_nested = TRUE,
         sim_new_data = "bici" # "no", "r", "bici", "summary_sim", "summary_inf"
     )
