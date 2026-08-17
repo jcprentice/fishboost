@@ -2,7 +2,7 @@
 # track of everything that's been loaded already.
 
 safe_source <- function(...) {
-    if (!exists("source_is_loaded")) {
+    if ("source_is_loaded" %notin% names(.GlobalEnv)) {
         .GlobalEnv$source_is_loaded <- c()
     }
 
