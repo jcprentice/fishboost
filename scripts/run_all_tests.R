@@ -3,21 +3,23 @@
     library(data.table)
     library(purrr)
 
-    source("fix_H_links.R")
-    source("scripts/check_convergence.R")
-    source("scripts/posterior.R")
-    source("scripts/get_covariances.R")
-    source("scripts/plot_ebvs.R")
-    source("scripts/plot_ebvs2.R")
-    source("scripts/pars_errorbars.R")
-    source("scripts/pars_bias.R")
-    source("scripts/tornadoes.R")
-    source("scripts/km_plots.R")
-    source("scripts/model_fit_dev.R")
-    source("plotting/plot_chains.R")
-    source("plotting/plot_correlations.R")
-    source("pred_accs.R")
-    source("get_ds_times.R")
+    safe_source(
+        "fix_H_links.R",
+        "scripts/check_convergence.R",
+        "scripts/posterior.R",
+        "scripts/get_covariances.R",
+        "scripts/plot_ebvs.R",
+        "scripts/plot_ebvs2.R",
+        "scripts/pars_errorbars.R",
+        "scripts/pars_bias.R",
+        "scripts/tornadoes.R",
+        "scripts/km_plots.R",
+        "scripts/model_fit_dev.R",
+        "plotting/plot_chains.R",
+        "plotting/plot_correlations.R",
+        "pred_accs.R",
+        "get_ds_times.R"
+    )
 }
 
 run_all_tests <- function(dataset = "fb-test",

@@ -7,7 +7,7 @@
     library(cowplot)
     # library(ggh4x)
 
-    source("utils.R")
+    safe_source("utils.R")
 }
 
 # gg_colour_hue <- function(n) {
@@ -344,3 +344,7 @@ if (FALSE) {
     out_fb_test <- model_fit_dev("fb-test", 0, "")
     out_fb_qtest <- model_fit_dev("fb-qtest", 0, "")
 }
+
+
+source_is_loaded <- union(source_is_loaded, "scripts/model_fit_dev.R")
+

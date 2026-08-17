@@ -6,11 +6,13 @@
     library(ggtext)
     library(cowplot)
 
-    source("utils.R")
-    source("get_plot_matrix.R")
-    source("rename_pars.R")
-    source("fes_to_vals.R")
-    source("figures/theme_natcom.R")
+    safe_source(
+        "utils.R",
+        "get_plot_matrix.R",
+        "rename_pars.R",
+        "fes_to_vals.R",
+        "figures/theme_natcom.R"
+    )
 }
 
 pars_errorbars <- function(dataset = "fb-test",
@@ -239,3 +241,7 @@ if (FALSE) {
     pars_errorbars("sim-test-inf2", 0, "Validating BICI on Simulated data")
     pars_errorbars("sim-events", 0, "Testing BICI's handling of events")
 }
+
+
+source_is_loaded <- union(source_is_loaded, "scripts/pars_errorbars.R")
+

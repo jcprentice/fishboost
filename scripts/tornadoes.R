@@ -2,9 +2,11 @@
     library(purrr)
     library(stringr)
 
-    source("plotting/plot_tornadoes.R")
-    source("utils.R")
-    source("get_plot_matrix.R")
+    safe_source(
+        "plotting/plot_tornadoes.R",
+        "utils.R",
+        "get_plot_matrix.R"
+    )
 }
 
 tornadoes <- function(dataset = "fb-test", scens = 0, combine = TRUE) {
@@ -67,3 +69,7 @@ if (FALSE) {
     tornadoes("sim-test-inf1")
     tornadoes("sim-test-inf2")
 }
+
+
+source_is_loaded <- union(source_is_loaded, "scripts/tornadoes.R")
+

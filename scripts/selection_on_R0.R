@@ -1,11 +1,9 @@
-{
-    source("libraries.R")
-    source("source_files.R")
-    source("crop.R")
-    source("set_cors.R")
-    library(purrr)
-    library(ggplot2)
-}
+safe_source(
+    "libraries.R",
+    "source_files.R",
+    "crop.R",
+    "set_cors.R"
+)
 
 
 ## Set parameters ----

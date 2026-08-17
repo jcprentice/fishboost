@@ -436,3 +436,7 @@ plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
 if (FALSE) {
     p1 <- plot_ebvs("fb-test", 1, 1)
 }
+
+
+source_is_loaded <- union(source_is_loaded, "scripts/plot_ebvs.R")
+

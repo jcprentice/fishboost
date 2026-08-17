@@ -4,7 +4,7 @@
     library(ggplot2)
     library(ggtext)
 
-    source("get_R0.R")
+    safe_source("get_R0.R")
 }
 
 files <- list.files("datasets/sim-r0/data", "summary_sim",

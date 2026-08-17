@@ -4,9 +4,11 @@
     library(purrr)
     library(cowplot)
 
-    source("utils.R")
-    source("get_plot_matrix.R")
-    source("plotting/plot_posteriors.R")
+    safe_source(
+        "utils.R",
+        "get_plot_matrix.R",
+        "plotting/plot_posteriors.R"
+    )
 }
 
 get_posterior <- function(dataset = "fb-test", scen = 1, rep = 1,
@@ -86,3 +88,7 @@ if (FALSE) {
     # get_posteriors(dataset = "sim-base-inf", scens = 5, reps = 1:5, combine = FALSE)
     # walk(scens, \(i) get_posterior(dataset, i, 1))
 }
+
+
+source_is_loaded <- union(source_is_loaded, "scripts/posterior.R")
+

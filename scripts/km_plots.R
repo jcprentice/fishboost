@@ -3,13 +3,15 @@
     library(stringr)
     library(purrr)
 
-    source("summary_to_km.R")
-    source("generate_km_data_sire.R")
-    source("generate_km_data_bici.R")
-    source("run_bici_sim.R")
-    source("plotting/plot_km_sire_trial.R")
-    source("plotting/plot_km_donor_trial.R")
-    source("plotting/plot_km_family_trial.R")
+    safe_source(
+        "summary_to_km.R",
+        "generate_km_data_sire.R",
+        "generate_km_data_bici.R",
+        "run_bici_sim.R",
+        "plotting/plot_km_sire_trial.R",
+        "plotting/plot_km_donor_trial.R",
+        "plotting/plot_km_family_trial.R"
+    )
 }
 
 km_plots <- function(dataset = "fb-test",
@@ -179,4 +181,6 @@ if (FALSE) {
     km_plots(dataset, scens, simulate_new_data, opts, plot_opts)
 }
 
+
+source_is_loaded <- union(source_is_loaded, "scripts/km_plots.R")
 

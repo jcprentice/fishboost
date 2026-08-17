@@ -6,10 +6,12 @@
     library(ggtext)
     library(cowplot)
 
-    source("utils.R")
-    source("rename_pars.R")
-    source("fes_to_vals.R")
-    source("figures/theme_natcom.R")
+    safe_source(
+        "utils.R",
+        "rename_pars.R",
+        "fes_to_vals.R",
+        "figures/theme_natcom.R"
+    )
 }
 
 pars_bias <- function(dataset = "fb-test",
@@ -153,3 +155,7 @@ if (FALSE) {
     pars_bias("sim-test-inf2", 0, "Validating BICI on Simulated data")
     pars_bias("sim-events", 0, "Testing BICI's handling of events")
 }
+
+
+source_is_loaded <- union(source_is_loaded, "scripts/pars_bias.R")
+

@@ -2,7 +2,7 @@
     library(stringr)
     library(purrr)
 
-    source("plotting/plot_covariances.R")
+    safe_source("plotting/plot_covariances.R")
 }
 
 get_covariances <- function(dataset = "fb-test", scen = 2) {
@@ -58,3 +58,7 @@ get_covariances <- function(dataset = "fb-test", scen = 2) {
         })
     }
 }
+
+
+source_is_loaded <- union(source_is_loaded, "scripts/get_covariances.R")
+

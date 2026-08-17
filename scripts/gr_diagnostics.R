@@ -5,7 +5,7 @@
     library(xtable)
     library(stringr)
 
-    source("rename_pars.R")
+    safe_source("rename_pars.R")
 }
 
 

@@ -5,7 +5,7 @@
     library(HDInterval)
     library(xtable)
 
-    source("rename_pars.R")
+    safe_source("rename_pars.R")
 }
 
 # dataset <- "fb-fes3"; scens <- 1:12

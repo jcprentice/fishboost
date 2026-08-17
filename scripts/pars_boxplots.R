@@ -5,9 +5,11 @@
     library(ggplot2)
     library(cowplot)
 
-    source("utils.R")
-    source("get_plot_matrix.R")
-    source("rename_pars.R")
+    safe_source(
+        "utils.R",
+        "get_plot_matrix.R",
+        "rename_pars.R"
+    )
 }
 
 pars_boxplots <- function(dataset = "fb-test",
