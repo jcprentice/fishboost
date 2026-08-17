@@ -68,6 +68,3 @@ summary_to_km <- function(dataset = "fb-test", scens = 0, opts, bici_cmd = "post
     km_data
 }
 
-
-source_is_loaded <- union(source_is_loaded, "summary_to_km.R")
-

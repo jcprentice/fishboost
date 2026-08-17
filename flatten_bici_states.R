@@ -313,7 +313,3 @@ flatten_bici_states <- function(params) {
 # out <- flatten_bici_states("testing", "scen-1-1", "sim")
 # out <- flatten_bici_states("testing", "scen-1-1", "post-sim")
 
-
-
-source_is_loaded <- union(source_is_loaded, "flatten_bici_states.R")
-

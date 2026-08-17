@@ -23,6 +23,3 @@ widen_priors <- function(priors) {
     priors
 }
 
-
-source_is_loaded <- union(source_is_loaded, "widen_priors.R")
-

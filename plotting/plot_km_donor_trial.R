@@ -216,6 +216,3 @@ plot_km_donor_trial <- function(data_list, plot_opts = NULL) {
 
 }
 
-
-source_is_loaded <- union(source_is_loaded, "plotting/plot_km_donor_trial.R")
-

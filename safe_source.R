@@ -8,7 +8,9 @@ safe_source <- function(...) {
 
     for (s in list(...)) {
         if (s %notin% source_is_loaded) {
+            message("- sourcing '", s, "'")
             source(s)
+            .GlobalEnv$source_is_loaded <- union(.GlobalEnv$source_is_loaded, s)
         }
     }
 }

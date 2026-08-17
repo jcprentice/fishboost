@@ -94,6 +94,3 @@ set_phenotypes <- function(popn, params) {
     popn2
 }
 
-
-source_is_loaded <- union(source_is_loaded, "set_phenotypes.R")
-

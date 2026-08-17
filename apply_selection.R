@@ -44,5 +44,3 @@ apply_selection <- function(popn, params) {
     popn2
 }
 
-source_is_loaded <- union(source_is_loaded, "apply_selection.R")
-

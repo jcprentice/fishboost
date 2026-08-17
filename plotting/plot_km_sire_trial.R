@@ -266,6 +266,3 @@ plot_km_sire_trial <- function(data_list, plot_opts = NULL) {
     list(plt = plt, data = data_t2)
 }
 
-
-source_is_loaded <- union(source_is_loaded, "plotting/plot_km_sire_trial.R")
-

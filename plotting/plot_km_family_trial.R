@@ -245,6 +245,3 @@ plot_km_family_trial <- function(data_list, plot_opts = NULL) {
     list(plt = plt, data = data_svm)
 }
 
-
-source_is_loaded <- union(source_is_loaded, "plotting/plot_km_family_trial.R")
-

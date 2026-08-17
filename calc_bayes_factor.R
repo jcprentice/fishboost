@@ -59,6 +59,3 @@ dataset <- "fb-final"; scen <- 1
 
 BFs <- calc_bayes_factor(dataset, scen)
 
-
-source_is_loaded <- union(source_is_loaded, "calc_bayes_factor.R")
-

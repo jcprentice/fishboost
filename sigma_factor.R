@@ -25,7 +25,3 @@ q <- 0.95
 sigma2f(sigma, q)
 check_s2f(sigma, q)
 
-
-
-source_is_loaded <- union(source_is_loaded, "sigma_factor.R")
-

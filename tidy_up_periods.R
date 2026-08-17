@@ -33,6 +33,3 @@ tidy_up_periods <- function(params, protocol = NULL) {
     params2
 }
 
-
-source_is_loaded <- union(source_is_loaded, "tidy_up_periods.R")
-

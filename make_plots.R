@@ -171,6 +171,3 @@ plot_SIS <- function(popn, params) {
         theme_bw()
 }
 
-
-source_is_loaded <- union(source_is_loaded, "make_plots.R")
-

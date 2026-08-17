@@ -13,6 +13,3 @@ theme_natcom <- function() {
           axis.ticks = element_line(linewidth = 0.5 / .pt))
 }
 
-
-source_is_loaded <- union(source_is_loaded, "figures/theme_natcom.R")
-

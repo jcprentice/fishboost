@@ -114,6 +114,3 @@ gwas <- function(dataset = "fb-test", scen = 1, rep = 1) {
     })
 }
 
-
-source_is_loaded <- union(source_is_loaded, "gwas.R")
-

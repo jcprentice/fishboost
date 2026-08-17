@@ -208,6 +208,3 @@ make_time_series_sis <- function(popn, params) {
         melt("time")
 }
 
-
-source_is_loaded <- union(source_is_loaded, "make_time_series.R")
-

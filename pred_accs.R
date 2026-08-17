@@ -220,6 +220,3 @@ if (FALSE) {
                           parents = if (parents_only) "-parents" else ""))
 }
 
-
-source_is_loaded <- union(source_is_loaded, "pred_accs.R")
-

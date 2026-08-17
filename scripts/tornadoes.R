@@ -70,6 +70,3 @@ if (FALSE) {
     tornadoes("sim-test-inf2")
 }
 
-
-source_is_loaded <- union(source_is_loaded, "scripts/tornadoes.R")
-

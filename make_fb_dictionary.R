@@ -139,6 +139,3 @@ make_fb_dictionary <- function() {
     fb_dict
 }
 
-
-source_is_loaded <- union(source_is_loaded, "make_fb_dictionary.R")
-

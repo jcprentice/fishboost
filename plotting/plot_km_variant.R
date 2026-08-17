@@ -93,6 +93,3 @@ plot_km_variant <- function(data_list,
     list(plt = plt, data = data_t0)
 }
 
-
-source_is_loaded <- union(source_is_loaded, "plotting/plot_km_variant.R")
-

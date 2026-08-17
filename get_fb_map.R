@@ -81,7 +81,3 @@ get_fb_map <- function() {
          fb_to_pp = id_map2)
 }
 
-
-source_is_loaded <- union(source_is_loaded, "get_fb_map.R")
-
-

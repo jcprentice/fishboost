@@ -151,6 +151,3 @@ plot_correlations <- function(dataset = "fb-test", scen = 1, rep = 1) {
     plts
 }
 
-
-source_is_loaded <- union(source_is_loaded, "plotting/plot_correlations.R")
-

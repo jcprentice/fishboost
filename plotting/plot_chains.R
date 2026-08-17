@@ -144,6 +144,3 @@ if (FALSE) {
     walk2(scens, reps, \(scen, rep) plot_chains(dataset, scen, rep))
 }
 
-
-source_is_loaded <- union(source_is_loaded, "plotting/plot_chains.R")
-

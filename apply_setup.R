@@ -63,5 +63,3 @@ apply_setup <- function(setup, params) {
     params
 }
 
-source_is_loaded <- union(source_is_loaded, "apply_setup.R")
-

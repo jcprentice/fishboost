@@ -144,6 +144,3 @@ make_matrices_from_priors <- function(priors1, params) {
          cov_E = sigma2cov(Sigma_E))
 }
 
-
-source_is_loaded <- union(source_is_loaded, "make_matrices.R")
-

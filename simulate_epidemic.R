@@ -9,7 +9,3 @@ simulate_epidemic <- function(popn, params) {
     get(f)(popn, params)
 }
 
-
-
-source_is_loaded <- union(source_is_loaded, "simulate_epidemic.R")
-

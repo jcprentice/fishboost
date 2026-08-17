@@ -277,6 +277,3 @@ rebuild_sire_posteriors <- function(dataset = "fb-final",
     xp
 }
 
-
-source_is_loaded <- union(source_is_loaded, "rebuild_posteriors.R")
-

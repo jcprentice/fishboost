@@ -85,8 +85,3 @@ set_groups <- function(popn, params) {
     popn2
 }
 
-
-
-
-source_is_loaded <- union(source_is_loaded, "set_groups.R")
-

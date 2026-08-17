@@ -15,6 +15,3 @@ clean_bici_files <- function(params) {
     }
 }
 
-
-source_is_loaded <- union(source_is_loaded, "clean_bici_files.R")
-

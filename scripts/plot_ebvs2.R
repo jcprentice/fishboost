@@ -183,6 +183,3 @@ if (FALSE) {
     p2 <- plot_ebvs2("sim-base-inf", 1, 1)
 }
 
-
-source_is_loaded <- union(source_is_loaded, "scripts/plot_ebvs2.R")
-

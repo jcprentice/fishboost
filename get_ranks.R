@@ -60,6 +60,3 @@ get_ranks <- function(popn, estimated_BVs, params, verbose = FALSE) {
     ranks <- BVs[, map(.SD, rank)]
 }
 
-
-source_is_loaded <- union(source_is_loaded, "get_ranks.R")
-

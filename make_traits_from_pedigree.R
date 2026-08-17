@@ -125,6 +125,3 @@ make_traits_from_pedigree <- function(popn, params) {
     popn2
 }
 
-
-source_is_loaded <- union(source_is_loaded, "make_traits_from_pedigree.R")
-

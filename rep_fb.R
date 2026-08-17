@@ -36,6 +36,3 @@ rep_fb <- function(n = 2, base = "fb_12") {
 
 rep_fb(2)
 
-
-source_is_loaded <- union(source_is_loaded, "rep_fb.R")
-

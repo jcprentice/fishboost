@@ -282,6 +282,3 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
          scenario = scen)
 }
 
-
-source_is_loaded <- union(source_is_loaded, "plotting/plot_posteriors.R")
-

@@ -23,6 +23,3 @@ get_R0 <- function(popn) {
     mget(c("R0", "state_R0", "group_R0"))
 }
 
-
-source_is_loaded <- union(source_is_loaded, "get_R0.R")
-

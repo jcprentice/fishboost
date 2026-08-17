@@ -38,6 +38,3 @@ crop <- function(popn, trait = "r0", prop = 0.2) {
     popn3
 }
 
-
-source_is_loaded <- union(source_is_loaded, "crop.R")
-

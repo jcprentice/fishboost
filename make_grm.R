@@ -68,6 +68,3 @@ make_A_matrix <- function(popn) {
     GRM
 }
 
-
-source_is_loaded <- union(source_is_loaded, "make_grm.R")
-

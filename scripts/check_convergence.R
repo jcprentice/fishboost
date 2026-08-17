@@ -76,6 +76,3 @@ if (FALSE) {
     out$summary
 }
 
-
-source_is_loaded <- union(source_is_loaded, "scripts/check_convergence.R")
-

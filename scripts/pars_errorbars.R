@@ -242,6 +242,3 @@ if (FALSE) {
     pars_errorbars("sim-events", 0, "Testing BICI's handling of events")
 }
 
-
-source_is_loaded <- union(source_is_loaded, "scripts/pars_errorbars.R")
-

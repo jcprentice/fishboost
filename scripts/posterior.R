@@ -89,6 +89,3 @@ if (FALSE) {
     # walk(scens, \(i) get_posterior(dataset, i, 1))
 }
 
-
-source_is_loaded <- union(source_is_loaded, "scripts/posterior.R")
-

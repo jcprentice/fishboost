@@ -127,6 +127,3 @@ generate_km_data_sire <- function(dataset = "fb-final",
                   opts))
 }
 
-
-source_is_loaded <- union(source_is_loaded, "generate_km_data_sire.R")
-

@@ -317,6 +317,3 @@ patch_params <- function(params, trace_row = 0) {
     params2
 }
 
-
-source_is_loaded <- union(source_is_loaded, "patch_params.R")
-

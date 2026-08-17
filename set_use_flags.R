@@ -77,6 +77,3 @@ set_use_flags <- function(params) {
     params
 }
 
-
-source_is_loaded <- union(source_is_loaded, "set_use_flags.R")
-

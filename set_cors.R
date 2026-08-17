@@ -16,6 +16,3 @@ set_cors <- function(X, cors) {
     X
 }
 
-
-source_is_loaded <- union(source_is_loaded, "set_cors.R")
-

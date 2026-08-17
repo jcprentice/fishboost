@@ -563,6 +563,3 @@ make_parameters <- function(
     params
 }
 
-
-source_is_loaded <- union(source_is_loaded, "make_parameters.R")
-

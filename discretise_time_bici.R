@@ -101,6 +101,3 @@ discretise_time_bici <- function(popn, params) {
     }) |> rbindlist()
 }
 
-
-source_is_loaded <- union(source_is_loaded, "discretise_time_bici.R")
-

@@ -181,6 +181,3 @@ if (FALSE) {
     km_plots(dataset, scens, simulate_new_data, opts, plot_opts)
 }
 
-
-source_is_loaded <- union(source_is_loaded, "scripts/km_plots.R")
-

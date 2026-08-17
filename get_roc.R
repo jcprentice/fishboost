@@ -63,6 +63,3 @@ plot_roc_curves <- function(ranks, p = 0.8) {
     plt_roc
 }
 
-
-source_is_loaded <- union(source_is_loaded, "get_roc.R")
-

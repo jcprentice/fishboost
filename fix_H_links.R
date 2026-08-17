@@ -22,6 +22,3 @@ fix_H_links <- function(...) {
     })
 }
 
-
-source_is_loaded <- union(source_is_loaded, "fix_H_links.R")
-

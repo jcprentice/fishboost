@@ -98,5 +98,3 @@ basic_km <- function(popn, params) {
     plt
 }
 
-source_is_loaded <- union(source_is_loaded, "basic_km.R")
-

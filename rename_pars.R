@@ -140,6 +140,3 @@ param_order <- c(
 
 full_param_order <- pretty_names(param_order)
 
-
-source_is_loaded <- union(source_is_loaded, "rename_pars.R")
-

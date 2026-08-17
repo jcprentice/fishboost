@@ -59,6 +59,3 @@ if (FALSE) {
     )
 }
 
-
-source_is_loaded <- union(source_is_loaded, "map_idxs.R")
-

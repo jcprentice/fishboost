@@ -345,6 +345,3 @@ if (FALSE) {
     out_fb_qtest <- model_fit_dev("fb-qtest", 0, "")
 }
 
-
-source_is_loaded <- union(source_is_loaded, "scripts/model_fit_dev.R")
-

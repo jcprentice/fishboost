@@ -77,6 +77,3 @@ fes_to_vals <- function(dataset = "fb-lp", scen = 1, rep = 1) {
 #                RP = params$RP)]
 # }
 
-
-source_is_loaded <- union(source_is_loaded, "fes_to_vals.R")
-

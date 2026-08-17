@@ -59,6 +59,3 @@ run_bici_sim <- function(dataset = "fb-test",
 # etc <- run_bici_sim(dataset = "fb-test", "scen-1-1", "post-sim", 50)
 # etc <- run_bici_sim(dataset = "sim-test2", "scen-1-1", "post-sim", 50)
 
-
-source_is_loaded <- union(source_is_loaded, "run_bici_sim.R")
-

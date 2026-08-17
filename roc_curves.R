@@ -87,6 +87,3 @@ for (slider in seq(0L, 100L, by = 10L)) {
            plts, width = 1000, height = 500, units = "px")
 }
 
-
-source_is_loaded <- union(source_is_loaded, "roc_curves.R")
-

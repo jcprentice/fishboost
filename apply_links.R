@@ -118,4 +118,3 @@ apply_links <- function(params) {
     params2
 }
 
-source_is_loaded <- c(source_is_loaded, "apply_links.R")

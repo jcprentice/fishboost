@@ -36,6 +36,3 @@ install_base <- function() {
                        "microbenchmark"))
 }
 
-
-source_is_loaded <- union(source_is_loaded, "libraries.R")
-

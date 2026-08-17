@@ -19,6 +19,3 @@ inc_seed <- function(params) {
     writeLines(lines, f)
 }
 
-
-source_is_loaded <- union(source_is_loaded, "inc_seed.R")
-

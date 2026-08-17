@@ -87,6 +87,3 @@ get_plot_matrix <- function(pars, plt_shape = "traits") {
          nr = nrow(plt_mat))
 }
 
-source_is_loaded <- union(source_is_loaded, "get_plot_matrix.R")
-
-
