@@ -3,7 +3,7 @@
     library(purrr)
     library(stringr)
 
-    source("utils.R")
+    safe_source("utils.R")
 }
 
 # Overview ----

@@ -83,3 +83,6 @@ plot_tornadoes <- function(dataset = "sim-test-inf1",
     plts
 }
 
+
+source_is_loaded <- union(source_is_loaded, "plotting/plot_tornadoes.R")
+

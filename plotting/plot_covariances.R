@@ -281,3 +281,7 @@ plot_covariances <- function(dataset = "fb-test",
 
 # out <- plot_covariances("fb-final", 1, 1, "hpdi")
 # out <- plot_covariances("fb-final-old", 1, 1, "hpdi")
+
+
+source_is_loaded <- union(source_is_loaded, "plotting/plot_covariances.R")
+

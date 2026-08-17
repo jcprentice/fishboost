@@ -6,7 +6,7 @@
     library(ggeasy)
     library(ggh4x)
 
-    # source("scripts/km_plots.R")
+    # safe_source("scripts/km_plots.R")
 }
 
 get_auc <- function(dataset = "fb-final",

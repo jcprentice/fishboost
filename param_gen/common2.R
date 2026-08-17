@@ -23,3 +23,6 @@ common2$nsample_per_gen <- max(3e-3 * common2$nsample, 1)
 cols <-  c("dataset", "description", "scenario", "replicate", "label",
            "name", "sim_new_data", "model_type", "setup")
 
+
+# Unlike other source files, this one may need to be re-sourced continually
+source_is_loaded <- setdiff(source_is_loaded, "param_gen/common2.R")

@@ -869,4 +869,4 @@ generate_bici_script <- function(popn, params, clean_dirs = TRUE) {
     })
 }
 
-source_is_loaded <- union(source_is_loaded, "generate_bici_script")
+source_is_loaded <- union(source_is_loaded, "generate_bici_script.R")

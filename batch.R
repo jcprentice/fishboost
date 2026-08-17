@@ -3,7 +3,9 @@
 ## Load libraries and source files ----
 
 suppressPackageStartupMessages({
-    safe_source("libraries.R", "source_files.R")
+    source("safe_source.R")
+    safe_source("libraries.R",
+                "source_files.R")
 })
 
 time_start <- now()

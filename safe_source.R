@@ -1,0 +1,14 @@
+# Adds a check to avoid re-sourcing files all over the place, also lets you keep
+# track of everything that's been loaded already.
+
+safe_source <- function(...) {
+    if (!exists("source_is_loaded")) {
+        .GlobalEnv$source_is_loaded <- c()
+    }
+
+    for (s in list(...)) {
+        if (s %notin% source_is_loaded) {
+            source(s)
+        }
+    }
+}

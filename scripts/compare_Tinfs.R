@@ -6,7 +6,7 @@
     library(ggeasy)
     library(ggh4x)
 
-    source("get_Tinfs.R")
+    safe_source("get_Tinfs.R")
 }
 
 compare_Tinfs <- function(dataset = "sim-test1", scen = 1, itn = 1) {

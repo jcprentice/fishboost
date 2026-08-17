@@ -4,7 +4,7 @@
     library(purrr)
     library(stringr)
 
-    source("fes_to_vals.R")
+    safe_source("fes_to_vals.R")
 }
 
 draw_event_times <- function(dataset = "fb-test", scen = 1, rep = 1) {

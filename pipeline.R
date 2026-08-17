@@ -6,6 +6,7 @@
 ## Load libraries and source files ----
 
 suppressPackageStartupMessages({
+    source("safe_source.R")
     safe_source("libraries.R",
                 "source_files.R")
 })
