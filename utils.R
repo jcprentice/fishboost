@@ -94,6 +94,12 @@ samp1 <- function(prob, x = NULL) {
     }
 }
 
+# Standard error of mean
+sem <- function(x, na.rm = TRUE) {
+    x1 <- if (na.rm) x[!is.na(x)] else x
+    sqrt(var(x1) / length(x1))
+}
+
 
 # This function handles list columns, preventing lists of lists
 dt_row_to_list <- function(x) {
