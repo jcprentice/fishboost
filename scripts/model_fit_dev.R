@@ -53,7 +53,7 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
     # Extract RMS deviance for each id, family, trial / Tsign, RP
     fit <- map(km_data, \(x) {
         if (FALSE) {
-            i <- 7; x <- copy(km_data[[i]])
+            i <- 2; x <- copy(km_data[[i]])
         }
 
         # Set full-sib family combination
@@ -153,41 +153,62 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
         # x3 <- x3[tmp %in% ids_to_keep]
         # x3[, tmp := NULL]
 
-        # Take mean and SEM over all sim values
+        if (FALSE) {
+            x4 <- x3[, .(survival_mean = mean(survival, na.rm = TRUE),
+                         survival_sem = sem(survival),
+                         wt = first(wt)),
+                     .(family, trial, variable, time, src)]
 
-        sem <- function(x) {
-            x1 <- na.omit(x)
-            sqrt(var(x1) / length(x1))
+            x5 <- x4 |>
+                dcast(... ~ src, value.var = c("survival_mean",
+                                               "survival_sem",
+                                               "wt"))
+            x5[, survival_sem_fb := NULL]
+            x5[, `:=`(dev = abs(survival_mean_sim - survival_mean_fb) * wt_fb,
+                      sem = survival_sem_sim * wt_fb)]
+
+            # Reduce to summary statistics
+            x6 <- x5[, .(mad_all   = sum(dev),
+                         mad_Tsign = sum(dev[variable == "Tsign"]),
+                         mad_RP    = sum(dev[variable == "RP"]),
+
+                         rms_all   = sqrt(sum(dev^2)),
+                         rms_Tsign = sqrt(sum(dev[variable == "Tsign"]^2)),
+                         rms_RP    = sqrt(sum(dev[variable == "RP"]^2)),
+
+                         sem_all   = sum(sem),
+                         sem_Tsign = sum(sem[variable == "Tsign"]),
+                         sem_RP    = sum(sem[variable == "RP"]))] |> #,
+                # .(family, trial)] |>
+                melt(measure.vars = measure(type, variable,
+                                            pattern = "(mad|sem|rms)_(.*)"))
+            x6
+        } else {
+            x7 <- x3[, .(survival = survival * wt),
+                     .(id, family, trial, variable, time, src)]
+            x7[, I := seq(.N), id]
+            x7[, dev := abs(survival - last(survival)), I]
+            x8_mad <- x7[id != last(id),
+                         .(mad_all   = sum(dev),
+                           mad_Tsign = sum(dev[variable == "Tsign"]),
+                           mad_RP    = sum(dev[variable == "RP"])),
+                         id]
+            x8_rms <- x7[id != last(id),
+                         .(rms_all   = sqrt(sum(dev^2)),
+                           rms_Tsign = sqrt(sum(dev[variable == "Tsign"]^2)),
+                           rms_RP    = sqrt(sum(dev[variable == "RP"]^2))),
+                         id]
+            x9 <- cbind(
+                x8_mad[, map(.SD, mean), .SDcols = -"id"],
+                x8_rms[, map(.SD, mean), .SDcols = -"id"],
+                x8_mad[, map(.SD, sem),  .SDcols = -"id"] |>
+                    setnames(\(x) str_replace_all(x, "mad", "sem"))
+            )
+            x10 <- x9 |>
+                melt(measure.vars = measure(type, variable,
+                                            pattern = "(mad|rms|sem)_(.*)"))
+            x10
         }
-
-        x4 <- x3[, .(survival_mean = mean(survival, na.rm = TRUE),
-                     survival_sem = sem(survival),
-                     wt = first(wt)),
-                 .(family, trial, variable, time, src)]
-
-        x5 <- x4 |>
-            dcast(... ~ src, value.var = c("survival_mean",
-                                           "survival_sem", "wt"))
-        x5[, survival_sem_fb := NULL]
-        x5[, `:=`(dev = abs(survival_mean_sim - survival_mean_fb) * wt_fb,
-                  sem = survival_sem_sim * wt_fb)]
-
-        # Reduce to summary statistics
-        x6 <- x5[, .(mad_all   = sum(dev),
-                     mad_Tsign = sum(dev[variable == "Tsign"]),
-                     mad_RP    = sum(dev[variable == "RP"]),
-
-                     rms_all   = sqrt(sum(dev^2)),
-                     rms_Tsign = sqrt(sum(dev[variable == "Tsign"]^2)),
-                     rms_RP    = sqrt(sum(dev[variable == "RP"]^2)),
-
-                     sem_all   = sum(sem),
-                     sem_Tsign = sum(sem[variable == "Tsign"]),
-                     sem_RP    = sum(sem[variable == "RP"]))] |> #,
-                 # .(family, trial)] |>
-            melt(measure.vars = measure(type, variable,
-                                        pattern = "(mad|sem|rms)_(.*)"))
-        x6
     }) |>
         rbindlist(idcol = "scen")
 
