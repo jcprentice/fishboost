@@ -1,5 +1,8 @@
-library(stringr)
-library(purrr)
+{
+    library(data.table)
+    library(stringr)
+    library(purrr)
+}
 
 datasets <- list.files("datasets")
 
@@ -8,8 +11,8 @@ walk(datasets, \(ds) {
 
     walk(files, \(f) {
         x <- readRDS(f)
-        names(x$params)[which(names(x$params) == "use_traits")] <- "ies"
-        # saveRDS(x, f)
+        names(x$params)[which(names(x$params) == "use_traits")] <- "IEs"
+        saveRDS(x, f)
     })
 })
 
