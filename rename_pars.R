@@ -55,7 +55,7 @@ html_names <- function(pars) {
           "Tr([12])" = "Trial \\1",
           "sigma" = "Group Effect",
           "^cov_" = "Var_",
-          "^r_" = "Cor_",
+          "^r_" = "Corr_",
           "_G_" = "<sub>A</sub>_",
           "_E_" = "<sub>E</sub>_",
           "_P_" = "<sub>P</sub>_",
@@ -93,7 +93,7 @@ pretty_names <- function(pars) {
           "Tr([12])" = "Trial \\1",
           "sigma" = "Group Effect",
           "^cov_" = "Var_",
-          "^r_" = "Cor_",
+          "^r_" = "Corr_",
           "_G_" = "_Gen_",
           "_E_" = "_Env_",
           "_P_" = "_PT_",
@@ -121,7 +121,7 @@ sildt1 <- str_chars("sildt")
 sildt2 <- str_c(sildt1, sildt1)
 xy <- c("si", "sl", "sd", "st", "il", "id", "it", "ld", "lt", "dt")
 
-fes <- expand.grid(sildt,
+fes <- expand.grid(sildt1,
                    c("trial", "donor", "txd", "weight", "weight1", "weight2")) |>
     rev() |> apply(1, str_flatten, "_")
 
