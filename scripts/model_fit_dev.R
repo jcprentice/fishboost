@@ -116,7 +116,7 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
         if (FALSE) {
             # Weight by no. of points and by 1 / time covered
             x2[, `:=`(wt1 = .N,
-                      wt2 = max(time[time < tmax[trial]], na.rm = TRUE)),
+                      wt2 = min(max(time, na.rm = TRUE), tmax[trial])),
                .(id, family, trial, variable)]
             x2[, wt := {
                 x <- (wt1 * mean(wt2)) / (mean(wt1) * wt2)
@@ -154,6 +154,7 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
         # x3[, tmp := NULL]
 
         if (FALSE) {
+            # Mean and SE across id
             x4 <- x3[, .(survival_mean = mean(survival, na.rm = TRUE),
                          survival_sem = sem(survival),
                          wt = first(wt)),
@@ -184,77 +185,103 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
                                             pattern = "(mad|sem|rms)_(.*)"))
             x6
         } else {
-            x7 <- x3[, .(survival = survival * wt),
-                     .(id, family, trial, variable, time, src)]
-            x7[, I := seq(.N), id]
-            x7[, dev := abs(survival - last(survival)), I]
-            x8_mad <- x7[id != last(id),
-                         .(mad_all   = sum(dev),
-                           mad_Tsign = sum(dev[variable == "Tsign"]),
-                           mad_RP    = sum(dev[variable == "RP"])),
-                         id]
-            x8_rms <- x7[id != last(id),
-                         .(rms_all   = sqrt(sum(dev^2)),
-                           rms_Tsign = sqrt(sum(dev[variable == "Tsign"]^2)),
-                           rms_RP    = sqrt(sum(dev[variable == "RP"]^2))),
-                         id]
-            x9 <- cbind(
-                x8_mad[, map(.SD, mean), .SDcols = -"id"],
-                x8_rms[, map(.SD, mean), .SDcols = -"id"],
-                x8_mad[, map(.SD, sem),  .SDcols = -"id"] |>
-                    setnames(\(x) str_replace_all(x, "mad", "sem"))
-            )
-            x10 <- x9 |>
-                melt(measure.vars = measure(type, variable,
-                                            pattern = "(mad|rms|sem)_(.*)"))
-            x10
+            # Use bootstrapping to obtain mean and SD
+
+            # Split by id
+            s1 <- split(x3, by = "id")
+            n <- length(s1)
+
+            x8 <- map(1:2000, \(i) {
+                # Sample with replacement 1..n-1, n is the actual value
+                ids <- c(sample(n-1, replace = TRUE), n)
+                s3 <- rbindlist(s1[ids])
+
+                # Mean and SE across resampled id
+                x4 <- s3[, .(survival_mean = mean(survival, na.rm = TRUE),
+                             wt = first(wt)),
+                         .(family, trial, variable, time, src)]
+
+                x5 <- x4 |>
+                    dcast(... ~ src, value.var = c("survival_mean", "wt"))
+                x5[, dev := abs(survival_mean_sim - survival_mean_fb) * wt_fb]
+
+                # Reduce to summary statistics
+                x6 <- x5[, .(mad_all   = sum(dev),
+                             mad_Tsign = sum(dev[variable == "Tsign"]),
+                             mad_RP    = sum(dev[variable == "RP"]),
+
+                             rms_all   = sqrt(sum(dev^2)),
+                             rms_Tsign = sqrt(sum(dev[variable == "Tsign"]^2)),
+                             rms_RP    = sqrt(sum(dev[variable == "RP"]^2)))] |> #,
+                    # .(family, trial)] |>
+                    melt(measure.vars = measure(type, variable,
+                                                pattern = "(mad|rms)_(.*)"))
+                x6
+            }) |>
+                rbindlist(idcol = "id")
+            x8
+            # x8[, .(value = mean(value), sem = sem(value)), .(type, variable)]
         }
     }) |>
-        rbindlist(idcol = "scen")
+        rbindlist(idcol = "scen") # fit <- ...
+
+
 
     fit[, scen := ordered(labels[scen],
                           levels = str_sort(labels, numeric = TRUE))]
+    setkey(fit, NULL)
 
     # fit[, `:=`(scen = factor(str_c("s", scen), levels = labels),
     #            id = format(id),
     #            family = format(family),
     #            trial = format(trial))]
-    setorder(fit, scen, variable)
+    setorder(fit, scen, type, variable)
 
-    fit_summary <- fit |> dcast(scen ~ ..., value.var = "value")
+    fit_summary <- fit[, .(mean = mean(value),
+                           sd = sd(value)),
+                       .(scen, type, variable)] |>
+        dcast(scen ~ ..., value.var = c("mean", "sd"))
     fit_summary[, map_if(.SD, is.numeric, round, 1)]
 
-    fit_wide <- fit |> dcast(... ~ type, value.var = "value")
-    fit_summary[, map_if(.SD, is.numeric, round, 2)]
+    fit_wide <- fit[, .(mean = mean(value),
+                        lo = hdi(value)[["lower"]],
+                        hi = hdi(value)[["upper"]]),
+                    .(scen, type, variable)] |>
+        dcast(... ~ type, value.var = c("mean", "lo", "hi"))
+    fit_wide[, map_if(.SD, is.numeric, round, 2)]
 
-    fit_wide[, trial := fcase(str_detect(scen, "[123]"), "Trial 1",
-                              str_detect(scen, "[456]"), "Trial 2",
-                              str_detect(scen, "[789]"), "Trials 1+2")]
-    fit_wide[, model := fcase(str_detect(scen, "[147]"), "SS Endurance",
-                              str_detect(scen, "[258]"), "MS Endurance",
-                              str_detect(scen, "[369]"), "No Variance")]
-    fit_wide[, model := ordered(model, levels = c("SS Endurance",
-                                                  "MS Endurance",
-                                                  "No Variance"))]
-    for_paper <- fit_wide[variable == "all" & !str_detect(scen, "[456]")]
+    fit2 <- copy(fit)
+    fit2[, trial := fcase(str_detect(scen, "[123]"), "Trial 1",
+                          str_detect(scen, "[456]"), "Trial 2",
+                          str_detect(scen, "[789]"), "Trials 1+2")]
+    fit2[, model := fcase(str_detect(scen, "[147]"), "SS End",
+                          str_detect(scen, "[258]"), "MS End",
+                          str_detect(scen, "[369]"), "Homogeneous")]
+    fit2[, model := ordered(model, levels = c("SS End", "MS End", "Homogeneous"))]
+    fit2 <- fit2[variable == "all" & !str_detect(scen, "[456]")]
+    for_paper <- fit2[type == "mad",
+                      .(mean = mean(value),
+                        lo = hdi(value)[["lower"]],
+                        hi = hdi(value)[["upper"]]),
+                      .(scen, variable, trial, model)]
 
     p1 <- ggplot(for_paper,
-           aes(colour = variable)) +
-        geom_point(aes(x = model, y = mad),
-                   show.legend = FALSE) +
-        geom_errorbar(aes(x = model,
-                          ymin = mad - sem, ymax = mad + sem),
+           aes(x = model,
+               y = mean,
+               colour = variable)) +
+        geom_point(show.legend = FALSE) +
+        geom_errorbar(aes(ymin = lo, ymax = hi),
                       width = 0.2,
                       show.legend = FALSE) +
-        scale_y_continuous(limits = ~ range(.x, 0)) +
+        # scale_y_continuous(limits = ~ range(.x, 0)) +
         scale_colour_discrete("Measurements",
                             breaks = c("all", "Tsign", "RP"),
                             # values = gg_colour_hue(3),
                             labels = c("Combined", "Tsign", "RP")) +
         labs(colour = "Measure",
              x = "Model",
-             y = "Sum Absolute Deviation",
-             title = "Sum Absolute Deviation by Trial and Model") +
+             y = "F",
+             title = "Fitness Metric F by Trial and Model with 95% HDI") +
         facet_wrap(vars(trial),
                    scales = "free") +
         theme_bw() +
