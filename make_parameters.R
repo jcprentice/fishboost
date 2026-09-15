@@ -405,7 +405,7 @@ make_parameters <- function(
         }
     }
 
-    fes <- colnames(FE_vals)
+    fes <- rownames(FE_vals)
     fe_p <- expand.grid(t1, fes) |> rev() |> apply(1, str_flatten, "_")
     fe_priors <- data.table(parameter = fe_p, true_val = 0,
                             type = "uniform", val1 = -4, val2 = 4)
