@@ -121,7 +121,7 @@ pars_errorbars <- function(dataset = "fb-test",
           "Overfitting MSE to No Vars",
           "Overfitting MSE to ST",
           "Testing h2=0",
-          "Underfitting MSE to Cors=0",
+          "Underfitting MSE to Corrs=0",
           "Underfitting MSE to All vars",
           "Underfitting none to SSE")
     } else {
