@@ -8,8 +8,7 @@ summarise_parameters <- function(params) {
         } else if (sim_new_data == "summary_ps") {
             message("Using data simulated in BICI from posterior")
         } else {
-            message(str_glue("Simulating new {model_type} data via {x}",
-                             x = str_to_upper(sim_new_data)))
+            message(str_glue("Simulating new {model_type} data via {sim_new_data}"))
         }
 
         message(str_glue(
