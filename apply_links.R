@@ -109,7 +109,7 @@ apply_links <- function(params) {
     })
 
     # Ensure weight_is_nested is respected
-    wt <- if (weight_is_nested) "weight\\d_" else "weight_"
+    wt <- if (weight_is_nested) "weight_" else "weight\\d_"
     priors[str_starts(parameter, wt), use := FALSE]
 
     # Copy updated values back into params2
