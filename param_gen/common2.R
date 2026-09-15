@@ -25,4 +25,4 @@ cols <-  c("dataset", "description", "scenario", "replicate", "label",
 
 
 # Unlike other source files, this one may need to be re-sourced continually
-source_is_loaded <- setdiff(source_is_loaded, "param_gen/common2.R")
+src_loaded <- setdiff(src_loaded, "param_gen/common2.R")
