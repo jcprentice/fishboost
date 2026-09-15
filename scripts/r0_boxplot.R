@@ -4,7 +4,8 @@
     library(ggplot2)
     library(ggtext)
 
-    safe_source("get_R0.R")
+    safe_source("get_R0.R",
+                "figures/theme_natcom.R")
 }
 
 files <- list.files("datasets/sim-r0/data", "summary_sim",
@@ -12,7 +13,8 @@ files <- list.files("datasets/sim-r0/data", "summary_sim",
 
 x <- map(files, readRDS)
 
-types <- ordered(rep(c("none", "sus", "inf", "tol", "r0"), each = length(x) / 5),
+types <- ordered(rep(c("none", "sus", "inf", "tol", "r0"),
+                     each = length(x) / 5),
                  levels = c("none", "sus", "inf", "tol", "r0"))
 
 # Average traits
@@ -85,7 +87,8 @@ p1 <- ggplot(r0s,
          y = "R<sub>0</sub>",
          title = "R<sub>0</sub> vs selection") +
     facet_wrap(. ~ type) +
-    theme_classic() +
+    theme_natcom() +
+    # theme_classic() +
     theme(plot.title = element_markdown(),
           axis.title.y = element_markdown())
 print(p1)
@@ -121,10 +124,16 @@ p2 <- ggplot(r0s[type == "group_rep"],
                labeller = labeller(
                    group = c("1" = "Trial 1",
                              "2" = "Trial 1+2"))) +
-    theme_bw() +
+    theme_natcom() +
+    # theme_classic() +
     theme(plot.title = element_markdown(),
           axis.title.y = element_markdown())
 print(p2)
 
-ggsave("gfx/R0_selection_trials12.png", p2,
-       width = 6, height = 6)
+wt <- 9.9
+ht <- wt * 3/4
+
+ggsave("gfx/R0_selection.png", p2,
+       width = wt, height = ht, units = "cm")
+ggsave("gfx/R0_selection.pdf", p2,
+       width = wt, height = ht, units = "cm")
