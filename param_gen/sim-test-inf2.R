@@ -19,14 +19,14 @@ dataset <- "sim-test-inf2"
 # Variable parameters ----
 protocol <- rbind(
     # Misspecified models
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d2, (Correct model)"),                # 1
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d5, (Overfitting SITTT to none)"),    # 2
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d6, (Overfitting SITTT to ST)"),      # 3
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d9, (Testing h2=0)"),                 # 4
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d8, (Underfitting SITTT to Cors=0)"), # 5
-    data.table(d = "FB_1_rpw, GEV SITTT, Weight SITTT, Fit d7, (Underfitting SITTT to SILDT)"),  # 6
-    data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit d1, (Underfitting none to SIT)"),     # 7
-    data.table(d = "FB_1_rpw, GEV none,  Weight SITTT, Fit d2, (Underfitting none to SITTT)"),   # 8
+    data.table(d = "FB_1_rpw, IEs SITTT, Weight SITTT, Fit d2, (Correct model)"),                 # 1
+    data.table(d = "FB_1_rpw, IEs SITTT, Weight SITTT, Fit d5, (Overfitting SITTT to none)"),     # 2
+    data.table(d = "FB_1_rpw, IEs SITTT, Weight SITTT, Fit d6, (Overfitting SITTT to ST)"),       # 3
+    data.table(d = "FB_1_rpw, IEs SITTT, Weight SITTT, Fit d9, (Testing h2=0)"),                  # 4
+    data.table(d = "FB_1_rpw, IEs SITTT, Weight SITTT, Fit d8, (Underfitting SITTT to Corrs=0)"), # 5
+    data.table(d = "FB_1_rpw, IEs SITTT, Weight SITTT, Fit d7, (Underfitting SITTT to SILDT)"),   # 6
+    data.table(d = "FB_1_rpw, IEs none,  Weight SITTT, Fit d1, (Underfitting none to SIT)"),      # 7
+    data.table(d = "FB_1_rpw, IEs none,  Weight SITTT, Fit d2, (Underfitting none to SITTT)"),    # 8
 
     fill = TRUE
 )
@@ -35,10 +35,7 @@ protocol <- rbind(
 protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
 
 # Genetic & Environmental Variance
-protocol[, GEV := get_part(d, "GEV ") |> str_to_lower(), .I]
-protocol[GEV == "sittt", `:=`(IEs = "sildt", link_traits = "sittt")]
-protocol[GEV != "sittt", IEs := GEV]
-protocol[, GEV := NULL]
+protocol[, IEs := get_part(d, "IEs") |> str_to_lower(), .I]
 
 protocol[, `:=`(vars = list(list(default = 0)),
                 cors = list(list(default = 0)))]

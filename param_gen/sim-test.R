@@ -19,16 +19,16 @@ dataset <- "sim-test"
 # Variable parameters ----
 protocol <- rbind(
     # Basic models
-    data.table(d = "FB_1_rpw,  GEV SIT,   Weight SIT,   Fit s1, GRM pedigree"), # 1
-    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SITTT, Fit s2, GRM pedigree"), # 2
-    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit s7, GRM pedigree"), # 3
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit s8, GRM pedigree"), # 4
+    data.table(d = "FB_1_rpw,  IEs SIT,   Weight SIT,   Fit s1, GRM pedigree"), # 1
+    data.table(d = "FB_1_rpw,  IEs SITTT, Weight SITTT, Fit s2, GRM pedigree"), # 2
+    data.table(d = "FB_12_rpw, IEs SIT,   Weight SIT,   Fit s7, GRM pedigree"), # 3
+    data.table(d = "FB_12_rpw, IEs SITTT, Weight SITTT, Fit s8, GRM pedigree"), # 4
 
-    data.table(d = "FB_1_rpw, GEV none,   Weight SITTT, Fit s2, GRM pedigree"), # 5
-    data.table(d = "FB_1_rpw, GEV ST,     Weight SITTT, Fit s2, GRM pedigree"), # 6
-    data.table(d = "FB_1_rpw, GEV SILDT,  Weight SITTT, Fit s2, GRM pedigree"), # 7
-    data.table(d = "FB_1_rpw, GEV SITTT,  Weight SITTT, Fit s2, Cors 0, GRM pedigree"), # 8
-    data.table(d = "FB_1_rpw, GEV SITTT,  Weight SITTT, Fit s2, h2 0, GRM pedigree"), # 9
+    data.table(d = "FB_1_rpw, IEs none,   Weight SITTT, Fit s2, GRM pedigree"), # 5
+    data.table(d = "FB_1_rpw, IEs ST,     Weight SITTT, Fit s2, GRM pedigree"), # 6
+    data.table(d = "FB_1_rpw, IEs SILDT,  Weight SITTT, Fit s2, GRM pedigree"), # 7
+    data.table(d = "FB_1_rpw, IEs SITTT,  Weight SITTT, Fit s2, Corrs 0, GRM pedigree"), # 8
+    data.table(d = "FB_1_rpw, IEs SITTT,  Weight SITTT, Fit s2, h2 0, GRM pedigree"), # 9
 
     fill = TRUE
 )
@@ -38,11 +38,9 @@ protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
 
 protocol[, use_grm := get_part(d, "GRM"), .I]
 
-# Handle Genetic & Environmental Variance (GEV)
-protocol[, GEV := get_part(d, "GEV") |> str_to_lower(), .I]
-protocol[, IEs := GEV]
-protocol[GEV == "sittt", `:=`(IEs = "sildt", link_traits = "sittt")]
-protocol[, GEV := NULL]
+# Handle Genetic & Environmental Variance (IEs)
+protocol[, IEs := get_part(d, "IEs") |> str_to_lower(), .I]
+
 protocol[str_detect(d, "h2"), h2 := get_part(d, "h2") |> as.numeric(), .I]
 protocol[str_detect(d, "h2"), override_h2 := TRUE]
 
@@ -61,14 +59,14 @@ protocol[, weight_fe := get_part(d, "Weight") |> str_to_lower(), .I]
 # Vars and Cors
 protocol[, `:=`(vars = list(list(default = 0)),
                 cors = list(list(default = 0)))]
-protocol[str_detect(d, "Cors 0"), `:=`(cors = list(list(0)),
-                                       skip_patches = "cor")]
-protocol[str_detect(d, "GEV SILDT"), `:=`(vars = list(list(default = 0.5)),
+protocol[str_detect(d, "Corrs 0"), `:=`(cors = list(list(0)),
+                                        skip_patches = "cor")]
+protocol[str_detect(d, "IEs SILDT"), `:=`(vars = list(list(default = 0.5)),
                                           cors = list(list(default = 0.2)))]
 
 # Skip patches when we want 0 variance
-protocol[str_detect(d, "GEV ST"), skip_patches := "_[GE]_.?i.?"]
-protocol[str_detect(d, "GEV none"), skip_patches := "ies"]
+protocol[str_detect(d, "IEs ST"), skip_patches := "_[GE]_.?i.?"]
+protocol[str_detect(d, "IEs none"), skip_patches := "ies"]
 
 
 

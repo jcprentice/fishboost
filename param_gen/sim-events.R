@@ -33,13 +33,12 @@ protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
 source("param_gen/common2.R")
 
 common <- list(sim_new_data = "summary_sim",
-               IEs = "sildt",
-               link_traits = "sittt",
+               IEs = "sittt",
+               FEs = list(trial = "", donor = "", txd = "", weight = "sittt"),
                use_grm = "pedigree", # "HG_inv",
                inf_model = "S=pC",
                traits_source = "posterior", # should this be GRM?
                use_weight = "log",
-               weight_fe = "sittt",
                weight_is_nested = TRUE,
                cov_prior = list(type = "default", vals = c()),
                single_prior = "inverse",

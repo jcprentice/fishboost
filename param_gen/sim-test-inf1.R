@@ -19,11 +19,11 @@ dataset <- "sim-test-inf1"
 # Variable parameters ----
 protocol <- rbind(
     # Basic models for Trial 1
-    data.table(d = "FB_1_rpw,  GEV SIT,   Weight SIT,   Fit d1"), # 1
-    data.table(d = "FB_1_rpw,  GEV SITTT, Weight SITTT, Fit d2"), # 2
+    data.table(d = "FB_1_rpw,  IEs SIT,   Weight SIT,   Fit d1"), # 1
+    data.table(d = "FB_1_rpw,  IEs SITTT, Weight SITTT, Fit d2"), # 2
     # Basic models for both Trials
-    data.table(d = "FB_12_rpw, GEV SIT,   Weight SIT,   Fit d3"), # 3
-    data.table(d = "FB_12_rpw, GEV SITTT, Weight SITTT, Fit d4"), # 4
+    data.table(d = "FB_12_rpw, IEs SIT,   Weight SIT,   Fit d3"), # 3
+    data.table(d = "FB_12_rpw, IEs SITTT, Weight SITTT, Fit d4"), # 4
 
     fill = TRUE
 )
@@ -32,10 +32,7 @@ protocol <- rbind(
 protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
 
 # Genetic & Environmental Variance
-protocol[, GEV := get_part(d, "GEV ") |> str_to_lower(), .I]
-protocol[GEV == "sittt", `:=`(IEs = "sildt", link_traits = "sittt")]
-protocol[GEV != "sittt", IEs := GEV]
-protocol[, GEV := NULL]
+protocol[, IEs := get_part(d, "IEs ") |> str_to_lower(), .I]
 
 
 # Handle FEs

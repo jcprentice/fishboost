@@ -19,18 +19,17 @@ dataset <- "sim-r0"
 # Variable parameters ----
 protocol <- rbind(
     # Basic models
-    data.table(d = "FB_1_rpw, GEV SIT, Weight SIT, Fit s1"),                 # 1
-    data.table(d = "FB_1_rpw, GEV SIT, Weight SIT, Fit s1, Select sus 0.2"), # 2
-    data.table(d = "FB_1_rpw, GEV SIT, Weight SIT, Fit s1, Select inf 0.2"), # 3
-    data.table(d = "FB_1_rpw, GEV SIT, Weight SIT, Fit s1, Select tol 0.2"), # 4
-    data.table(d = "FB_1_rpw, GEV SIT, Weight SIT, Fit s1, Select r0 0.2"),  # 5
+    data.table(d = "FB_1_rpw, IEs SIT, Weight SIT, Fit s1"),                 # 1
+    data.table(d = "FB_1_rpw, IEs SIT, Weight SIT, Fit s1, Select sus 0.2"), # 2
+    data.table(d = "FB_1_rpw, IEs SIT, Weight SIT, Fit s1, Select inf 0.2"), # 3
+    data.table(d = "FB_1_rpw, IEs SIT, Weight SIT, Fit s1, Select tol 0.2"), # 4
+    data.table(d = "FB_1_rpw, IEs SIT, Weight SIT, Fit s1, Select r0 0.2"),  # 5
 
     fill = TRUE
 )
 
 protocol[, `:=`(select_on = get_part(d, "Select", 2),
                 select_top = get_part(d, "Select", 3) |> as.numeric()), .I]
-
 
 
 # Common options ----
@@ -43,7 +42,6 @@ common <- list(sim_new_data = "bici",
                traits_source = "pedigree",
                model_type = "SEIDR",
                IEs = "sit",
-               link_traits = "sildt",
                inf_model = "S=pC",
                traits_source = "none",
                group_effect = -1,
