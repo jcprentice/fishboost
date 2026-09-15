@@ -22,8 +22,8 @@ if (run_from_script) {
     pname <- cmd_args[[1]]
     row_no <- as.integer(cmd_args[[2]])
 } else {
-    pname <- "fb-test"
-    row_no <- 1L
+    pname <- "sim-events"
+    row_no <- 61L
 }
 
 {
