@@ -11,7 +11,7 @@
     source("figures/theme_natcom.R")
 }
 
-fig_pars_bias <- function(dataset = "sim-test-inf1", scens = 0) {
+fig_pars_zscore <- function(dataset = "sim-test-inf1", scens = 0) {
     if (FALSE) {
         dataset <- "sim-test-inf1"; scens <- 0
         dataset <- "sim-test-inf2"; scens <- 0
@@ -56,8 +56,7 @@ fig_pars_bias <- function(dataset = "sim-test-inf1", scens = 0) {
            parameter := str_replace(parameter, "weight_", str_c("weight", setup, "_"))]
         pe[!str_starts(parameter, "G_|Group"),
            .(parameter,
-             bias1 = median - true_val,
-             bias2 = (median - true_val) / sd)]
+             zscore = (median - true_val) / sd)]
     }) |>
         rbindlist(idcol = "scen", fill = TRUE) |>
         _[, scen := scens_str[scen] |> str_split_i("-", 2) |> as.integer()]
@@ -69,7 +68,7 @@ fig_pars_bias <- function(dataset = "sim-test-inf1", scens = 0) {
     html_pars <- html_names(pars) |>
         setNames(pars)
 
-    setorder(x, parameter, bias2)
+    setorder(x, parameter, zscore)
 
     # Set lvl names
     lvls <- if (dataset == "sim-test-inf1") {
@@ -95,12 +94,12 @@ fig_pars_bias <- function(dataset = "sim-test-inf1", scens = 0) {
             i <- 1
             par <- pars[[i]]
         }
-        x1 <- x[parameter == par, .(scen, bias = bias2)]
-        x2 <- x1[, .(mu  = mean(bias),
-                     min = hdi(bias)[["lower"]],
-                     max = hdi(bias)[["upper"]]),
+        x1 <- x[parameter == par, .(scen, zscore)]
+        x2 <- x1[, .(mu  = mean(zscore),
+                     min = hdi(zscore)[["lower"]],
+                     max = hdi(zscore)[["upper"]]),
                  scen]
-        mu_x1 <- x1[, .(mu = mean(bias)), scen]
+        mu_x1 <- x1[, .(mu = mean(zscore)), scen]
         mu_x1[, scen := as.integer(scen)]
 
         ggplot(x1) +
@@ -112,7 +111,7 @@ fig_pars_bias <- function(dataset = "sim-test-inf1", scens = 0) {
                        x2,
                        colour = "red",
                        size = 2 * l2p) +
-            # geom_boxplot(aes(x = scen, y = bias),
+            # geom_boxplot(aes(x = scen, y = zscore),
             #              x1,
             #              fill = "tomato",
             #              colour = "black",
@@ -162,7 +161,7 @@ fig_pars_bias <- function(dataset = "sim-test-inf1", scens = 0) {
 
     ht <- if (length(trials) == 1) 17 * 2 / 3 else 17
 
-    plt_str <- str_glue("gfx/{dataset}-pars-bias")
+    plt_str <- str_glue("gfx/{dataset}-pars-zscore")
     ggsave(str_glue("{plt_str}.pdf"), plt,
            width = 18.3, height = ht, units = "cm", dpi = "print")
     ggsave(str_glue("{plt_str}.png"), plt,
@@ -172,6 +171,6 @@ fig_pars_bias <- function(dataset = "sim-test-inf1", scens = 0) {
 }
 
 if (FALSE) {
-    fig_pars_bias("sim-test-inf1")
-    fig_pars_bias("sim-test-inf2")
+    fig_pars_zscore("sim-test-inf1")
+    fig_pars_zscore("sim-test-inf2")
 }
