@@ -55,6 +55,27 @@ sbc <- function(dataset = "sim-test-inf1", scen = 2) {
         priors[str_starts(parameter, "r_"), prior_var := 1 / (2 * 1.2 + 1)]
     }
 
+
+    if (FALSE) {
+        params <- intersect(param_order, priors$parameter)
+        out <- map(params, \(par) {
+            tv <- priors[parameter == par, true_val]
+            out <- tc[, mean(get(par) < tv), id][, .(id, rank = sort(V1))]
+            ggplot(out) +
+                aes(x = id, y = rank) +
+                # stat_ecdf() +
+                geom_point() +
+                geom_smooth(method = "lm",
+                            se = FALSE) +
+                labs(x = "ID",
+                     y = "Rank",
+                     title = pretty_names(par)) +
+                theme_bw()
+        }) |> setNames(params)
+        plot_grid(plotlist = out)
+    }
+
+
     x[, Param := pretty_names(parameter)]
 
     x1 <- merge(x, priors[, .(parameter, prior_var)], by = "parameter", all.x = TRUE)
@@ -64,12 +85,14 @@ sbc <- function(dataset = "sim-test-inf1", scen = 2) {
     x1[, rank := NULL]
 
     pb <- x1[!is.na(true_val),
-      .(coverage = mean(hdi95min < true_val & true_val < hdi95max),
-        z_score = mean((median - true_val) / sd) |> round(2),
-        contraction = mean(1 - sd^2 / prior_var) |> round(2)),
+      .(coverage    = fifelse(hdi95min < true_val & true_val < hdi95max, 1, 0),
+        z_score     = (median - true_val) / sd,
+        contraction = 1 - sd^2 / prior_var),
       Param]
 
-    pb
+    pbm <- pb[, .SD |> map(mean) |> map(round, 2), Param]
+
+    pbm
 }
 
 
