@@ -193,7 +193,8 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
 
             x8 <- map(1:2000, \(i) {
                 # Sample with replacement 1..n-1, n is the actual value
-                ids <- c(sample(n-1, replace = TRUE), n)
+                # The first one gives the true mean
+                ids <- if (i == 1) 1:n else c(sample(n-1, replace = TRUE), n)
                 s3 <- rbindlist(s1[ids])
 
                 # Mean and SE across resampled id
@@ -224,8 +225,6 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
         }
     }) |>
         rbindlist(idcol = "scen") # fit <- ...
-
-
 
     fit[, scen := ordered(labels[scen],
                           levels = str_sort(labels, numeric = TRUE))]
