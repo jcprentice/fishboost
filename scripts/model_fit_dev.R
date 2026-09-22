@@ -236,6 +236,11 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
     #            trial = format(trial))]
     setorder(fit, scen, type, variable)
 
+    # Save to meta dir (give that dir something to do!)
+    meta_dir <- str_glue("datasets/{dataset}/meta")
+    if (!dir.exists(meta_dir)) dir.create(meta_dir)
+    saveRDS(fit, str_glue("{meta_dir}/fit.rds"))
+
     fit_summary <- fit[, .(mean = mean(value),
                            sd = sd(value)),
                        .(scen, type, variable)] |>
@@ -392,3 +397,11 @@ if (FALSE) {
     out_fb_qtest <- model_fit_dev("fb-qtest", 0, "")
 }
 
+
+if (FALSE) {
+    fit[scen %in% c("s7", "s8", "s9") & type == "mad" & variable == "all"] |>
+        ggplot() +
+        aes(x = value, fill = scen) +
+        geom_density(alpha = 0.5, position = "identity") +
+        theme_bw()
+}
