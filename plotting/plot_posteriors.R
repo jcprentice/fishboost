@@ -173,7 +173,9 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
             dd <- data.table(x = xp$value[[1]] * c(0.95, 1, 1.05),
                              y = c(0, 1, 0))
         } else {
-            dens <- density(xp$value, bw = "SJ", adjust = 1, cut = 0)
+            rng <- priors[parameter == par, .(val1, val2)] |> unlist()
+            dens <- density(xp$value, bw = "SJ", adjust = 1,
+                            from = rng[[1]], to = rng[[2]])
             dd <- with(dens, data.table(x, y))
         }
 

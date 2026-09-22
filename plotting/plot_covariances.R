@@ -136,7 +136,9 @@ plot_covariances <- function(dataset = "fb-test",
 
         xp_val <- x2[parameter == par, val]
 
-        dens <- density(xp_val, adjust = 1, cut = 0)
+        rng <- priors[parameter == par, .(val1, val2)] |> unlist()
+        dens <- density(xp_val, adjust = 1,
+                        from = rng[[1]], to = rng[[2]])
         dd <- with(dens, data.table(x, y))
         mx <- median(xp_val)
 

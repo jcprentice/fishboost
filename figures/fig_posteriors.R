@@ -133,6 +133,7 @@ fig_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1) {
                                type = "default", val1 = 0, val2 = 1,
                                true_val = 0.5, use = TRUE))
 
+    # Generate phenotype values
     walk(c("ss", "ii", "tt"), \(trait) {
         v2 <- priors[str_detect(parameter, str_c("cov_[GE]_", trait)), val2]
         tv <- priors[str_detect(parameter, str_c("cov_[GE]_", trait)), true_val]
@@ -169,7 +170,9 @@ fig_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1) {
             dd <- data.table(x = xp$value[[1]] * c(0.95, 1, 1.05),
                              y = c(0, 1, 0))
         } else {
-            dens <- density(xp$value, bw = "SJ", adjust = 1, cut = 0)
+            rng <- priors[parameter == par, .(val1, val2)] |> unlist()
+            dens <- density(xp$value, bw = "SJ", adjust = 1,
+                            from = rng[[1]], to = rng[[2]])
             dd <- with(dens, data.table(x, y))
         }
 
@@ -222,6 +225,7 @@ fig_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1) {
             message(str_glue("Define prior for parameter {par} with ",
                              "prior_type = '{prior_type}' "))
         }
+        # Scale the prior to make it a correct distribution
         prior[, y := y / sum(c(0, diff(x)) * y, na.rm = TRUE)]
 
         l2p <- 1 / ggplot2::.pt
@@ -287,4 +291,5 @@ fig_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1) {
     plt
 }
 
+fig_posteriors("fb-test", 2, 1)
 fig_posteriors("fb-test", 7, 1)
