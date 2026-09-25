@@ -6,56 +6,102 @@
     safe_source("utils.R")
 }
 
-calc_BF <- function(data, param = "cov_G_ii", params, pt = 0, pc = 1) {
+calc_BF <- function(par = "cov_G_ii", data, params, pt = 0, qnt = 0.01) {
     # pt: the fixed point to compare models (usually 0, but could take other
     # numbers, e.g. 1 for the shape of a gamma distribution)
     #
-    # pc: the percentage of the distribution around the fixed point
-
-    pc <- clamp(pc / 100, 0, 1)
-    prior_rng <- params$priors[parameter == param, c(val1, val2)]
-    width <- abs(diff(prior_rng))
+    # qnt: the quantile of the distribution around the fixed point
 
     # Can't calculate density for a fixed point (var = 0), so just return NA
-    if (var(data[[param]]) == 0) {
+    if (par %notin% params$priors$parameter || var(data[[par]]) == 0) {
         return(NA_real_)
     }
 
-    dens <- density(data[[param]],
-                    from = min(pt, prior_rng[[1]]),
-                    to   = max(pt, prior_rng[[2]]),
-                    bw = "SJ", adjust = 1, cut = 0)
+    # Get prior parameters
+    type <- params$priors[parameter == par, type]
+    A <- params$priors[parameter == par, val1]
+    B <- params$priors[parameter == par, val2]
+
+    pt <- clamp(pt, A, B)
+    c(A = A, pt = pt, B = B)
+
+    prior_dens <- if (type == "default") {
+        if (str_starts(par, "cov_")) {
+            # Half normal(0, 2)
+            dnorm(pt, 0, 2) * 2
+        } else {
+            # LKJ(1.2)
+            dbeta(pt / 2 + 0.5, 1.2, 1.2)
+        }
+    } else if (type == "inverse") {
+        1 / (pt * log(B / A))
+    } else if (type == "uniform") {
+        dunif(pt, A, B)
+    }
+    # prior_dens
+
+    # post_dens <- mean(between(data[[par]], a, b))
+
+
+    dens <- density(data[[par]],
+                    adjust = 1, # cut = 0, # bw = "SJ",
+                    from = A, to = B)
     dd <- with(dens, data.table(x, y))
-    area <- approx(dd$x, dd$y, pt)$y * width
-    signif(1 / area, 3)
+    post_dens <- approx(dd$x, dd$y, pt)$y
+
+    BF <- post_dens / prior_dens
+    BF
 }
 
 
-calc_bayes_factor <- function(dataset = "fb-final", scen = 1, pc = 1) {
-    # dataset <- "fb-final"; scen <- 1; pc <- 1
+calc_bayes_factor <- function(dataset = "fb-final", scen = 1, qnt = 0.01) {
+    if (FALSE) {
+        dataset <- "fb-test"; scen <- 2; qnt <- 0.01
+    }
 
     res <- readRDS(str_glue("datasets/{dataset}/results/scen-{scen}-1.rds"))
     params <- res$params
     data <- fread(str_glue("datasets/{dataset}/data/scen-{scen}-1-out/trace_combine.tsv"))
 
     data[, str_subset(names(.SD), "Group|state") := NULL]
-    param_names <- names(data)
+    pars <- names(data) |>
+        str_subset("^G_", negate = TRUE)
 
-    map_dbl(param_names, \(param) {
-        # param <- "cov_G_ii"
-        pt <- if (str_detect(param, "shape")) 1 else 0
-        BF <- calc_BF(data, param, params, pt, pc)
+    BFs <- map(pars, \(par) {
+        if (FALSE) {
+            i <- 1; par <- pars[[i]]
+        }
+
+        pt <- if (str_detect(par, "[LDR]P|shape|infrat")) {
+            1
+        } else if (str_detect(par, "beta")) {
+            0.5
+        } else {
+            0
+        }
+
+        BF <- calc_BF(par, data, params, pt, qnt) |> signif(3)
 
         # every sqrt(10) is worth 1 star
-        stars <- str_dup("*", min(abs(log10(BF)), 2) %/% 0.5)
+        stars <- if (is.na(BF)) {
+            NA_character_
+        } else if (BF > 1) {
+            str_dup("!", min(log10(BF), 1.5) %/% 0.5)
+        } else {
+            str_dup("*", min(-log10(BF), 1.5) %/% 0.5)
+        }
 
-        message(str_glue("{param} = {BF} {stars}"))
-        BF
-    }) |> set_names(param_names)
+        # message(str_glue("{par} != {pt}:\t{BF}\t{stars}"))
+        list(par = par, pt = pt, BF = BF, stars = stars)
+    }) |>
+        rbindlist()
+
+    BFs[!is.na(BF), .(par, pt, BF = signif(BF, 3), logBF = round(log10(BF), 2), stars)]
 }
 
-# dataset <- "fb-weight-grm"; scen <- 2
-dataset <- "fb-final"; scen <- 1
-
-BFs <- calc_bayes_factor(dataset, scen)
+if (FALSE) {
+    BFs_fb_test_s1 <- calc_bayes_factor("fb-test", 1)
+    BFs_fb_test_s2 <- calc_bayes_factor("fb-test", 2)
+    BFs_fb_test_s8 <- calc_bayes_factor("fb-test", 8)
+}
 
