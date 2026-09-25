@@ -399,9 +399,16 @@ if (FALSE) {
 
 
 if (FALSE) {
-    fit[scen %in% c("s7", "s8", "s9") & type == "mad" & variable == "all"] |>
+    scens <- 7:9
+    fit_plt <- fit[scen %in% str_c("s", scens) & type == "mad" & variable == "all"] |>
         ggplot() +
         aes(x = value, fill = scen) +
         geom_density(alpha = 0.5, position = "identity") +
+        labs(fill = "Scenario",
+             x = "Goodness of Fit, F",
+             y = "Density") +
         theme_bw()
+    fit_plt
+    ggsave(str_glue("gfx/fit_{str_flatten(scens)}.pdf"), fit_plt,
+           width = 8, height = 5)
 }
