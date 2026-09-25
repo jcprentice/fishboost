@@ -28,7 +28,7 @@ plot_covariances <- function(dataset = "fb-test",
                              output = "png") {
 
     if (FALSE) {
-        dataset <- "fb-test"; scen <- 2; itn <- 1; ci <- "hpdi"; output <- "png"
+        dataset <- "fb-test"; scen <- 2; itn <- 1; ci <- "hpdi"; output <- c("png", "pdf")
     }
 
     {
@@ -111,7 +111,8 @@ plot_covariances <- function(dataset = "fb-test",
 
     # Priors
     priors <- if (file.exists(res_file)) {
-        copy(params$priors)
+        params$priors
+
     } else {
          data.table(parameter = pars,
                     true_val = NA_real_,
@@ -136,9 +137,12 @@ plot_covariances <- function(dataset = "fb-test",
 
         xp_val <- x2[parameter == par, val]
 
-        rng <- priors[parameter == par, .(val1, val2)] |> unlist()
-        dens <- density(xp_val, adjust = 1,
-                        from = rng[[1]], to = rng[[2]])
+        prng <- priors[parameter == par, .(val1, val2)] |> unlist()
+        dens <- if (length(prng) < 2) {
+            density(xp_val, adjust = 1, cut = 0)
+        } else {
+            density(xp_val, adjust = 1, from = prng[[1]], to = prng[[2]])
+        }
         dd <- with(dens, data.table(x, y))
         mx <- median(xp_val)
 
@@ -177,7 +181,7 @@ plot_covariances <- function(dataset = "fb-test",
 
 
         if (str_starts(par, "cov")) {
-            x_min <- 0; x_max <- max(xp_val)
+            x_min <- 0; x_max <- min(max(xp_val), 4)
         } else if (str_starts(par, "h2")) {
             x_min <- 0; x_max <- 1
         } else if (str_starts(par, "r_")) {
@@ -188,7 +192,6 @@ plot_covariances <- function(dataset = "fb-test",
 
         if (par %in% priors$parameter) {
             prior <- data.table(x = seq(x_min, x_max, length.out = 101))
-            prior_type <- priors[parameter == par, type]
             if (str_detect(par, "cov_")) {
                 prior[, y := dnorm(x, 0, 2) * 2]
             } else if (str_detect(par, "r_")) {
@@ -196,7 +199,7 @@ plot_covariances <- function(dataset = "fb-test",
             } else if (str_detect(par, "h2_")) {
                 prior[, y := NA_real_]
             }
-            prior[, y := y / sum(c(0, diff(x)) * y, na.rm = TRUE)]
+            # prior[, y := y / sum(c(0, diff(x)) * y, na.rm = TRUE)]
         } else {
             prior <- data.table(x = numeric(0), y = numeric(0))
         }
@@ -281,6 +284,9 @@ plot_covariances <- function(dataset = "fb-test",
          GE = pltGE_cov)
 }
 
-# out <- plot_covariances("fb-final", 1, 1, "hpdi")
-# out <- plot_covariances("fb-final-old", 1, 1, "hpdi")
+if (FALSE) {
+    out <- plot_covariances("fb-test", 2, 1, "hpdi", c("png", "pdf"))
+    out <- plot_covariances("fb-test", 7, 1, "hpdi", c("png", "pdf"))
+    out <- plot_covariances("fb-final-old", 1, 1, "hpdi")
+}
 
