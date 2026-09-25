@@ -171,6 +171,7 @@ fig_pars_zscore <- function(dataset = "sim-test-inf1", scens = 0) {
 }
 
 if (FALSE) {
+    fig_pars_zscore("fb-test")
     fig_pars_zscore("sim-test-inf1")
     fig_pars_zscore("sim-test-inf2")
 }
