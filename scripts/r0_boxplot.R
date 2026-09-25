@@ -3,6 +3,7 @@
     library(purrr)
     library(ggplot2)
     library(ggtext)
+    library(xtable)
 
     safe_source("get_R0.R",
                 "figures/theme_natcom.R")
@@ -96,6 +97,21 @@ print(p1)
 ggsave("gfx/R0_selection_all.png", p1,
        width = 10, height = 6)
 
+# For pasting into LaTeX
+out <- r0s[type == "group_rep",
+           .(mean = mean(R0) |> round(2),
+             lo = hdi(R0)[["lower"]] |> round(2),
+             hi = hdi(R0)[["upper"]] |> round(2),
+             under = (100 * mean(R0 < 1)) |> round(1)),
+           selection]
+xtable(out,
+       align = c("l", "l", "S", "S", "S", "S")) |>
+    print(size = "small",
+          booktabs = TRUE,
+          hline.after = c(0, 2),
+          include.rownames = FALSE)
+
+
 p2 <- ggplot(r0s[type == "group_rep"],
              aes(x = selection,
                  y = R0,
@@ -131,9 +147,9 @@ p2 <- ggplot(r0s[type == "group_rep"],
 print(p2)
 
 wt <- 9.9
-ht <- wt * 3/4
+ht <- wt * 3 / 4
 
-ggsave("gfx/R0_selection.png", p2,
-       width = wt, height = ht, units = "cm")
-ggsave("gfx/R0_selection.pdf", p2,
-       width = wt, height = ht, units = "cm")
+walk(c("png", "pdf"), \(ft) {
+    ggsave(str_glue("gfx/R0_selection.{ft}"), p2,
+           width = wt, height = ht, units = "cm")
+})
