@@ -20,7 +20,8 @@ gwas <- function(dataset = "fb-test", scen = 1, rep = 1) {
     ebvs <- readRDS(f)$popn[, .(state, id, sdp, sus_g, inf_g, tol_g, sus_e, inf_e, tol_e)]
     ebvs[, `:=`(sus_p = sus_g + sus_e,
                 inf_p = inf_g + inf_e,
-                tol_p = tol_g + tol_e)]
+                tol_p = tol_g + tol_e,
+                r0_g = sus_g + inf_g + tol_g)]
 
     trials <- readRDS(f)$popn[sdp == "progeny", unique(trial)]
     if (length(trials) == 1) {
@@ -83,8 +84,9 @@ gwas <- function(dataset = "fb-test", scen = 1, rep = 1) {
 
     # Create EBV files
 
-    BVs <- expand.grid(c("g", "e", "p"), c("sus", "inf", "tol")) |>
-        rev() |> apply(1, str_flatten, "_")
+    BVs <- expand.grid(c("g", "e", "p"), c("sus", "inf", "tol", "r0")) |>
+        rev() |> apply(1, str_flatten, "_") |>
+        str_subset("r0_[ep]", negate = TRUE)
 
     out <- map(BVs, \(bv) {
         ebv <- ebvs[, mget(c("state", "id", bv))]
