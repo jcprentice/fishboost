@@ -2,7 +2,7 @@
     library(data.table)
     library(stringr)
     library(purrr)
-    library(Matrix)
+    # library(Matrix)
 }
 
 # Maps ----
@@ -84,13 +84,13 @@ fwrite(HG_inv, "fb_data/HG_inv_nz_12_rpw.tsv", sep = "\t")
 
 n <- last(HS_inv$i) + 1L
 
-with(HS_inv, sparseMatrix(i = i, j = j, x = x,
+with(HS_inv, Matrix::sparseMatrix(i = i, j = j, x = x,
                           symmetric = TRUE, index1 = FALSE)) |>
     as.matrix() |> as.data.table() |>
     set_names(1:n) |>
     fwrite(file = "fb_data/HS_inv_12_rpw.tsv", sep = "\t")
 
-with(HG_inv, sparseMatrix(i = i, j = j, x = x,
+with(HG_inv, Matrix::sparseMatrix(i = i, j = j, x = x,
                           symmetric = TRUE, index1 = FALSE)) |>
     as.matrix() |> as.data.table() |>
     set_names(1:n) |>
