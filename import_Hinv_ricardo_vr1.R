@@ -1,6 +1,6 @@
 {
     library(data.table)
-    library(Matrix)
+    # library(Matrix)
     library(stringr)
     # library(gtools)
 
@@ -17,7 +17,7 @@ setnames(Hinv, c("i", "j", "x"))
 setorder(Hinv, "i", "j")
 
 # Convert to (sparse) matrix
-Hinv12 <- with(Hinv, sparseMatrix(i = i, j = j, x = x, symmetric = TRUE))
+Hinv12 <- with(Hinv, Matrix::sparseMatrix(i = i, j = j, x = x, symmetric = TRUE))
 
 # This should be 1829
 N <- max(Hinv$i)

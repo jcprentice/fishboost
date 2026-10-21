@@ -1,6 +1,6 @@
 library(data.table)
 library(stringr)
-library(Matrix)
+# library(Matrix)
 
 # Load GRM from files provided by Ricardo
 
@@ -12,7 +12,7 @@ setnames(Hinv, c("i", "j", "x"))
 setorder(Hinv, "i", "j")
 
 # Convert to (sparse) matrix
-Hinv12 <- with(Hinv, sparseMatrix(i = i, j = j, x = x, symmetric = TRUE))
+Hinv12 <- with(Hinv, Matrix::sparseMatrix(i = i, j = j, x = x, symmetric = TRUE))
 
 # Useful value
 N <- max(Hinv$i)
@@ -69,7 +69,7 @@ Hinv12 <- Hinv12[id_map, id_map]
 
 if (FALSE) {
     # Manual method, does not reorder individuals except 1 and 2
-    
+
     # Handle individuals 221 and 1209 who have been moved to 2 and 1
     ids <- c(3:223, 2, 224:1211, 1, 1212:N)
     Hinv12 <- Hinv12[ids, ids]
@@ -77,7 +77,7 @@ if (FALSE) {
     # Clip out group 14 (ids 380:404)
     not_group14 <- setdiff(1:N, 380:404)
     Hinv12 <- Hinv12[not_group14, not_group14]
-    
+
     # Shift all higher ids down by 25
     Hinv[i > 404, i := i - 25]
     Hinv[j > 404, j := j - 25]
@@ -98,7 +98,7 @@ Hinv2 <- Hinv12[trial2_ids, trial2_ids]
 # Convert to data.table and write as tsv
 for (ti in c(1, 2, 12)) {
     M <- get(str_glue("Hinv{ti}"))
-    
+
     # Sparse Matrix
     dt <- as.data.table(summary(M))
     dt <- rbind(dt, dt[i != j, .(i = j, j = i, x)])
@@ -118,7 +118,7 @@ for (ti in c(1, 2, 12)) {
 uninvert <- FALSE
 if (uninvert) {
     H12 <- solve(Hinv12)
-    
+
     # Clip out group 14
     for (k in 1:2) {
         IDs <- fb12[trial == k, c(sort(unique(sire)), sort(unique(dam)), id)]
@@ -126,7 +126,7 @@ if (uninvert) {
         write.table(dt, file = str_glue("fb_data/H{k}.tsv"),
                     sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
     }
-    
+
     write.table(H, file = "fb_data/H12.tsv",
                 sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
 }
