@@ -2,7 +2,6 @@
 {
     library(data.table) # used for all data table manipulations
     library(purrr)      # functional programming
-    library(Matrix)     # allows Matrix
     library(xml2)       # used to generate XML file
     library(corpcor)    # efficient estimation of Cov and (partial) Corr
     library(MASS)       # needed for mvnorm
