@@ -3,6 +3,7 @@
 {
     library(data.table) # Used for all data table manipulations
     library(purrr)      # Functional programming is great
+    library(furrr)      # Simulate epidemics in parallel
     library(stringr)    # Better string manipulation
     library(MASS)       # Needed for mvnorm
     library(tictoc)     # Check performance
