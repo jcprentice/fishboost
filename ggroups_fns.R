@@ -56,7 +56,7 @@ tabA <- function(ped) {
     }
     tbA = tbA[order(tbA$id1, tbA$id2), ]
 
-    sparseMatrix(i = tbA$id1, j = tbA$id2, x = tbA$a)
+    Matrix::sparseMatrix(i = tbA$id1, j = tbA$id2, x = tbA$a)
 
     message("Found ", gen, " generations")
     return(tbA)

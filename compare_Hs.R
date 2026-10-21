@@ -1,7 +1,7 @@
 {
     library(data.table)
     library(ggplot2)
-    library(Matrix)
+    # library(Matrix)
     library(cowplot)
     library(viridisLite)
 }
@@ -32,7 +32,7 @@ setorder(Ricardo, i, j)
 }
 
 get_inverse <- function(x_dt) {
-    x_sm <- with(x_dt, sparseMatrix(i, j, x = x))
+    x_sm <- with(x_dt, Matrix::sparseMatrix(i, j, x = x))
     ix_sm <- solve(x_sm)
     ix_dt <- as.data.table(summary(ix_sm))
     #setnames(ix_dt, c("i", "j", "x"))
