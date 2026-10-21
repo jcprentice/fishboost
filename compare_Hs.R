@@ -1,8 +1,10 @@
-library(data.table)
-library(ggplot2)
-library(Matrix)
-library(cowplot)
-library(viridisLite)
+{
+    library(data.table)
+    library(ggplot2)
+    library(Matrix)
+    library(cowplot)
+    library(viridisLite)
+}
 
 # Manually step through import_Hinv.R and import_Hinv2.R to get these matrices
 Ricardo   <- fread("Hinv_matrices/ricardo.tsv")
@@ -58,7 +60,7 @@ iP <- get_inverse(Pedigree)
 
 # Ricardo <- fread("fb_data/Hinv.txt", skip = 1)
 # setnames(Ricardo, c("i", "j", "x"))
-# 
+#
 # Christina <- fread("HinvOrig.txt")
 # setnames(Christina, c("i", "j", "x"))
 
@@ -74,7 +76,7 @@ dt <- rbind(
                                  0.984 < x, "high",
                                  default = "mid"),
                            levels = c("low", "mid", "high"))]
-    
+
     ht <- ggplot(dt[section != "mid"]) +
         geom_line(aes(x = x, y = y, colour = name),
                   linewidth = 1.2) +
