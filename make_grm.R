@@ -1,20 +1,20 @@
 {
     library(data.table)
     library(stringr)
-    library(Matrix)
+    # library(Matrix)
 }
 
 make_grm <- function(popn, use_grm) {
     switch(use_grm,
            "A" = make_A_matrix(popn) |>
-               with(sparseMatrix(i = i, j = j, x = x)),
+               with(Matrix::sparseMatrix(i = i, j = j, x = x)),
            "A_nz" = make_A_matrix(popn),
            "A_inv" = make_A_matrix(popn) |>
-               with(sparseMatrix(i = i, j = j, x = x)) |>
+               with(Matrix::sparseMatrix(i = i, j = j, x = x)) |>
                solve(),
            "A_nz_inv" =,
            "A_inv_nz" = make_A_matrix(popn) |>
-               with(sparseMatrix(i = i, j = j, x = x)) |>
+               with(Matrix::sparseMatrix(i = i, j = j, x = x)) |>
                solve() |>
                summary() |>
                as.data.table() |>
