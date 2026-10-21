@@ -23,10 +23,10 @@ run_from_script <- length(cmd_args) > 0
 
 {
     params <- make_parameters(
-        model_type = "SEIDR", # "SIR", "SEIR", "SIDR", or "SEIDR"
+        model_type = "SEIDR", # "SEIDR", "SEIR", "SIDR", "SIR", "SIS"
         dataset = "testing",
         name = "scen-1-1",
-        setup = "fb_12_rpw", # chris, small, fb_12, fb_1, fb_2, single
+        setup = "fb_12_rpw", # "chris", "small", "fb_12", "fb_1", "fb_2", "single"
         IEs = "sit", # "all", "none", "sit", "si" etc.
         vars = 0.5, # c(0.5, 1.5, 0, 0, 0.5)
         cors = 0.2, # c(0.2, ..., 0.2)
