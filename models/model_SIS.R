@@ -16,15 +16,19 @@ model_SIS <- function(popn, params) {
     DEBUG  <- params$DEBUG
 
     # initialise population ----
-    Xgroups <- init_popn(popn, params) |>
-        split(by = "group")
-
     # function for appending to list unless only element is NA
     nax <- function(x, y) {
         if (length(x) == 1 && is.na(x[[1]])) y else c(x, y)
     }
 
-    Y <- map(Xgroups, \(X) {
+    if (TRUE) {
+        plan(multisession, workers = max(1, parallel::detectCores() - 1))
+    } else {
+        plan(sequential)
+    }
+    RNGkind("L'Ecuyer-CMRG")
+
+    Y <- future_map(Xgroups, \(X) {
         if (FALSE) {
             X <- copy(Xgroups[[1]])
         }
@@ -125,7 +129,7 @@ model_SIS <- function(popn, params) {
             }
         }
         X
-    }) |> rbindlist()
+    }, .options = furrr_options(seed = TRUE)) |> rbindlist()
 
     final_t <- Y$Tdeath |> list_c() |> max(na.rm = TRUE) |> signif(5)
 

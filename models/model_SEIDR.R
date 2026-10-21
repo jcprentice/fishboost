@@ -21,7 +21,14 @@ model_SEIDR <- function(popn, params) {
     # Each group is independent, so it seems to be about ~33% faster to split
     # them by group, run them separately, then recombine them.
 
-    Y <- map(Xgroups, \(X) {
+    if (TRUE) {
+        plan(multisession, workers = max(1, parallel::detectCores() - 1))
+    } else {
+        plan(sequential)
+    }
+    RNGkind("L'Ecuyer-CMRG")
+
+    Y <- future_map(Xgroups, \(X) {
         if (FALSE) {
             X <- copy(Xgroups[[1]])
         }
@@ -119,7 +126,9 @@ model_SEIDR <- function(popn, params) {
             }
         }
         X
-    }) |> rbindlist()
+    },
+    .options = furrr_options(seed = TRUE)) |>
+        rbindlist()
 
     final_t <- max(Y$Tdeath, na.rm = TRUE) |> signif(5)
 

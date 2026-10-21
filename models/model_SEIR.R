@@ -21,7 +21,14 @@ model_SEIR <- function(popn, params) {
     # Each group is independent, so it seems to be about ~33% faster to split
     # them by group, run them separately, then recombine them.
 
-    Y <- map(Xgroups, \(X) {
+    if (TRUE) {
+        plan(multisession, workers = max(1, parallel::detectCores() - 1))
+    } else {
+        plan(sequential)
+    }
+    RNGkind("L'Ecuyer-CMRG")
+
+    Y <- future_map(Xgroups, \(X) {
         # This is a priority queue for the next event
         ni_events <- X[, .(.I, Tsign, Tdeath)] |>
             melt(id.vars = "I", variable.name = "event", value.name = "time") |>
@@ -111,7 +118,9 @@ model_SEIR <- function(popn, params) {
             }
         }
         X
-    }) |> rbindlist()
+    },
+    .options = furrr_options(seed = TRUE)) |>
+        rbindlist()
 
     final_t <- max(Y$Tdeath, na.rm = TRUE) |> signif(5)
 

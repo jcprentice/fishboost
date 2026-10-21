@@ -25,7 +25,14 @@ model_SIRS <- function(popn, params) {
         if (length(x) == 1 && is.na(x[[1]])) y else c(x, y)
     }
 
-    Y <- map(Xgroups, \(X) {
+    if (TRUE) {
+        plan(multisession, workers = max(1, parallel::detectCores() - 1))
+    } else {
+        plan(sequential)
+    }
+    RNGkind("L'Ecuyer-CMRG")
+
+    Y <- future_map(Xgroups, \(X) {
         X[, names(.SD) := map(.SD, ~ map(.x, ~ .x)), .SDcols = c("Tinf", "Trec", "Tdeath")]
 
 
@@ -121,7 +128,7 @@ model_SIRS <- function(popn, params) {
         }
         X
     },
-    .progress = TRUE) |>
+    .options = furrr_options(seed = TRUE)) |>
         rbindlist()
 
     Y[, `:=`(
