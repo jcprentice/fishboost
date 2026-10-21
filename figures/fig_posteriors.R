@@ -295,5 +295,6 @@ fig_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1) {
     plt
 }
 
+fig_posteriors("fb-test", 1, 1)
 fig_posteriors("fb-test", 2, 1)
 fig_posteriors("fb-test", 7, 1)
