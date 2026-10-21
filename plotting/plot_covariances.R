@@ -141,7 +141,9 @@ plot_covariances <- function(dataset = "fb-test",
         dens <- if (length(prng) < 2) {
             density(xp_val, adjust = 1, cut = 0)
         } else {
-            density(xp_val, adjust = 1, from = prng[[1]], to = prng[[2]])
+            density(xp_val, adjust = 1,
+                    from = prng[[1]],
+                    to = min(prng[[2]], 1.2 * max(xp_val)))
         }
         dd <- with(dens, data.table(x, y))
         mx <- median(xp_val)
@@ -181,7 +183,7 @@ plot_covariances <- function(dataset = "fb-test",
 
 
         if (str_starts(par, "cov")) {
-            x_min <- 0; x_max <- min(max(xp_val), 4)
+            x_min <- 0; x_max <- min(1.2 * max(xp_val), 4)
         } else if (str_starts(par, "h2")) {
             x_min <- 0; x_max <- 1
         } else if (str_starts(par, "r_")) {
