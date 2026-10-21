@@ -11,7 +11,7 @@
 
 plot_ebvs <- function(dataset = "fb-test", scen = 1, rep = 1) {
     if (FALSE) {
-        dataset <- "fb-qtest"; scen <- 4; rep <- 1
+        dataset <- "fb-test"; scen <- 1; rep <- 1
     }
 
     message(str_glue("Generating EBV plots for '{dataset} / s{scen}-{rep}' ..."))
