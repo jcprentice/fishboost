@@ -2,6 +2,7 @@
     library(data.table)
     library(stringr)
     library(purrr)
+    library(HDInterval)
 
     safe_source("utils.R")
 }
@@ -92,11 +93,25 @@ calc_bayes_factor <- function(dataset = "fb-final", scen = 1, qnt = 0.01) {
         }
 
         # message(str_glue("{par} != {pt}:\t{BF}\t{stars}"))
-        list(par = par, pt = pt, BF = BF, stars = stars)
+        list(par = par,
+             median = median(data[[par]]),
+             lower = hdi(data[[par]])[["lower"]],
+             upper = hdi(data[[par]])[["upper"]],
+             pt = pt,
+             BF = BF,
+             stars = stars)
     }) |>
         rbindlist()
 
-    BFs[!is.na(BF), .(par, pt, BF = signif(BF, 3), logBF = round(log10(BF), 2), stars)]
+    BFs[!is.na(BF),
+        .(par,
+          pt,
+          median = round(median, 1),
+          lower = round(lower, 1),
+          upper = round(upper, 1),
+          BF = signif(BF, 3),
+          logBF = round(log10(BF), 2),
+          stars)]
 }
 
 if (FALSE) {
