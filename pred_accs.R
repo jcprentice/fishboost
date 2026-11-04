@@ -26,7 +26,7 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 1, rep = 1, parents_
     res <- readRDS(str_glue("datasets/{dataset}/results/{name}.rds"))
     params <- res$params
 
-    x <- res$popn[, .SD, .SDcols = patterns("^(id|sdp|sus|inf|tol|end)")]
+    x <- res$popn[, .SD, .SDcols = patterns("(^id$|sdp|_[ge]$)")]
     if (parents_only) x <- x[sdp != "progeny"]
     setnames(x, str_replace_all(names(x),
                                 c("susceptibility" = "sus",
@@ -40,6 +40,7 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 1, rep = 1, parents_
     setcolorder(x, cols, skip_absent = TRUE)
 
     if (any(cols %notin% names(x))) {
+        message("Warning: missing columns!")
         return(NULL)
     }
 
@@ -48,16 +49,16 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 1, rep = 1, parents_
         message(str_glue("Warning: missing '{rf}'"))
         return(c(sus = 0, inf = 0, tol = 0))
     }
-    y <- readRDS(rf)$popn[, .SD, .SDcols = patterns("^(id|sdp|sus|inf|tol|end)")]
+    y <- readRDS(rf)$popn[, .SD, .SDcols = patterns("(^id$|sdp|_[ge]$)")]
     if (parents_only) y <- y[sdp != "progeny"]
 
-    y <- y[, map(.SD, mean), .(id, sdp), .SDcols = patterns("_[ge]$")]
+    y <- y[, map(.SD, median), .(id, sdp), .SDcols = patterns("_[ge]$")]
     setcolorder(y, cols, skip_absent = TRUE)
 
-    xy <- merge(melt(x[, .SD, .SDcols = -patterns("_e")], id.vars = c("id", "sdp"), value.name = "x"),
-                melt(y[, .SD, .SDcols = -patterns("_e")], id.vars = c("id", "sdp"), value.name = "y"))
-    # xy <- merge(melt(x, "id", value.name = "x"),
-    #             melt(y, "id", value.name = "y"))
+    xy <- merge(melt(x[, .SD, .SDcols = patterns("id|sdp|_g$")],
+                     id.vars = c("id", "sdp"), value.name = "x"),
+                melt(y[, .SD, .SDcols = patterns("id|sdp|_g$")],
+                     id.vars = c("id", "sdp"), value.name = "y"))
 
     qx <- xy[, quantile(x, 0.8) |> as.numeric()]
     qy <- xy[, quantile(y, 0.8) |> as.numeric()]
@@ -117,9 +118,9 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 1, rep = 1, parents_
     plt
 }
 
-pred_accs <- function(dataset = "sim-base-inf", scen = 1, rep = 1, parents_only = TRUE, method = "kendall") {
+pred_accs <- function(dataset = "sim-test-inf1", scen = 1, rep = 1, parents_only = TRUE, method = "kendall") {
     if (FALSE) {
-        dataset <- "sim-base-inf"
+        dataset <- "sim-test-inf1"
         scen <- 1
         rep <- 1
         parents_only <- TRUE
@@ -129,7 +130,7 @@ pred_accs <- function(dataset = "sim-base-inf", scen = 1, rep = 1, parents_only 
     name <- str_glue("scen-{scen}-{rep}")
 
     x <- readRDS(str_glue("datasets/{dataset}/results/{name}.rds"))$popn
-    x[, names(.SD) := NULL, .SDcols = !patterns("^(id|sdp|sus|inf|tol|end)")]
+    x[, names(.SD) := NULL, .SDcols = !patterns("(^id$|sdp|_[ge]$)")]
     if (parents_only) x <- x[sdp != "progeny"]
     x[, sdp := NULL]
 
@@ -153,14 +154,14 @@ pred_accs <- function(dataset = "sim-base-inf", scen = 1, rep = 1, parents_only 
         message(str_glue("Warning: missing '{rf}'"))
         return(c(sus = 0, inf = 0, tol = 0))
     }
-    y <- readRDS(rf)$popn[, .SD, .SDcols = patterns("^(id|sdp|sus|inf|tol|end)")]
+    y <- readRDS(rf)$popn[, .SD, .SDcols = patterns("(^id$|sdp|_[ge]$)")]
     if (parents_only) y <- y[sdp != "progeny"]
     y[, sdp := NULL]
 
     y <- y[, map(.SD, mean), id, .SDcols = patterns("_[ge]$")]
     setcolorder(y, cols, skip_absent = TRUE)
 
-    if (str_detect("top", method)) {
+    if (str_detect(method, "top")) {
         pc2p <- function(x) 1 - x / 100
         method <- str_remove(method, "top") |> as.numeric() |> pc2p()
     }
