@@ -79,9 +79,19 @@ patch_in_traits <- function(popn, params) {
         stop("No files to work with!")
     }
 
+    if (str_starts(setup, "fb\\d+")) {
+        n <- str_extract(setup, "fb(\\d+)_", group = 1) |> as.integer()
+        nparents <- popn[sdp != "progeny", .N]
+        nprogeny <- popn[sdp == "progeny", .N]
+        ebvs <- ebvs[c(seq_len(nparents),
+                       nparents + seq_len(nprogeny / n),
+                       nparents + seq_len(nprogeny / n))]
+    }
+
     if (nrow(popn) != nrow(ebvs)) {
         message(str_glue("- inconsistent sizes for EBVs ({x}) and pedigree ({y}), generating new data",
-                               x = nrow(popn), y = nrow(ebvs)))
+                         x = nrow(popn),
+                         y = nrow(ebvs)))
         popn2 <- make_traits_from_pedigree(popn, params)
         return(popn2)
     }
