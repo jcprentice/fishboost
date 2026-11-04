@@ -56,9 +56,7 @@ flatten_bici_states <- function(params) {
     # give `name`, where we want `id`, so just sub in `ids` where appropriate.
     idsect <- str_which(lines, "[{}]")
     ids <- lines[seq(idsect[[1]] + 4, idsect[[2]] - 1)] |>
-        # str_subset("#|Time|timepoint|index", negate = TRUE) |>
-        str_squish() |>
-        str_split_i(":", 2) |>
+        str_extract("\\d+:(\\d+$)", group = 1) |>
         as.integer()
 
     state_lines <- c(str_which(lines, "STATE"),
@@ -213,7 +211,7 @@ flatten_bici_states <- function(params) {
                 }
             })
 
-            # This is typically 15
+            # This is typically 20
             max_secondaries <- with(params, group_size - I0)
 
             get_gen <- function(id, g = 1L) {
@@ -234,6 +232,9 @@ flatten_bici_states <- function(params) {
 
             setnames(transitions, "index", "id")
             # setorder(transitions, id)
+
+            # Fix transition ids before merging
+            transitions[, id := ids]
 
             popn <- merge(base_popn, transitions, by = "id", all = TRUE)
 
@@ -278,7 +279,7 @@ flatten_bici_states <- function(params) {
             mget(parts)
         })
 
-        cat("\n", file = stderr())
+        cat(" ", file = stderr())
 
         map(parts, ~ map(out1, .x) |> rbindlist(idcol = "state1")) |>
             setNames(parts)
