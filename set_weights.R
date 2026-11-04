@@ -12,10 +12,13 @@ set_weights <- function(popn, params) {
     setcolorder(popn, "weight", after = "group")
 
     if (weight_type == "fb") {
+
         fb <- readRDS("fb_data/fb_12_rpw.rds")
         popn[trial == 1, weight := sample(fb[trial == 1, weight], .N, replace = TRUE)]
         popn[trial == 2, weight := sample(fb[trial == 2, weight], .N, replace = TRUE)]
+
     } else if (weight_type == "random") {
+
         # Generate a truncated log-normal distribution
         fb <- readRDS("fb_data/fb_12_rpw.rds")
 
