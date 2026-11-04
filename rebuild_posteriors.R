@@ -4,6 +4,7 @@
     library(purrr)
     library(coda)
     library(HDInterval)
+    library(pipebind)
 
     safe_source("rename_pars.R",
                 "utils.R")
@@ -11,17 +12,18 @@
 
 
 rebuild_bici_posteriors <- function(dataset = "fb-test",
-                                    name = "scen-1-1") {
+                                    name = "scen-2-1") {
 
     if (FALSE) {
-        dataset <- "sim-test-inf2"
-        name <- "scen-1-1"
+        dataset <- "fb-test"
+        name <- "scen-2-1"
         dataset <- params$dataset
         name <- params$name
     }
 
-    data_dir <- str_glue("datasets/{dataset}/data")
-    res_dir  <- str_glue("datasets/{dataset}/results")
+    base_dir <- str_glue("datasets/{dataset}")
+    data_dir <- str_glue("{base_dir}/data")
+    res_dir  <- str_glue("{base_dir}/results")
     out_dir  <- str_glue("{data_dir}/{name}-out")
 
     f <- str_glue("{res_dir}/{name}.rds")
@@ -54,23 +56,50 @@ rebuild_bici_posteriors <- function(dataset = "fb-test",
         map(~ .x[, .SD, .SDcols = !patterns("L\\^|N\\^|Prior")]) |>
         map(~ setnames(.x, rename_bici_pars))
 
-    sildt <- str_chars("sildt")
-
     walk(x, \(xi) {
         if (FALSE) {
             xi <- copy(x[[1]])
         }
 
-        walk(sildt, \(t1) {
-            gt <- str_c("cov_G_", t1, t1)
-            et <- str_c("cov_E_", t1, t1)
-            pt <- str_c("cov_P_", t1, t1)
-            ht <- str_c("h2_", t1, t1)
-            if (all(c(gt, et) %in% names(xi))) {
-                xi[, (pt) := get(gt) + get(et)]
-                xi[, (ht) := get(gt) / get(pt)]
-            }
+        traits <- names(xi) |> str_subset("cov_G") |> str_remove("cov_G_") |> str_1st()
+
+        covs <- str_c(traits, traits)
+        cors <- expand.grid(traits, traits) |> apply(1, str_flatten) |>
+            matrix(length(traits)) |> bind(x, t(x)[lower.tri(x)])
+
+        walk(covs, \(t1) {
+            gt <- str_c("cov_G_", t1)
+            et <- str_c("cov_E_", t1)
+            pt <- str_c("cov_P_", t1)
+            ht <- str_c("h2_", t1)
+            xi[, (pt) := get(gt) + get(et)]
+            xi[, (ht) := get(gt) / get(pt)]
         })
+
+        walk(cors, \(st) {
+            s <- str_sub(st, 1, 1)
+            t <- str_sub(st, 2, 2)
+
+            rgst <- str_c("r_G_", st)
+            rest <- str_c("r_E_", st)
+            rpst <- str_c("r_P_", st)
+            cgs <- str_c("cov_G_", s, s)
+            cgt <- str_c("cov_G_", t, t)
+            cgst <- str_c("cov_G_", st)
+            ces <- str_c("cov_E_", s, s)
+            cet <- str_c("cov_E_", t, t)
+            cest <- str_c("cov_E_", st)
+            cps <- str_c("cov_P_", s, s)
+            cpt <- str_c("cov_P_", t, t)
+            cpst <- str_c("cov_P_", st)
+
+            xi[, (cgst) := get(rgst) * sqrt(get(cgs) * get(cgt))]
+            xi[, (cest) := get(rgst) * sqrt(get(ces) * get(cet))]
+            xi[, (cpst) := get(cgst) + get(cest)]
+            xi[, (rpst) := get(cpst) / sqrt(get(cps) + get(cpt))]
+            xi[, c(cgst, cest, cpst) := NULL]
+        })
+
 
         pnames <- c(str_subset(names(xi), "_P_"),
                     str_subset(names(xi), "h2_"))
@@ -93,13 +122,46 @@ rebuild_bici_posteriors <- function(dataset = "fb-test",
 
     xp <- xs[, .(parameter = .SD |> names(),
                  true_val  = NA_real_,
+                 type      = NA_character_,
+                 val1      = NA_real_,
+                 val2      = NA_real_,
                  mean      = .SD |> map_dbl(mean),
                  median    = .SD |> map_dbl(median),
                  sd        = .SD |> map_dbl(sd),
                  ci95min   = .SD |> map_dbl(quantile, 0.025),
                  ci95max   = .SD |> map_dbl(quantile, 0.975),
                  hdi95min  = .SD |> map(hdi) |> map_dbl("lower"),
-                 hdi95max  = .SD |> map(hdi) |> map_dbl("upper"))]
+                 hdi95max  = .SD |> map(hdi) |> map_dbl("upper"),
+                 prior_var = NA_real_,
+                 contract  = NA_real_)]
+
+    walk(seq_len(nrow(xp)), \(i) {
+        par <- xp$parameter[[i]]
+        if (par %in% params$priors$parameter) {
+            priors <- params$priors[parameter == par,
+                                    .(true_val, type, val1, val2)] |>
+                as.list()
+            xp[i, c("true_val", "type", "val1", "val2") := priors]
+            # set(xp, i, c("true_val", "type", "val1", "val2"),
+            #     params$priors[parameter == par, .(true_val, type, val1, val2)] |> as.list())
+        }
+        if (str_detect(dataset, "sim")) {
+            xp[i, true_val := NA_real_]
+        }
+    })
+
+    inv_var <- function(a, b) {
+        (b^2 - a^2) / (2 * log(b /a )) -
+            ((b - a) / log(b / a))^2
+    }
+
+    xp[type == "uniform", prior_var := (val2 - val1)^2 / 12]
+    xp[type == "inverse", prior_var := inv_var(val1, val2)]
+    xp[str_starts(parameter, "cov_"), prior_var := 4 * (1 - 2 / pi)]
+    xp[str_starts(parameter, "r_"), prior_var := 1 / (2 * 1.2 + 1)]
+
+    xp[, contract := 1 - sd^2 / prior_var]
+    xp[, prior_var := NULL]
 
     if (str_detect(dataset, "sim")) {
         tvs <- with(params$priors, setNames(true_val, parameter))
