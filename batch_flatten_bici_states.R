@@ -10,17 +10,22 @@ if (length(cmd_args) > 0) {
     dataset <- cmd_args[[1]]
     num <- as.integer(cmd_args[[2]])
 } else {
-    dataset <- "fb-test"
+    dataset <- "sim-events"
     num <- 1L
 }
 
-switch(dataset,
-       "fb-test" = {scens <- 1:5; reps <- 1:5},
-       "sim-test2" = {scens <- 1:5; reps <- 1:5},
-       {scens <- 1:5; reps <- 1:5})
+name <- list.files(str_glue("datasets/{dataset}/data")) |>
+    str_subset("bici") |>
+    str_remove("\\.bici") |>
+    str_sort(numeric = TRUE) |>
+    _[[num]]
 
-name <- expand.grid(reps, scens, "scen") |>
-    rev() |> apply(1, str_flatten, "-")
+message(str_glue("Flattening {dataset}, {name}"))
 
-flatten_bici_states(dataset, name[[num]], "inf")
+params <- list(dataset = dataset,
+               name = name,
+               bici_cmd = "inf")
 
+flatten_bici_states(params)
+
+message("Finished!")
