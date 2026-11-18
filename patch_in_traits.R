@@ -86,6 +86,7 @@ patch_in_traits <- function(popn, params) {
         ebvs <- ebvs[c(seq_len(nparents),
                        nparents + seq_len(nprogeny / n),
                        nparents + seq_len(nprogeny / n))]
+        ebvs[, id := .I]
     }
 
     if (nrow(popn) != nrow(ebvs)) {
