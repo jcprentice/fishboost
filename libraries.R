@@ -34,6 +34,6 @@ install_base <- function() {
                        "xml2", "tictoc", "gtools", "codetools", "janitor",
                        "fitdistrplus", "lubridate", "ggplot2", "ggthemes",
                        "gganimate", "ggcorrplot", "cowplot", "pROC", "pipebind",
-                       "microbenchmark"))
+                       "microbenchmark", "furrr"))
 }
 
