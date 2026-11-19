@@ -92,12 +92,9 @@ patch_params <- function(params, trace_row = 0) {
     # handled is TRUE
     if (identical(patch_state, FALSE)) {
         # Get parameters from trace file
-        f <- str_glue("{patch_out_dir}/extended_trace_combine.tsv")
+        f <- str_glue("{patch_out_dir}/trace_combine.tsv")
         if (!file.exists(f)) {
-            f <- str_remove(f, "extended_")
-            if (!file.exists(f)) {
-                stop("No trace file")
-            }
+            stop("No trace file")
         }
         if (msgs) message(str_glue("- reading trace file '{f}'"))
         trace_file <- fread(f)

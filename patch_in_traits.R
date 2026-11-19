@@ -59,12 +59,9 @@ patch_in_traits <- function(popn, params) {
                                    "- using state '{patch_state}' ..."))
     } else if (!is.null(params$trace_row)) {
         trace_row <- params$trace_row
-        f <- str_glue("{output_dir}/extended_trace_combine.tsv")
+        f <- str_glue("{output_dir}/trace_combine.tsv")
         if (!file.exists(f)) {
-            f <- str_remove(f, "extended_")
-            if (!file.exists(f)) {
-                stop("No trace file")
-            }
+            stop("No trace file")
         }
         if (msgs) message(str_glue("- reading trace file '{f}'"))
         tc <- fread(f)[trace_row]
