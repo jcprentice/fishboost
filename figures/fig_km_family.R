@@ -18,7 +18,7 @@ fig_km_family <- function(dataset = "fb-test",
 
     if (FALSE) {
         dataset <- "fb-test"
-        scen <- 7
+        scen <- 8
         plot_opts <- c("keep_small_groups", "fb_only", "extremes", "drop_donors",
                        "t1", "t2", "t2_width", "mean", "ribbon")
         plot_opts <- c("Tsign", "t1", "t2_width", "fb_only", "ribbon")
@@ -235,7 +235,7 @@ fig_km_family <- function(dataset = "fb-test",
     plt
 }
 
-{
+if (FALSE) {
     p1 <- fig_km_family("fb-test", 2, c("Tsign", "ribbon"),
                         "Time to visual signs<br>Multi-stage endurance")
 
@@ -285,29 +285,29 @@ fig_km_family <- function(dataset = "fb-test",
         theme(text = element_text(size = 5))
     p_leg
     p_legend <- get_legend(p_leg)
+
+    plt1 <- plot_grid(p1 + theme(legend.position = "none"),
+                      p2 + theme(legend.position = "none"),
+                      p3 + theme(legend.position = "none"),
+                      p4 + theme(legend.position = "none"),
+                      p5 + theme(legend.position = "none"),
+                      p6 + theme(legend.position = "none"),
+                      labels = "auto",
+                      label_size = 10,
+                      align = "hv", ncol = 3)
+
+    plt <- plot_grid(plt1, p_legend,
+                     ncol = 1, rel_heights = c(2, 0.16))
+    plt
+
+    ggsave("gfx/km_plots.pdf", plt,
+           width = 18.3, height = 17, units = "cm", dpi = "print")
+    ggsave("gfx/km_plots.png", plt,
+           width = 18.3, height = 17, units = "cm", dpi = "print")
 }
 
-plt1 <- plot_grid(p1 + theme(legend.position = "none"),
-                  p2 + theme(legend.position = "none"),
-                  p3 + theme(legend.position = "none"),
-                  p4 + theme(legend.position = "none"),
-                  p5 + theme(legend.position = "none"),
-                  p6 + theme(legend.position = "none"),
-                  labels = "auto",
-                  label_size = 10,
-                  align = "hv", ncol = 3)
 
-plt <- plot_grid(plt1, p_legend,
-                 ncol = 1, rel_heights = c(2, 0.16))
-plt
-
-ggsave("gfx/km_plots.pdf", plt,
-       width = 18.3, height = 17, units = "cm", dpi = "print")
-ggsave("gfx/km_plots.png", plt,
-       width = 18.3, height = 17, units = "cm", dpi = "print")
-
-
-{
+if (FALSE) {
     p_fb1a <- fig_km_family("fb-test", 2, c("Tsign", "fb_only", "t1"),
                             "Time to visual signs<br>Multi-stage endurance")
 
