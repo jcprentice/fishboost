@@ -24,8 +24,8 @@ fig_tornadoes <- function(dataset = "sim-test-inf1", scen = 1) {
     data_dir    <- str_glue("datasets/{dataset}/data")
     results_dir <- str_glue("datasets/{dataset}/results")
     res_files   <- list.files(results_dir,
-                              pattern = str_glue("scen-{scen}-"),
                               full.names = TRUE) |>
+        str_subset(str_glue("scen-{scen}-")) |>
         str_sort(numeric = TRUE)
 
     nres <- length(res_files)
@@ -50,11 +50,9 @@ fig_tornadoes <- function(dataset = "sim-test-inf1", scen = 1) {
     # Combine trace files into X ----
 
     trace_files <- list.files(data_dir,
-                              pattern = "trace_combine",
                               full.names = TRUE,
                               recursive = TRUE) |>
-        str_subset(str_glue("scen-{scen}-")) |>
-        str_subset("extended", negate = TRUE) |>
+        str_subset(str_glue("scen-{scen}-.*trace_combine")) |>
         str_sort(numeric = TRUE)
 
     if (is_empty(trace_files)) {
@@ -70,19 +68,18 @@ fig_tornadoes <- function(dataset = "sim-test-inf1", scen = 1) {
 
         tmpx = data.table(parameter = names(tmp),
                           mean   = tmp[, map(.SD, mean)]   |> unlist(),
-                          median = tmp[, map(.SD, median)] |> unlist())
+                          median = tmp[, map(.SD, median)] |> unlist(),
+                          sd     = tmp[, map(.SD, sd)]     |> unlist())
 
         # 95% Highest Density Posterior Interval
-        CIs <- tmp[, map(.SD, hdi, credMass = 0.95)]
-        tmpx[, `:=`(ci_min = CIs[1] |> unlist(),
-                    ci_max = CIs[2] |> unlist())]
+        HDIs <- tmp[, map(.SD, hdi, credMass = 0.95)]
+        tmpx[, `:=`(hdi_min = HDIs[1] |> unlist(),
+                    hdi_max = HDIs[2] |> unlist())]
         tmpx
-    }) |> rbindlist()
+    }) |>
+        rbindlist() |>
+        setorder(parameter, median)
 
-
-    # Tidy and sort X ----
-
-    setorder(X, parameter, median)
     X[, id := seq_len(.N), parameter]
 
     # Get true and posterior means ----
@@ -94,16 +91,21 @@ fig_tornadoes <- function(dataset = "sim-test-inf1", scen = 1) {
     iwalk(pars, \(par, i) {
         # html_par <- str_remove_all(par, "_Tr.*")
         X_mu <- X[parameter == par, mean(mean)]
-        X_hdi <-  X[parameter == par, hdi(mean)][c("lower", "upper")]
-        set(Xtab, i, c("xmin", "xmax", "true_val", "est_val", "hdi1", "hdi2"),
-            c(params$priors[parameter == par, .(val1, val2, true_val)], X_mu, X_hdi))
+        X_hdi <-  X[parameter == par, hdi(mean)][c("lower", "upper")] |> unname()
+        if (par %in% params$priors$parameter) {
+            set(Xtab, i, c("xmin", "xmax", "true_val", "est_val", "hdi1", "hdi2"),
+                c(params$priors[parameter == par, .(val1, val2, true_val)], X_mu, X_hdi))
+        } else {
+            set(Xtab, i, c("est_val", "hdi1", "hdi2"),
+                as.list(c(X_mu, X_hdi)))
+        }
     })
 
     rename_weights <- function(x, n) {
         str_replace(x, "weight_", str_c("weight", n, "_"))
     }
 
-    if (!identical(trials, c(1L, 2L))) {
+    if (length(trials == 1)) {
         pars <- rename_weights(pars, trials)
         X[, parameter := rename_weights(parameter, trials)]
         Xtab[, parameter := rename_weights(parameter, trials)]
@@ -112,7 +114,7 @@ fig_tornadoes <- function(dataset = "sim-test-inf1", scen = 1) {
     # Set X-axis limits ----
     Xtab[str_starts(parameter, "cov_"), `:=`(xmin = 0, xmax = pmax(1, xmax))]
     Xtab[str_starts(parameter, "r_"), `:=`(xmin = -1, xmax = 1)]
-    Xtab[str_detect(parameter, "beta|period|shape|period"), xmin := 0]
+    Xtab[str_detect(parameter, "beta|[LDR]P|shape"), xmin := 0]
 
     # print(Xtab)
 
@@ -134,7 +136,7 @@ fig_tornadoes <- function(dataset = "sim-test-inf1", scen = 1) {
         x1 <- Xtab[parameter == par, .SD, .SDcols = -1] |> unlist()
 
         ggplot(data = X[parameter == par]) +
-            geom_segment(aes(x = ci_min, xend = ci_max, y = id, yend = id,
+            geom_segment(aes(x = hdi_min, xend = hdi_max, y = id, yend = id,
                              colour = par)) +
             geom_point(aes(x = mean, y = id),
                        colour = "red", size = 1 * l2p) +
