@@ -60,9 +60,15 @@ calc_bayes_factor <- function(dataset = "fb-final", scen = 1, qnt = 0.01) {
         dataset <- "fb-test"; scen <- 2; qnt <- 0.01
     }
 
-    res <- readRDS(str_glue("datasets/{dataset}/results/scen-{scen}-1.rds"))
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        data_dir <- str_glue("{base_dir}/data")
+        res_dir  <- str_glue("{base_dir}/results")
+    }
+
+    res <- readRDS(str_glue("{res_dir}/scen-{scen}-1.rds"))
     params <- res$params
-    data <- fread(str_glue("datasets/{dataset}/data/scen-{scen}-1-out/trace_combine.tsv"))
+    data <- fread(str_glue("{data_dir}/scen-{scen}-1-out/trace_combine.tsv"))
 
     data[, str_subset(names(.SD), "Group|state") := NULL]
     pars <- names(data) |>

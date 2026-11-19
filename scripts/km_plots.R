@@ -32,14 +32,32 @@ km_plots <- function(dataset = "fb-test",
                        "mean", "t1", "t2")[0]
     }
 
+    {
+        base_dir  <- str_glue("datasets/{dataset}")
+        data_dir  <- str_glue("{base_dir}/data")
+        res_dir   <- str_glue("{base_dir}/results")
+        meta_dir  <- str_glue("{base_dir}/meta")
+        gfx_dir   <- str_glue("{base_dir}/gfx")
+        km_dir_st <- str_glue("{gfx_dir}/km_st")
+        km_dir_dt <- str_glue("{gfx_dir}/km_dt")
+        km_dir_ft <- str_glue("{gfx_dir}/km_ft")
+
+
+        c(meta_dir, km_dir_st, mk_dir_dt, km_dir_ft) |>
+            discard(dir.exists) |>
+            walk(~ message("- mkdir ", .x)) |>
+            walk(dir.create, recursive = TRUE)
+    }
+
+
     if (all(scens == 0)) {
-        scens <- list.files(str_glue("datasets/{dataset}/results")) |>
+        scens <- list.files(res_dir) |>
             str_split_i("-", 2) |> unique() |> as.integer() |> sort()
     }
 
     # Use posterior means (pm) or sample from posterior (ps, default)
     um <- switch(opts$post, "mean" =, "median" = "_pm", "_ps")
-    f <- str_glue("datasets/{dataset}/meta/km_data{um}.rds")
+    f <- str_glue("{meta_dir}/km_data{um}.rds")
 
     if (simulate_new_data != "no" && file.exists(f)) {
         message("- Removing previous km_data file")
@@ -72,11 +90,6 @@ km_plots <- function(dataset = "fb-test",
         km_data <- setNames(km_data, str_c("s", scens))
 
         # Save the data we just created
-        md <- str_glue("datasets/{dataset}/meta")
-        if (!dir.exists(md)) {
-            message("- mkdir ", md)
-            dir.create(md)
-        }
         saveRDS(km_data, file = f)
         message(str_glue("Saved KM data to '{f}'"))
     } else {
@@ -94,7 +107,7 @@ km_plots <- function(dataset = "fb-test",
 
     # Grab the descriptions of the first available result for each scen
     descriptions <- map_chr(scens, \(i) {
-        f <- list.files(str_glue("datasets/{dataset}/results"),
+        f <- list.files(res_dir),
                         str_glue("scen-{i}-"),
                         full.names = TRUE)
         readRDS(f[[1]])$params$description
@@ -104,25 +117,6 @@ km_plots <- function(dataset = "fb-test",
     plts_st <- map2(plts_st, descriptions, \(x, y) append(x, list(description = y)))
     plts_dt <- map2(plts_dt, descriptions, \(x, y) append(x, list(description = y)))
     plts_ft <- map2(plts_ft, descriptions, \(x, y) append(x, list(description = y)))
-
-    km_dir_st <- str_glue("datasets/{dataset}/gfx/km_st")
-    if (!dir.exists(km_dir_st)) {
-        message("- mkdir ", km_dir_st)
-        dir.create(km_dir_st, recursive = TRUE)
-    }
-
-    km_dir_dt <- str_glue("datasets/{dataset}/gfx/km_dt")
-    if (!dir.exists(km_dir_dt)) {
-        message("- mkdir ", km_dir_dt)
-        dir.create(km_dir_dt, recursive = TRUE)
-    }
-
-    km_dir_ft <- str_glue("datasets/{dataset}/gfx/km_ft")
-    if (!dir.exists(km_dir_ft)) {
-        message("- mkdir ", km_dir_ft)
-        dir.create(km_dir_ft, recursive = TRUE)
-    }
-
 
     mu <- if ("mean" %in% plot_opts) "_mu" else ""
     es <- if ("extreme_sires" %in% plot_opts) "_es" else ""

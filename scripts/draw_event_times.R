@@ -14,7 +14,18 @@ draw_event_times <- function(dataset = "fb-test", scen = 1, rep = 1) {
         rep <- 1
     }
 
-    f <- str_glue("datasets/{dataset}/results/scen-{scen}-{rep}.rds")
+    {
+        base_dir   <- str_glue("datasets/{dataset}")
+        res_dir    <- str_glue("{base_dir}/results")
+        gfx_dir    <- str_glue("{base_dir}/gfx")
+        events_dir <- str_glue("{gfx_dir}/events")
+    }
+
+    if (!dir.exists(events_dir)) {
+        message("- mkdir ", events_dir)
+        dir.create(events_dir)
+    }
+    f <- str_glue("{res_dir}/scen-{scen}-{rep}.rds")
     res <- readRDS(f)
 
     fb_times <- (
@@ -72,13 +83,8 @@ draw_event_times <- function(dataset = "fb-test", scen = 1, rep = 1) {
         theme_bw() +
         theme(plot.title = element_text(size = 8))
 
-    gfx_dir <- str_glue("datasets/{dataset}/gfx/events")
-    if (!dir.exists(gfx_dir)) {
-        message("- mkdir ", gfx_dir)
-        dir.create(gfx_dir)
-    }
 
-    fp <- str_glue("{gfx_dir}/{dataset}-{scen}-{rep}-events.png")
+    fp <- str_glue("{events_dir}/{dataset}-{scen}-{rep}-events.png")
     ggsave(fp, plt, width = 6, height = 3)
 
     plt
@@ -86,8 +92,8 @@ draw_event_times <- function(dataset = "fb-test", scen = 1, rep = 1) {
 
 dataset <- "sim-test"; scen <- 1;
 
-reps <- list.files(str_glue("datasets/{dataset}/results"),
-                   str_glue("scen-{scen}")) |>
+reps <- list.files(str_glue("datasets/{dataset}/results")) |>
+    str_subset(str_glue("scen-{scen}-")) |>
     str_remove_all("scen-|\\.rds") |>
     str_split_i("-", 2) |>
     as.integer()

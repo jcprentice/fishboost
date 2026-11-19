@@ -16,14 +16,21 @@ tornadoes <- function(dataset = "fb-test", scens = 0, combine = TRUE) {
         combine <- TRUE
     }
 
-    gfx_dir <- str_glue("datasets/{dataset}/gfx/tornadoes")
-    if (!dir.exists(gfx_dir)) {
-        message("- mkdir ", gfx_dir)
-        dir.create(gfx_dir, recursive = TRUE)
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        res_dir  <- str_glue("{base_dir}/results")
+        gfx_dir  <- str_glue("{base_dir}/gfx")
+        tornado_dir <- str_glue("{gfx_dir}_/tornadoes")
+
+        if (!dir.exists(tornado_dir)) {
+            message("- mkdir ", tornado_dir)
+            dir.create(tornado_dir, recursive = TRUE)
+        }
     }
 
+
     if (all(scens == 0)) {
-        scens <- list.files(str_glue("datasets/{dataset}/results")) |>
+        scens <- list.files(res_dir) |>
             str_sort(numeric = TRUE) |>
             str_extract("-(\\d+)-", group = 1) |>
             unique() |>
@@ -54,7 +61,7 @@ tornadoes <- function(dataset = "fb-test", scens = 0, combine = TRUE) {
                          ncol = 1,
                          rel_heights = c(0.3, pmat$nr))
 
-        plt_str <- str_glue("{gfx_dir}/{dataset}-{scen}-tornadoes.pdf")
+        plt_str <- str_glue("{tornado_dir}/{dataset}-{scen}-tornadoes.pdf")
         ggsave(plt_str, plt,
                width = 2.4 * pmat$nc,
                height = 2 * (pmat$nr + 0.3))

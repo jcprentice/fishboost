@@ -35,11 +35,17 @@ run_all_tests <- function(dataset = "fb-test",
 
     message(str_glue("Generating all outputs for '{dataset}'"))
 
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        res_dir  <- str_glue("{base_dir}/results")
+        gfx_dir  <- str_glue("{base_dir}/gfx")
+    }
+
     fix_H_links(dataset)
 
     get_ds_times(dataset, 10)
 
-    sr <- list.files(str_glue("datasets/{dataset}/results")) |>
+    sr <- list.files(res_dir) |>
         str_sort(numeric = TRUE) |>
         str_extract_all("\\d+") |>
         map(as.integer)
@@ -81,7 +87,7 @@ run_all_tests <- function(dataset = "fb-test",
                  plot_opts = plot_opts[0])
 
         # Don't want the extreme sires results for donor/trial KM plots
-        list.files(str_glue("datasets/{dataset}/gfx/km_dt"), "_es",
+        list.files(str_glue("{gfx_dir}/km_dt"), "_es",
                    full.names = TRUE) |>
             file.remove()
 

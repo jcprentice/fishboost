@@ -25,6 +25,20 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
 
     message(str_glue("Calculating model fit deviation for '{dataset}'"))
 
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        data_dir <- str_glue("{base_dir}/data")
+        res_dir  <- str_glue("{base_dir}/results")
+        gfx_dir  <- str_glue("{base_dir}/gfx")
+        meta_dir <- str_glue("{base_dir}/meta")
+        mf_dir   <- str_glue("{gfx_dir}/model_fit")
+
+        c(meta_dir, mf_dir) |>
+            discard(dir.exists) |>
+            walk(~ message("- mkdir", .x)) |>
+            walk(dir.create)
+    }
+
     suffix <- str_c("",
                     if ("drop_outliers" %in% opts) "drop",
                     if ("extremes" %in% opts) "es",
@@ -32,7 +46,7 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
 
     if (str_1st(alt) %notin% c("", "-")) alt <- str_c("-", alt)
 
-    km_data <- readRDS(str_glue("datasets/{dataset}/meta/km_data_ps.rds"))
+    km_data <- readRDS(str_glue("{meta_dir}/km_data_ps.rds"))
 
     if (all(scens != 0)) {
         scens1 <- km_data |> names() |> str_remove("s") |> as.integer() |> intersect(scens)
@@ -237,8 +251,6 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
     setorder(fit, scen, type, variable)
 
     # Save to meta dir (give that dir something to do!)
-    meta_dir <- str_glue("datasets/{dataset}/meta")
-    if (!dir.exists(meta_dir)) dir.create(meta_dir)
     saveRDS(fit, str_glue("{meta_dir}/fit.rds"))
 
     fit_summary <- fit[, .(mean = mean(value),
@@ -341,12 +353,6 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
         theme(plot.title = element_text(size = 16),
               plot.background = element_rect(fill = "white"))
     fit_plt_rms
-
-    mf_dir <- str_glue("datasets/{dataset}/gfx/model_fit")
-    if (!dir.exists(mf_dir)) {
-        message("- mkdir ", mf_dir)
-        dir.create(mf_dir)
-    }
 
     ggsave(str_glue("{mf_dir}/{dataset}-model_fit-rms_dev{suffix}{alt}.png"),
            fit_plt_rms, width = 8, height = 5)

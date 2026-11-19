@@ -21,9 +21,13 @@ fig_tornadoes <- function(dataset = "sim-test-inf1", scen = 1) {
     message(str_glue("Generating tornado plots for {dataset} / s{scen} ..."))
 
     # Directories and list of files to scan
-    data_dir    <- str_glue("datasets/{dataset}/data")
-    results_dir <- str_glue("datasets/{dataset}/results")
-    res_files   <- list.files(results_dir,
+    {
+        base-dir <-str_glue("datasets/{dataset}")
+        data_dir <- str_glue("{base_dir}/data")
+        res_dir  <- str_glue("{base_dir}/results")
+    }
+
+    res_files   <- list.files(res_dir,
                               full.names = TRUE) |>
         str_subset(str_glue("scen-{scen}-")) |>
         str_sort(numeric = TRUE)

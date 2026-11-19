@@ -11,11 +11,14 @@
 
 compare_Tinfs <- function(dataset = "sim-test1", scen = 1, itn = 1) {
 
-    data_dir <- str_glue("datasets/{dataset}/data")
-    results_dir <- str_glue("datasets/{dataset}/results")
-    gfx_dir <- str_glue("datasets/{dataset}/gfx")
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        data_dir <- str_glue("{base_dir}/data")
+        res_dir  <- str_glue("{base_dir}/results")
+        gfx_dir  <- str_glue("{base_dir}/gfx")
+    }
 
-    f <- str_glue("{results_dir}/scen-{scen}-{itn}.rds")
+    f <- str_glue("{res_dir}/scen-{scen}-{itn}.rds")
     if (!file.exists(f)) {
         stop("Can't find file ", f)
     }
@@ -61,7 +64,7 @@ compare_Tinfs <- function(dataset = "sim-test1", scen = 1, itn = 1) {
                                  "2" = "Trial 2 Contacts"))) +
         theme_bw()
     plt
-    ggsave(str_glue("datasets/{gfx_dir}/comparing_Tinf.png"),
+    ggsave(str_glue("{gfx_dir}/comparing_Tinf.png"),
            plt, width = 9, height = 6, unit = "in")
 }
 

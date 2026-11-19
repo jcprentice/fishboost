@@ -15,13 +15,21 @@ dataset <- "fb-final"; scens <- 1:4
 # dataset <- "sim-test"; scens <- 1:4
 # dataset <- "sim-final"; scens <- 1:2
 
+{
+    base_dir <- str_glue("datasets/{dataset}")
+    data_dir <- str_glue("{base_dir}/data")
+    meta_dir <- str_glue("{base_dir}/meta")
+    res_dir  <- str_glue("{base_dir}/results")
+}
+
 scens <- setNames(scens, str_c("s", scens))
 
 x <- map(scens, possibly(\(i) {
     if (FALSE) {
         i <- 1
     }
-    f <- str_glue("datasets/{dataset}/data/scen-{i}-1-out/trace_combine.tsv")
+
+    f <- str_glue("{data_dir}/scen-{i}-1-out/trace_combine.tsv")
     if (!file.exists(f)) return(NULL)
 
     tr <- fread(f)
@@ -42,7 +50,7 @@ x <- map(scens, possibly(\(i) {
 
     rows <- pe[, str_subset(parameter, "h2", negate = TRUE)]
 
-    f <- str_glue("datasets/{dataset}/results/scen-{i}-1.rds")
+    f <- str_glue("{res_dir}/scen-{i}-1.rds")
     if (file.exists(f)) {
         PEs <- readRDS(f)$parameter_estimates
         pe[parameter %in% rows, `:=`(ESS = PEs[parameter %in% rows, ESS],
@@ -94,7 +102,7 @@ walk(scens, possibly(\(i) {
 
 setnames(x, str_replace_all(names(x), "_", "_s"))
 
-pe_name <- str_glue("datasets/{dataset}/meta/{dataset}-parameter_estimates.txt")
+pe_name <- str_glue("{meta_dir}/{dataset}-parameter_estimates.txt")
 message("- Writing to ", pe_name)
 fwrite(x, pe_name, sep = "|")
 

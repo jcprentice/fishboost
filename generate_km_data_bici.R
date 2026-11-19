@@ -15,8 +15,11 @@ generate_km_data_bici <- function(dataset = "fb-test",
         opts <- list(n_plots = 2L, post = "sampled")
     }
 
-    data_dir <- str_glue("datasets/{dataset}/data")
-    res_dir <- str_glue("datasets/{dataset}/results")
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        data_dir <- str_glue("{base_dir}/data")
+        res_dir  <- str_glue("{base_dir}/results")
+    }
 
     n_plots <- opts$n_plots
 

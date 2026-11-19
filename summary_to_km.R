@@ -5,10 +5,12 @@
 }
 
 summary_to_km <- function(dataset = "fb-test", scens = 0, opts, bici_cmd = "post-sim") {
-    base_dir <- str_glue("datasets/{dataset}")
-    data_dir <- str_glue("{base_dir}/data")
-    res_dir  <- str_glue("{base_dir}/results")
-    meta_dir <- str_glue("{base_dir}/meta")
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        data_dir <- str_glue("{base_dir}/data")
+        res_dir  <- str_glue("{base_dir}/results")
+        meta_dir <- str_glue("{base_dir}/meta")
+    }
 
     files <- list.files(data_dir,
                         str_glue("summary_{bc}.rds",

@@ -13,8 +13,11 @@ sbc <- function(dataset = "sim-test-inf1", scen = 2) {
         dataset <- "sim-test-inf1"; scen <- 2
     }
 
-    data_dir <- str_glue("datasets/{dataset}")
-    res_dir  <- str_glue("{data_dir}/results")
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        data_dir <- str_glue("{base_dir}/data")
+        res_dir  <- str_glue("{base_dir}/results")
+    }
 
     res_files <- list.files(res_dir,
                             full.names = TRUE) |>

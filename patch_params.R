@@ -36,8 +36,9 @@ patch_params <- function(params, trace_row = 0) {
                                "'{patch_dataset}' scenario {patch_name} ..."))
 
     {
-        data_dir      <- str_glue("datasets/{patch_dataset}/data")
-        results_dir   <- str_glue("datasets/{patch_dataset}/results")
+        base_dir      <- str_glue("datasets/{patch_dataset}")
+        data_dir      <- str_glue("{base_dir}/data")
+        results_dir   <- str_glue("{base_dir}/results")
         patch_out_dir <- str_glue("{data_dir}/{patch_name}-out")
     }
 

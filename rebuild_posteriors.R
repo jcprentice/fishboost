@@ -21,10 +21,12 @@ rebuild_bici_posteriors <- function(dataset = "fb-test",
         name <- params$name
     }
 
-    base_dir <- str_glue("datasets/{dataset}")
-    data_dir <- str_glue("{base_dir}/data")
-    res_dir  <- str_glue("{base_dir}/results")
-    out_dir  <- str_glue("{data_dir}/{name}-out")
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        data_dir <- str_glue("{base_dir}/data")
+        res_dir  <- str_glue("{base_dir}/results")
+        out_dir  <- str_glue("{data_dir}/{name}-out")
+    }
 
     f <- str_glue("{res_dir}/{name}.rds")
     if (file.exists(f)) {
@@ -215,9 +217,12 @@ rebuild_sire_posteriors <- function(dataset = "fb-final",
     }
     # dataset <- params$dataset; name <- params$name
 
-    data_dir <- str_glue("datasets/{dataset}/data")
-    out_dir  <- str_glue("{data_dir}/{name}-out")
-    res_dir  <- str_glue("datasets/{dataset}/results")
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        data_dir <- str_glue("{base_dir}/data")
+        res_dir  <- str_glue("{base_dir}/results")
+        out_dir  <- str_glue("{data_dir}/{name}-out")
+    }
 
     tc_txt <- str_glue("{out_dir}/trace_combine.txt")
     tc     <- str_glue("{out_dir}/trace_combine.tsv")

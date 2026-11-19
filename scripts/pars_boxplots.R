@@ -23,9 +23,12 @@ pars_boxplots <- function(dataset = "fb-test",
         plt_shape <- "traits"; output <- "pdf"
     }
 
-    data_dir <- str_glue("datasets/{dataset}/data")
-    res_dir  <- str_glue("datasets/{dataset}/results")
-    gfx_dir  <- str_glue("datasets/{dataset}/gfx")
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        data_dir <- str_glue("{base_dir}/data")
+        res_dir  <- str_glue("{base_dir}/results")
+        gfx_dir  <- str_glue("{base_dir}/gfx")
+    }
 
     files <- list.files(data_dir, "^trace_combine",
                         recursive = TRUE, full.names = TRUE) |>

@@ -13,7 +13,19 @@ model_fit_auc <- function(dataset = "fb-final") {
 
     message(str_glue("Calculating AUC model fit for '{dataset}'"))
 
-    km_data <- readRDS(str_glue("datasets/{dataset}/meta/km_data_ps.rds"))
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        gfx_dir  <- str_glue("{base_dir}/gfx")
+        meta_dir <- str_glue("{base_dir}/meta")
+        mf_dir   <- str_glue("{gfx_dir}/model_fit")
+
+        if (!dir.exists(mf_dir)) {
+            message("- mkdir ", mf_dir)
+            dir.create(mf_dir)
+        }
+    }
+
+    km_data <- readRDS(str_glue("{meta_dir}/km_data_ps.rds"))
 
     params <- map(km_data, "params")
     labels <- map_chr(params, "label")
@@ -114,12 +126,6 @@ model_fit_auc <- function(dataset = "fb-final") {
         theme_classic() +
         theme(plot.title = element_text(size = 16))
     fit_plt
-
-    mf_dir <- str_glue("datasets/{dataset}/gfx/model_fit")
-    if (!dir.exists(mf_dir)) {
-        message("- mkdir ", mf_dir)
-        dir.create(mf_dir)
-    }
 
     ggsave(str_glue("{mf_dir}/{dataset}-model_fit-auc.png"),
            fit_plt, width = 8, height = 5)

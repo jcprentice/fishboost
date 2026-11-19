@@ -17,12 +17,23 @@ timings_hist <- function(dataset = "sim-test1",
     # dataset <- "sim-test1"; scens <- 1:9
     # post = "sampled"; apply_gammas <- 0
 
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        gfx_dir  <- str_glue("{base_dir}/gfx")
+        meta_dir <- str_glue("{base_dir}/meta")
+
+        if (!dir.exists(meta_dir)) {
+            message("- mkdir ",meta_dir)
+            dir.create(meta_dir)
+        }
+    }
+
     trials <- 12
 
     um <- switch(post, "sampled" = "_ps", "_pm")
     ag <- if (apply_gammas > 0) str_glue("_gam{apply_gammas}") else ""
 
-    f <- str_glue("datasets/{dataset}/meta/km_data{um}{ag}.rds")
+    f <- str_glue("{meta_dir}/km_data{um}{ag}.rds")
     km_data <- readRDS(f)
     data <- map(scens, \(i) {
         x <- km_data[[i]]$data
@@ -99,7 +110,7 @@ timings_hist <- function(dataset = "sim-test1",
     })
 
 
-    gfx_dir <- str_glue("datasets/{dataset}/gfx/timings")
+    gfx_dir <- str_glue("{gfx_dir}/timings")
     if (!dir.exists(gfx_dir)) {
         message("- mkdir ", gfx_dir)
         dir.create(gfx_dir)

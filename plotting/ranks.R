@@ -21,8 +21,12 @@ plot_ranks <- function(dataset = "sim-Gcov", scen = 1) {
         return()
     }
 
-    # Directory to save all files to
-    gfx_dir <- str_glue("datasets/{dataset}/gfx")
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        res_dir  <- str_glue("{base_dir}/results")
+        gfx_dir  <- str_glue("{base_dir}/gfx")
+    }
+
     if (!dir.exists(gfx_dir)) {
         message("- mkdir ", gfx_dir)
         dir.create(gfx_dir)
@@ -34,7 +38,6 @@ plot_ranks <- function(dataset = "sim-Gcov", scen = 1) {
     Rks <- data.table()
 
     # get list of files to scan
-    res_dir <- str_glue("datasets/{dataset}/results")
     res_files <- list.files(res_dir, pattern = str_glue("scen-{scen}-"))
 
     if (is_empty(res_files)) {

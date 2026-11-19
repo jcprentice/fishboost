@@ -54,8 +54,14 @@ means <- tmp[, .SD, .SDcols = patterns("scen|mean")]
 maxes[, id := seq_len(.N), scen]
 means[, id := seq_len(.N), scen]
 
+{
+    base_dir <- str_glue("datasets/{dataset}")
+    res_dir  <- str_glue("{base_dir}/results")
+    gfx_dir  <- str_glue("{base_dir}/gfx")
+}
+
 map_chr(seq_len(nScens), \(i) {
-    f <- str_glue("datasets/{dataset}/results/scen-{i}-1.rds")
+    f <- str_glue("{res_dir}/scen-{i}-1.rds")
     title_str <- readRDS(f)$params$description |>
         str_remove(", convergence")
 })
@@ -63,7 +69,7 @@ map_chr(seq_len(nScens), \(i) {
 
 
 plt_tD <- map(seq_len(nScens), possibly(\(i) {
-    f <- str_glue("datasets/{dataset}/results/scen-{i}-1.rds")
+    f <- str_glue("{res_dir}/scen-{i}-1.rds")
     params <- readRDS(f)$params
     title_str <- str_remove(params$description, ", convergence")
     ggplot() +
@@ -74,6 +80,6 @@ plt_tD <- map(seq_len(nScens), possibly(\(i) {
 }))
 
 p <- plot_grid(plotlist = plt_tD, ncol = 2, byrow = FALSE)
-ggsave(str_glue("datasets/{dataset}/gfx/tDs.png"),
+ggsave(str_glue("{gfx_dir}/tDs.png"),
        plot = p, width = 10, height = 10)
 

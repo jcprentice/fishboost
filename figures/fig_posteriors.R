@@ -43,8 +43,11 @@ fig_posteriors <- function(dataset = "fb-test", scen = 1, rep = 1) {
 
     message(str_glue("Generating posterior plots for '{dataset} / s{name}' ..."))
 
-    data_dir    <- str_glue("datasets/{dataset}/data")
-    results_dir <- str_glue("datasets/{dataset}/results")
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        data_dir <- str_glue("{base_dir}/data")
+        res_dir  <- str_glue("{base_dir}/results")
+    }
 
     # Slight nudge to ensure that LP is the same type as everything else
     trace_files <- list.files(data_dir, "trace_combine.tsv",
@@ -82,7 +85,7 @@ fig_posteriors <- function(dataset = "fb-test", scen = 1, rep = 1) {
 
     pars <- names(x)
 
-    res_file <- list.files(results_dir, full.names = TRUE) |>
+    res_file <- list.files(res_dir, full.names = TRUE) |>
         str_subset(str_glue("scen-{scen}-")) |>
         str_sort(numeric = TRUE) |>
         pluck(1)

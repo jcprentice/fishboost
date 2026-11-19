@@ -13,8 +13,11 @@ gr_diagnostics <- function(dataset = "fb-final", scen = 1, itn = 0) {
 
     # dataset <- "fb-final"; scen <- 1; itn <- 0
 
-    data_dir <- str_glue("datasets/{dataset}/data")
-    res_dir  <- str_glue("datasets/{dataset}/results")
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        data_dir <- str_glue("{base_dir}/data")
+        res_dir  <- str_glue("{base_dir}/results")
+    }
 
     trace_files <- list.files(path = data_dir,
                               pattern = "trace",
