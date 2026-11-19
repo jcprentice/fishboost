@@ -18,9 +18,9 @@ fig_km_tank <- function(dataset = "fb-test",
 
     if (FALSE) {
         dataset <- "fb-test"
-        scen <- 7
+        scen <- 8
         plot_opts <- c("fb_only", "extremes", "t1", "t2", "t2_width", "mean", "ribbon")
-        plot_opts <- c("Tsign", "t1", "ribbon")
+        plot_opts <- c("Tsign", "fb_only", "t1", "t2_width")
         title_str <- "Tsign<br>Multi-stage endurance"
         DEBUG <- TRUE
     }
@@ -174,7 +174,8 @@ fig_km_tank <- function(dataset = "fb-test",
     }
 
     fb_vals <- geom_line(aes(x = time, y = survival,
-                             group = gp, colour = str),
+                             group = gp, colour = str), # colour = gp
+                         alpha = 0.5,
                          data_svm[src == "fb"])
 
     Tmax <- if ("t2_width" %in% plot_opts) 160 else max(data_svm$time, na.rm = TRUE)
@@ -191,6 +192,7 @@ fig_km_tank <- function(dataset = "fb-test",
                             labels = scm$labels,
                             values = scm$values,
                             drop = FALSE) +
+        # scale_colour_gradient(low = "#1F78B4", high = "#0000FF") +
         # guides(fill   = guide_legend(ncol = 1),
         #        colour = guide_legend(ncol = 1)) +
         lims(x = c(0, Tmax),
@@ -200,28 +202,51 @@ fig_km_tank <- function(dataset = "fb-test",
              x = "Time (days)",
              y = "Survival (%)",
              title = title_str) +
+        # facet_wrap(~ trial, ncol = 1,
+        #            labeller = labeller(trial = c("1" = "Trial 1", "2" = "Trial 2"))) +
         theme_natcom()
     plt
 }
 
-{
+if (FALSE) {
+    p1 <- fig_km_tank("fb-test", 8, c("Tsign", "fb_only", "t1", "t2_width"),
+                      "Time to visual signs (Trial 1 tanks)")
+    p2 <- fig_km_tank("fb-test", 8, c("RP", "fb_only", "t1", "t2_width"),
+                      "Time from visual signs to death (Trial 1 tanks)")
+    p3 <- fig_km_tank("fb-test", 8, c("Tsign", "fb_only", "t2"),
+                      "Time to visual signs (Trial 2 tanks)")
+    p4 <- fig_km_tank("fb-test", 8, c("RP", "fb_only", "t2"),
+                      "Time from visual signs to death (Trial 2 tanks)")
+
+    plt <- plot_grid(p1, p2, p3, p4,
+                     labels = c("c", "d", "e", "f"),
+                     label_size = 10,
+                     align = "hv")
+
+    ggsave("gfx/km_plots-tank.pdf", plt,
+           width = 18.3, height = 8, units = "cm", dpi = "print")
+    ggsave("gfx/km_plots-tank.png", plt,
+           width = 18.3, height = 8, units = "cm", dpi = "print")
+}
+
+if (FALSE) {
     p1 <- fig_km_tank("fb-test", 2, c("Tsign", "ribbon"),
-                        "Time to visual signs<br>Multi-stage endurance")
+                      "Time to visual signs<br>Multi-stage endurance")
 
     p2 <- fig_km_tank("fb-test", 2, c("Tsign", "extremes", "ribbon"),
-                        "Time to visual signs, extremes<br>Multi-stage endurance")
+                      "Time to visual signs, extremes<br>Multi-stage endurance")
 
     p3 <- fig_km_tank("fb-test", 3, c("Tsign", "extremes", "ribbon"),
-                        "Time to visual signs, extremes<br>No genetic variance")
+                      "Time to visual signs, extremes<br>No genetic variance")
 
     p4 <- fig_km_tank("fb-test", 2, c("RP", "ribbon"),
-                        "Time from visual signs to death<br>Multi-stage endurance")
+                      "Time from visual signs to death<br>Multi-stage endurance")
 
     p5 <- fig_km_tank("fb-test", 2, c("RP", "extremes", "ribbon"),
-                        "Time from visual signs to death, extremes<br>Multi-stage endurance")
+                      "Time from visual signs to death, extremes<br>Multi-stage endurance")
 
     p6 <- fig_km_tank("fb-test", 3, c("RP", "extremes", "ribbon"),
-                        "Time from visual signs to death, extremes<br>No genetic variance")
+                      "Time from visual signs to death, extremes<br>No genetic variance")
 
     scm <- rowwiseDT(
         breaks=,    labels=,                      values=,
@@ -248,23 +273,23 @@ fig_km_tank <- function(dataset = "fb-test",
         theme(text = element_text(size = 5))
     p_leg
     p_legend <- get_legend(p_leg)
+
+    plt1 <- plot_grid(p1 + theme(legend.position = "none"),
+                      p2 + theme(legend.position = "none"),
+                      p3 + theme(legend.position = "none"),
+                      p4 + theme(legend.position = "none"),
+                      p5 + theme(legend.position = "none"),
+                      p6 + theme(legend.position = "none"),
+                      labels = "auto",
+                      label_size = 10,
+                      align = "hv", ncol = 3)
+
+    plt <- plot_grid(plt1, p_legend,
+                     ncol = 1, rel_heights = c(1, 0.08))
+    plt
+
+    ggsave("gfx/km_plots-tank.pdf", plt,
+           width = 18.3, height = 17, units = "cm", dpi = "print")
+    ggsave("gfx/km_plots-tank.png", plt,
+           width = 18.3, height = 17, units = "cm", dpi = "print")
 }
-
-plt1 <- plot_grid(p1 + theme(legend.position = "none"),
-                  p2 + theme(legend.position = "none"),
-                  p3 + theme(legend.position = "none"),
-                  p4 + theme(legend.position = "none"),
-                  p5 + theme(legend.position = "none"),
-                  p6 + theme(legend.position = "none"),
-                  labels = "auto",
-                  label_size = 10,
-                  align = "hv", ncol = 3)
-
-plt <- plot_grid(plt1, p_legend,
-                 ncol = 1, rel_heights = c(1, 0.08))
-plt
-
-ggsave("gfx/km_plots-tank.pdf", plt,
-       width = 18.3, height = 17, units = "cm", dpi = "print")
-ggsave("gfx/km_plots-tank.png", plt,
-       width = 18.3, height = 17, units = "cm", dpi = "print")
