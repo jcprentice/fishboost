@@ -95,7 +95,7 @@ fig_pars_zcontract <- function(dataset = "sim-test-inf1", scens = 0) {
 
     {
         priors[type == "uniform", prior_var := (val2 - val1)^2 / 12]
-        priors[type == "inverse", prior_var := inv_var(val1, val2), .I]
+        priors[type == "inverse", prior_var := inv_var(val1, val2)]
         priors[str_starts(parameter, "cov_"), prior_var := 4 * (1 - 2 / pi)]
         priors[str_starts(parameter, "r_"), prior_var := 1 / (2 * 1.2 + 1)]
         priors[, c("type", "val1", "val2") := NULL]
