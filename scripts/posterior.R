@@ -14,7 +14,7 @@
 get_posterior <- function(dataset = "fb-test", scen = 1, rep = 1,
                           output = "png") {
     if (FALSE) {
-        dataset <- "fb-test"; scen <- 1; rep <- 1
+        dataset <- "fb-test"; scen <- 8; rep <- 1
         dataset <- "sim-base-inf"; scen <- 1; rep <- 1
         output <- "png"
     }
@@ -45,9 +45,14 @@ get_posterior <- function(dataset = "fb-test", scen = 1, rep = 1,
                      ncol = 1, rel_heights = c(0.3, pmat$nr))
 
     plt_str <- str_glue("{post_dir}/{dataset}-s{scen}-{rep}-posteriors")
+
+    width <- 18.3
+    height <- min((pmat$nr + 0.3) / pmat$nc * width, 20)
+
     walk(output, ~ ggsave(str_c(plt_str, ".", .x), plt,
-                          width = 2 * pmat$nc,
-                          height = 2 * (pmat$nr + 0.3)))
+                          width = width,
+                          height = height,
+                          units = "cm"))
     message(str_glue("- plotted '{plt_str}'"))
 
 
