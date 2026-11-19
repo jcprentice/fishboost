@@ -13,32 +13,22 @@ sbc <- function(dataset = "sim-test-inf1", scen = 2) {
         dataset <- "sim-test-inf1"; scen <- 2
     }
 
-    tc_files <- list.files(str_glue("datasets/{dataset}/data"),
-                        "trace_combine.tsv",
-                        full.names = TRUE,
-                        recursive = TRUE) |>
+    data_dir <- str_glue("datasets/{dataset}")
+    res_dir  <- str_glue("{data_dir}/results")
+
+    res_files <- list.files(res_dir,
+                            full.names = TRUE) |>
         str_subset(str_glue("scen-{scen}-")) |>
         str_sort(numeric = TRUE)
 
-    tc <- tc_files |>
-        map(fread) |>
-        rbindlist(idcol = "id") |>
-        _[, str_subset(names(.SD), "^G_") := NULL]
-
-
-    files <- list.files(str_glue("datasets/{dataset}/results"),
-                        full.names = TRUE) |>
-        str_subset(str_glue("scen-{scen}-")) |>
-        str_sort(numeric = TRUE)
-
-    x <- files |>
+    x <- res_files |>
         map(readRDS) |>
         map("parameter_estimates") |>
         rbindlist(idcol = "id") |>
         _[!str_starts(parameter, "G_"),
           .(id, parameter, true_val, mean, median, sd, hdi95min, hdi95max)]
 
-    tv <- x[id == 1 & !is.na(true_val), .(parameter, true_val)]
+    true_vals <- x[id == first(id) & !is.na(true_val), .(parameter, true_val)]
 
     inv_var <- function(a, b) {
         c1 <- (b^2 - a^2) / (2 * log(b / a))
@@ -47,7 +37,7 @@ sbc <- function(dataset = "sim-test-inf1", scen = 2) {
     }
 
     {
-        priors <- readRDS(files[[1]])$params$priors
+        priors <- readRDS(res_files[[1]])$params$priors
         priors <- priors[parameter %in% x[, unique(parameter)]]
         priors[type == "uniform", prior_var := (val2 - val1)^2 / 12]
         priors[type == "inverse", prior_var := inv_var(val1, val2), .I]
@@ -57,10 +47,21 @@ sbc <- function(dataset = "sim-test-inf1", scen = 2) {
 
 
     if (FALSE) {
+        tc_files <- list.files(data_dir,
+                               full.names = TRUE,
+                               recursive = TRUE) |>
+            str_subset(str_glue("scen-{scen}-.*trace_combine")) |>
+            str_sort(numeric = TRUE)
+
+        tc <- tc_files |>
+            map(fread) |>
+            rbindlist(idcol = "id") |>
+            _[, str_subset(names(.SD), "^G_") := NULL]
+
         params <- intersect(param_order, priors$parameter)
         out <- map(params, \(par) {
             tv <- priors[parameter == par, true_val]
-            out <- tc[, mean(get(par) < tv), id][, .(id, rank = sort(V1))]
+            out <- tc[, mean(get(par) - tv), id][, .(id, rank = sort(V1))]
             ggplot(out) +
                 aes(x = id, y = rank) +
                 # stat_ecdf() +
@@ -80,13 +81,14 @@ sbc <- function(dataset = "sim-test-inf1", scen = 2) {
 
     x1 <- merge(x, priors[, .(parameter, prior_var)], by = "parameter", all.x = TRUE)
 
-    x1[, rank := match(parameter, param_order)]
-    setorder(x1, rank)
-    x1[, rank := NULL]
+    # Put parameters back into correct order after merge
+    x1[, tmp := match(parameter, param_order)]
+    setorder(x1, tmp)
+    x1[, tmp := NULL]
 
     pb <- x1[!is.na(true_val),
-      .(coverage    = fifelse(hdi95min < true_val & true_val < hdi95max, 1, 0),
-        z_score     = (median - true_val) / sd,
+      .(coverage    = hdi95min < true_val & true_val < hdi95max,
+        rel_bias    = (median - true_val) / sd,
         contraction = 1 - sd^2 / prior_var),
       Param]
 
