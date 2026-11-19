@@ -43,23 +43,19 @@ combine_replicates(dataset = "fb-final2") {
 
     # Merge trace_combine.tsv and extended_trace_combine.tsv files
     walk(scens, \(scen) {
-        # scen <- 1
-        walk(c("", "extended_"), \(fp) {
-            # fp <- ""
-            tc_files <- list.files(data_dir,
-                                   str_glue("^{fp}trace_combine"),
-                                   recursive = TRUE,
-                                   full.names = TRUE) |>
-                str_subset(str_glue("scen-{scen}"))
+        tc_files <- list.files(data_dir,
+                               recursive = TRUE,
+                               full.names = TRUE) |>
+            str_subset(str_glue("scen-{scen}-.*trace_combine")) |>
+            str_sort(numeric = TRUE)
 
-            if (length(tc_files) <= 1) return()
-            message(str_glue("- Rebuilding {fp}trace_combine.tsv file for s{scen}"))
+        if (length(tc_files) <= 1) return()
+        message(str_glue("- Rebuilding trace_combine.tsv file for s{scen}"))
 
-            foo <- map(tc_files, fread) |> rbindlist()
-            foo[, state := seq(0L, .N - 1L)]
-            fwrite(foo, tc_files[[1]], sep = "\t")
-            file.remove(tc_files[-1])
-        })
+        foo <- map(tc_files, fread) |> rbindlist()
+        foo[, state := seq(0L, .N - 1L)]
+        fwrite(foo, tc_files[[1]], sep = "\t")
+        file.remove(tc_files[-1])
     })
 
     walk(scens, \(scen) {
