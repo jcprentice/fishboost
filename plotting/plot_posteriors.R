@@ -38,7 +38,7 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
 ) {
 
     if (FALSE) {
-        dataset <- "fb-test"; scen <- 2; rep <- 1
+        dataset <- "fb-test"; scen <- 8; rep <- 1
         dataset <- "sim-test2"; scen <- 1; rep <- 1
         ci <- "hpdi"; draw <- "density"; combine <- TRUE
     }
@@ -47,8 +47,11 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
 
     message(str_glue("Generating posterior plots for '{dataset} / s{name}' ..."))
 
-    data_dir    <- str_glue("datasets/{dataset}/data")
-    results_dir <- str_glue("datasets/{dataset}/results")
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        data_dir <- str_glue("{base_dir}/data")
+        res_dir  <- str_glue("{base_dir}/results")
+    }
 
     # Slight nudge to ensure that LP is the same type as everything else
     trace_files <- list.files(data_dir, "trace_combine.tsv",
@@ -74,7 +77,7 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
         return(NULL)
     }
 
-    res_file <- list.files(results_dir, full.names = TRUE) |>
+    res_file <- list.files(res_dir, full.names = TRUE) |>
         str_subset(str_glue("scen-{scen}-")) |>
         str_sort(numeric = TRUE) |>
         pluck(1)
@@ -175,9 +178,9 @@ plot_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1,
         } else {
             prng <- priors[parameter == par, .(val1, val2)] |> unlist()
             dens <- if (length(prng) < 2) {
-                density(xp_val, adjust = 1, cut = 0)
+                density(xp$value, adjust = 1, cut = 0)
             } else {
-                density(xp_val, adjust = 1, from = prng[[1]], to = prng[[2]])
+                density(xp$value, adjust = 1, from = prng[[1]], to = prng[[2]])
             }
             dd <- with(dens, data.table(x, y))
         }
