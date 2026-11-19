@@ -4,29 +4,37 @@
     library(purrr)
     library(ggplot2)
     library(cowplot)
+    library(RColorBrewer)
     library(pipebind)
 }
 
-pred_accs_plot <- function(dataset = "sim-test-inf", scen = 1, rep = 1, parents_only = TRUE) {
+pred_accs_plot <- function(dataset = "sim-test-inf", scen = 2, rep = 1, parents_only = TRUE) {
     if (FALSE) {
-        dataset <- "sim-test-inf2"
-        scen <- 1
+        dataset <- "sim-test-inf1"
+        scen <- 2
         rep <- 1
         parents_only <- TRUE
     }
 
     name <- str_glue("scen-{scen}-{rep}")
 
-    pa_dir <- str_glue("datasets/{dataset}/gfx/pred_accs")
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        data_dir <- str_glue("{base_dir}/data")
+        res_dir  <- str_glue("{base_dir}/results")
+        gfx_dir  <- str_glue("{base_dir}/gfx")
+        pa_dir   <- str_glue("{gfx_dir}/pred_accs")
+    }
+
     if (!dir.exists(pa_dir)) {
         message("- mkdir ", pa_dir)
         dir.create(pa_dir)
     }
 
-    res <- readRDS(str_glue("datasets/{dataset}/results/{name}.rds"))
-    params <- res$params
+    results <- readRDS(str_glue("{res_dir}/{name}.rds"))
+    params <- results$params
 
-    x <- res$popn[, .SD, .SDcols = patterns("(^id$|sdp|_[ge]$)")]
+    x <- results$popn[, .SD, .SDcols = patterns("(^id$|sdp|_g$)")]
     if (parents_only) x <- x[sdp != "progeny"]
     setnames(x, str_replace_all(names(x),
                                 c("susceptibility" = "sus",
@@ -35,8 +43,8 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 1, rep = 1, parents_
                                   "detectability"  = "det",
                                   "tolerance"      = "tol",
                                   "endurance"      = "end",
-                                  "BV" = "g", "GV" = "g", "EV" = "e")))
-    cols <- c("id", "sdp", "sus_g", "inf_g", "tol_g", "sus_e", "inf_e", "tol_e")
+                                  "BV" = "g", "GV" = "g")))
+    cols <- c("id", "sdp", "sus_g", "inf_g", "tol_g")
     setcolorder(x, cols, skip_absent = TRUE)
 
     if (any(cols %notin% names(x))) {
@@ -44,15 +52,15 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 1, rep = 1, parents_
         return(NULL)
     }
 
-    rf <- str_glue("datasets/{dataset}/data/{name}-out/summary_inf.rds")
+    rf <- str_glue("{data_dir}/{name}-out/summary_inf.rds")
     if (!file.exists(rf)) {
         message(str_glue("Warning: missing '{rf}'"))
         return(c(sus = 0, inf = 0, tol = 0))
     }
-    y <- readRDS(rf)$popn[, .SD, .SDcols = patterns("(^id$|sdp|_[ge]$)")]
+    y <- readRDS(rf)$popn[, .SD, .SDcols = patterns("(^id$|sdp|_g$)")]
     if (parents_only) y <- y[sdp != "progeny"]
 
-    y <- y[, map(.SD, median), .(id, sdp), .SDcols = patterns("_[ge]$")]
+    y <- y[, map(.SD, median), .(id, sdp), .SDcols = patterns("_g$")]
     setcolorder(y, cols, skip_absent = TRUE)
 
     xy <- merge(melt(x[, .SD, .SDcols = patterns("id|sdp|_g$")],
@@ -68,7 +76,8 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 1, rep = 1, parents_
                        x >= quantile(x, 0.8) & y <  quantile(y, 0.8), "FN",
                        x <  quantile(x, 0.8) & y >= quantile(y, 0.8), "FP"), variable]
 
-    p <- ggplot(xy, aes(x = x, y = y, group = variable, colour = topx)) +
+    p <- ggplot(xy) +
+        aes(x = x, y = y, group = variable, colour = topx) +
         geom_point() +
         geom_abline(linetype = "dashed", linewidth = 0.5) +
         geom_hline(yintercept = 0, colour = "black") +
@@ -118,19 +127,30 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 1, rep = 1, parents_
     plt
 }
 
-pred_accs <- function(dataset = "sim-test-inf1", scen = 1, rep = 1, parents_only = TRUE, method = "kendall") {
+pred_accs <- function(dataset = "sim-test-inf1",
+                      scen = 2,
+                      rep = 1,
+                      parents_only = TRUE,
+                      method = "pearson") {
     if (FALSE) {
         dataset <- "sim-test-inf1"
-        scen <- 1
+        scen <- 2
         rep <- 1
         parents_only <- TRUE
-        method <- "kendall"
+        method <- "pearson"
     }
 
     name <- str_glue("scen-{scen}-{rep}")
 
-    x <- readRDS(str_glue("datasets/{dataset}/results/{name}.rds"))$popn
-    x[, names(.SD) := NULL, .SDcols = !patterns("(^id$|sdp|_[ge]$)")]
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        data_dir <- str_glue("{base_dir}/data")
+        res_dir  <- str_glue("{base_dir}/results")
+    }
+
+
+    x <- readRDS(str_glue("{res_dir}/{name}.rds"))$popn
+    x[, names(.SD) := NULL, .SDcols = !patterns("(^id$|sdp|_g$)")]
     if (parents_only) x <- x[sdp != "progeny"]
     x[, sdp := NULL]
 
@@ -141,24 +161,24 @@ pred_accs <- function(dataset = "sim-test-inf1", scen = 1, rep = 1, parents_only
                                   "detectability"  = "det",
                                   "tolerance"      = "tol",
                                   "endurance"      = "end",
-                                  "BV" = "g", "GV" = "g", "EV" = "e")))
-    cols <- c("id", "sus_g", "inf_g", "tol_g", "sus_e", "inf_e", "tol_e")
+                                  "BV" = "g", "GV" = "g")))
+    cols <- c("id", "sus_g", "inf_g", "tol_g")
     setcolorder(x, cols, skip_absent = TRUE)
 
     if (any(cols %notin% names(x))) {
         return(c(sus = 0, inf = 0, tol = 0))
     }
 
-    rf <- str_glue("datasets/{dataset}/data/{name}-out/summary_inf.rds")
+    rf <- str_glue("{data_dir}/{name}-out/summary_inf.rds")
     if (!file.exists(rf)) {
         message(str_glue("Warning: missing '{rf}'"))
         return(c(sus = 0, inf = 0, tol = 0))
     }
-    y <- readRDS(rf)$popn[, .SD, .SDcols = patterns("(^id$|sdp|_[ge]$)")]
+    y <- readRDS(rf)$popn[, .SD, .SDcols = patterns("(^id$|sdp|_g$)")]
     if (parents_only) y <- y[sdp != "progeny"]
     y[, sdp := NULL]
 
-    y <- y[, map(.SD, mean), id, .SDcols = patterns("_[ge]$")]
+    y <- y[, map(.SD, mean), id, .SDcols = patterns("_g$")]
     setcolorder(y, cols, skip_absent = TRUE)
 
     if (str_detect(method, "top")) {
@@ -168,7 +188,7 @@ pred_accs <- function(dataset = "sim-test-inf1", scen = 1, rep = 1, parents_only
 
     if (is.character(method)) {
         if (method %notin% c("pearson", "spearman", "kendall")) {
-            method <- "kendall"
+            method <- "pearson"
         }
         c(sus = cor.test(x$sus_g, y$sus_g, method = method)$estimate |> unname(),
           inf = cor.test(x$inf_g, y$inf_g, method = method)$estimate |> unname(),
@@ -191,15 +211,22 @@ pred_accs <- function(dataset = "sim-test-inf1", scen = 1, rep = 1, parents_only
 }
 
 if (FALSE) {
-    dataset <- "sim-test-inf2"
+    dataset <- "sim-test-inf1"
 
-    sr <- list.files(str_glue("datasets/{dataset}/results")) |>
-        str_sort(numeric = TRUE) |> str_remove_all("scen-|.rds") |>
+    {
+        base_dir <- str_glue("datasets/{dataset}")
+        res_dir  <- str_glue("{base_dir}/results")
+        meta_dir <- str_glue("{base_dir}/meta")
+    }
+
+    sr <- list.files(res_dir) |>
+        str_remove_all("scen-|.rds") |>
+        str_sort(numeric = TRUE) |>
         str_split("-") |> map(as.integer)
     scens <- map_int(sr, 1)
     reps  <- map_int(sr, 2)
 
-    methods <- c("kendall", "pearson", "spearman", "top20")
+    methods <- c("pearson", "kendall", "spearman", "top20")
     parents_only <- TRUE
 
     PAs <- map(methods, \(method) {
@@ -217,7 +244,7 @@ if (FALSE) {
         }) |>
         setNames(methods)
 
-    saveRDS(PAs, str_glue("datasets/{dataset}/meta/PAs{parents}.rds",
+    saveRDS(PAs, str_glue("{meta_dir}/PAs{parents}.rds",
                           parents = if (parents_only) "-parents" else ""))
 }
 
