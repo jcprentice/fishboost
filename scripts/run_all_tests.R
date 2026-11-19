@@ -29,12 +29,15 @@ run_all_tests <- function(dataset = "fb-test",
         dataset <- "sim-test-inf1"
         dataset <- "sim-test-inf2"
         dataset <- "sim-events"
+        dataset <- "sim-n-inf"
         km <- FALSE
     }
 
     message(str_glue("Generating all outputs for '{dataset}'"))
 
     fix_H_links(dataset)
+
+    get_ds_times(dataset, 10)
 
     sr <- list.files(str_glue("datasets/{dataset}/results")) |>
         str_sort(numeric = TRUE) |>
