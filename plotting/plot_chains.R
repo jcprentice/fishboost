@@ -26,7 +26,7 @@ plot_chains <- function(dataset = "fb-test",
     {
         base_dir <- str_glue("datasets/{dataset}")
         data_dir <- str_glue("{base_dir}/data")
-        res_dir <- str_glue("{base_dir}/results")
+        res_dir  <- str_glue("{base_dir}/results")
         chains_dir <- str_glue("{base_dir}/gfx/chains")
     }
 
