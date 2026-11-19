@@ -21,7 +21,7 @@
 #'
 #' Plot a grid of posterior distributions for parameters from a data set.
 #'
-#' @param dataset name of the data set to be worked on (e.g. `"fb-final"`)
+#' @param dataset name of the data set to be worked on (e.g. `"fb-test"`)
 #' @param scen scenario number
 #' @param draw choose between a `"density"` plot or a `"histogram"`
 #'
@@ -29,13 +29,13 @@
 #' @export
 #'
 #' @examples
-#' `plot_posteriors("fb-final", 1)`
-#' `plot_posteriors("fb-final", 1, "hpdi", "histogram")`
+#' `plot_posteriors("fb-test", 1)`
+#' `plot_posteriors("fb-test", 1, "hpdi", "histogram")`
 
-fig_posteriors <- function(dataset = "fb-final", scen = 1, rep = 1) {
+fig_posteriors <- function(dataset = "fb-test", scen = 1, rep = 1) {
 
     if (FALSE) {
-        dataset <- "fb-test"; scen <- 7; rep <- 1
+        dataset <- "fb-test"; scen <- 8; rep <- 1
         dataset <- "sim-test2"; scen <- 1; rep <- 1
     }
 
