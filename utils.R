@@ -5,8 +5,8 @@
 }
 
 # Quick first and last n
-first <- function(x, n = 1) x[seq(1, min(n, length(x)))]
-last <- function(x, n = 1) x[seq(max(length(x) - n + 1, 1), length(x))]
+first <- function(x, n = 1L) x[seq(min(n, length(x)))]
+last <- function(x, n = 1L) x[seq(max(1L, length(x) - n + 1L), length(x))]
 
 # We often just want the first or last letter of a string
 str_1st <- function(x) str_sub(x, 1L, 1L)
