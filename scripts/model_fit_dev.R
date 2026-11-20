@@ -15,12 +15,13 @@
 #     hcl(h = hues, l = 65, c = 100)[1:n]
 # }
 
-model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
-                          opts = c("extremes")[0]) {
+model_fit_dev <- function(dataset = "fb-test", scens = 0,
+                          opts = c("extremes", "tank")[0],
+                          alt = character(0)) {
     if (FALSE) {
         dataset <- "fb-test"
         dataset <- "sim-test-inf"
-        scens <- 0; opts = character(0); alt = ""
+        scens <- 0; opts = character(0); alt = character(0)
     }
 
     message(str_glue("Calculating model fit deviation for '{dataset}'"))
@@ -39,12 +40,13 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
             walk(dir.create)
     }
 
-    suffix <- str_c("",
-                    if ("drop_outliers" %in% opts) "drop",
-                    if ("extremes" %in% opts) "es",
-                    sep = "-")
-
-    if (str_1st(alt) %notin% c("", "-")) alt <- str_c("-", alt)
+    # Names for files generated
+    suffix <- unique(c("",
+                       if ("drop_outliers" %in% opts) "drop",
+                       if ("extremes" %in% opts) "es",
+                       if ("tank" %in% opts) "tank",
+                       alt)) |>
+        str_flatten("-")
 
     km_data <- readRDS(str_glue("{meta_dir}/km_data_ps.rds"))
 
@@ -72,7 +74,11 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
 
         # Set full-sib family combination
         # (split families that appeared in both trials)
-        x$data[, family := .GRP, .(sire, dam, trial)]
+        if ("tank" %in% opts) {
+            x$data[, family := .GRP, group]
+        } else {
+            x$data[, family := .GRP, .(sire, dam, trial)]
+        }
 
         x1 <- x$data[, .(id, family, trial, donor, Tsign, Tdeath, RP, src)] |>
             setorder(id, family, trial)
@@ -354,9 +360,9 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
               plot.background = element_rect(fill = "white"))
     fit_plt_rms
 
-    ggsave(str_glue("{mf_dir}/{dataset}-model_fit-rms_dev{suffix}{alt}.png"),
+    ggsave(str_glue("{mf_dir}/{dataset}-model_fit-rms_dev{suffix}.png"),
            fit_plt_rms, width = 8, height = 5)
-    ggsave(str_glue("{mf_dir}/{dataset}-model_fit-mad_dev{suffix}{alt}.png"),
+    ggsave(str_glue("{mf_dir}/{dataset}-model_fit-mad_dev{suffix}.png"),
            fit_plt_mad, width = 8, height = 5)
 
     # families_plt <- ggplot(fit, aes(x = family, y = value, colour = variable)) +
@@ -380,7 +386,7 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0, alt = "",
     #     theme(legend.position = "bottom")
     # families_plt
     #
-    # plt_str <- str_glue("{mf_base}_by_family{alt}.png")
+    # plt_str <- str_glue("{mf_base}_by_family{suffix}.png")
     # ggsave(plt_str, families_plt, width = 12, height = 8)
 
     list(fit = fit_wide,
