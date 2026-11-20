@@ -1,0 +1,95 @@
+{
+    library(data.table)
+    library(purrr)
+    library(stringr)
+
+    safe_source("utils.R")
+}
+
+# Overview ----
+
+# Are we testing convergence or coverage?
+# (Coverage only makes sense with simulated data.)
+n <- 2
+goal <- c("convergence", "coverage")[[n]]
+message("Goal = ", goal)
+
+dataset <- "sim-n-inf"
+
+# Variable parameters ----
+protocol <- rbind(
+    # Basic models for Trial 1
+    data.table(d = "FB_1_rpw,  IEs SITTT, Weight SITTT, Fit d1, GRM pedigree"), # 1
+    data.table(d = "FB2_1_rpw, IEs SITTT, Weight SITTT, Fit d2, GRM pedigree"), # 2
+    data.table(d = "FB3_1_rpw, IEs SITTT, Weight SITTT, Fit d3, GRM pedigree"), # 3
+
+    fill = TRUE
+)
+
+# Setup
+protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
+
+# Handle patch_name: "Scen x" -> "scen-X-1"
+protocol[, patch_name := get_part(d, "Fit ") |>
+             str_replace("d(.*)", "scen-\\1-1"), .I]
+
+
+# Common options ----
+source("param_gen/common2.R")
+
+common <- list(sim_new_data = "summary_sim",
+               use_grm = "pedigree",
+               inf_model = "S=pC",
+               traits_source = "posterior", # should this be GRM?
+               IEs = "sittt",
+               use_weight = "log",
+               weight_fe = "sittt",
+               weight_is_nested = TRUE,
+               cov_prior = list(type = "default", vals = c()),
+               single_prior = "inverse",
+               # expand_priors = 4,
+               group_effect = 0.05,
+               patch_dataset = "sim-n",
+               patch_type = "sampled",
+               bici_cmd = "inf",
+               fix_donors = "no_Tsign_survivors",
+               censor = 0.8,
+               nsample = 1e6,
+               nchains = 16,
+               sample_states = 100,
+               time_step_bici = 1) |>
+    safe_merge(common2)
+
+# Labels
+protocol[, label := str_c("s", 1:.N)]
+
+# Append "coverage" or "convergence" to description
+protocol[, d := str_c(d, ", ", goal) |> str_squish()] |>
+    setnames("d", "description")
+
+## Add replicates ----
+n_replicates <- 20
+protocol[, scenario := .I]
+protocol <- protocol[rep(1:.N, each = n_replicates)]
+protocol[, replicate := 1:.N, scenario]
+protocol[, dataset := dataset]
+protocol[, name := str_c("scen-", scenario, "-", replicate)]
+protocol[, seed := replicate]
+
+# Set up patches
+protocol[, patch_state := replicate]
+
+# Prefer to have these columns in this order at the start
+setcolorder(protocol, intersect(cols, names(protocol)))
+
+message(str_glue("Protocol file '{dataset}' has:",
+                 "- {nrow(protocol)} scenarios",
+                 "- each with {ncol(protocol)} parameters",
+                 "- and a further {length(common)} common parameters",
+                 .sep = "\n"))
+
+# Save to file ----
+saveRDS(list(protocol = protocol,
+             common = common),
+        file = str_glue("param_sets/{dataset}.rds"))
+
