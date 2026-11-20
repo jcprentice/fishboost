@@ -7,7 +7,7 @@
 #  memory limit of 1 Gbyte: -l h_vmem
 #$ -N flatten
 #$ -pe sharedmem 1
-#$ -t 1-25
+#$ -t 1-60
 #$ -R y
 #$ -P roslin_wilson
 #$ -cwd
@@ -21,5 +21,5 @@
 module load R/4.6
 
 # Run the program
-Rscript batch_flatten_bici_states.R fb-test $SGE_TASK_ID # 2
+Rscript batch_flatten_bici_states.R sim-n-inf $SGE_TASK_ID # 2
 
