@@ -6,9 +6,9 @@
     library(ggh4x)
 }
 
-plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
+plot_ebvs2 <- function(dataset = "sim-test-inf1", scen = 2, rep = 1) {
     if (FALSE) {
-        dataset <- "sim-test-inf"; scen <- 1; rep <- 1
+        dataset <- "sim-test-inf1"; scen <- 2; rep <- 1
     }
 
     {
@@ -53,6 +53,9 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
     st <- str_glue("{dataset} / s{scen}-{rep}")
 
     popn[, sdp := levels(sdp)[as.integer(sdp)]]
+
+    popn[, family := .GRP, .(sire, dam)]
+    setcolorder(popn, "family", after = "dam")
 
     x1 <- popn[, c(sire = sire[[1]],
                    sdp = sdp[[1]],
@@ -180,6 +183,6 @@ plot_ebvs2 <- function(dataset = "sim-base-inf", scen = 1, rep = 1) {
 }
 
 if (FALSE) {
-    p2 <- plot_ebvs2("sim-base-inf", 1, 1)
+    p2 <- plot_ebvs2("sim-test-inf1", 1, 1)
 }
 
