@@ -2,6 +2,7 @@
     library(data.table)
     library(stringr)
     library(purrr)
+    library(HDInterval)
     library(ggplot2)
     library(ggtext)
     library(cowplot)
@@ -110,14 +111,15 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0,
         sv_curve <- function(x) c(0, sort(x, na.last = TRUE))
 
         x2 <- x1[, .(survival = seq(1, 0, length = .N + 1),
-                     Tsign = sv_curve(Tsign),
-                     RP    = sv_curve(RP),
-                     src   = first(src)),
-                 .(id, family, trial)] |>
+                    Tsign = sv_curve(Tsign),
+                    RP    = sv_curve(RP),
+                    src   = first(src)),
+                .(id, family, trial)] |>
             melt(measure.vars = c("Tsign", "RP"),
-                 value.name = "time") |>
-            setorder(id, family, variable) |>
-            setcolorder(c("src", "id", "family", "trial", "variable", "time", "survival"))
+                 value.name = "time")
+
+        setorder(x2, id, family, variable)
+        setcolorder(x2, "survival", after = ncol(x2))
 
         if (FALSE && "keep_small_groups" %notin% opts) {
             # If times are only 0 or NA, then we drop them
@@ -132,22 +134,9 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0,
             x2[, keep := NULL]
         }
 
-        # Weight points
-        if (FALSE) {
-            # Weight by no. of points and by 1 / time covered
-            x2[, `:=`(wt1 = .N,
-                      wt2 = min(max(time, na.rm = TRUE), tmax[trial])),
-               .(id, family, trial, variable)]
-            x2[, wt := {
-                x <- (wt1 * mean(wt2)) / (mean(wt1) * wt2)
-                x / mean(x)
-            }]
-            x2[, c("wt1", "wt2") := NULL]
-        } else {
-            # Weight by no. of points only
-            x2[, wt := .N, .(id, family, trial, variable)]
-            x2[, wt := wt / mean(wt)]
-        }
+        # Weight by no. of points (bigger families are weighted more)
+        x2[, wt := .N, .(id, family, trial, variable)]
+        x2[, wt := wt / mean(wt)]
 
         # Resample x2 at all times 0:tmax[trial]
         # Don't do anything with NA values, will nafill them later
@@ -207,27 +196,28 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0,
         } else {
             # Use bootstrapping to obtain mean and SD
 
+            n <- last(x3$id)
+
             # Split by id
             s1 <- split(x3, by = "id")
-            n <- length(s1)
 
-            x8 <- map(1:2000, \(i) {
+            x4 <- map(seq(2e3), \(i) {
                 # Sample with replacement 1..n-1, n is the actual value
                 # The first one gives the true mean
-                ids <- if (i == 1) 1:n else c(sample(n-1, replace = TRUE), n)
-                s3 <- rbindlist(s1[ids])
+                ids <- if (i == 1) 1:n else c(sample(n - 1, replace = TRUE), n)
+                s2 <- rbindlist(s1[ids])
 
                 # Mean and SE across resampled id
-                x4 <- s3[, .(survival_mean = mean(survival, na.rm = TRUE),
+                s3 <- s2[, .(survival_mean = mean(survival, na.rm = TRUE),
                              wt = first(wt)),
                          .(family, trial, variable, time, src)]
 
-                x5 <- x4 |>
+                s4 <- s3 |>
                     dcast(... ~ src, value.var = c("survival_mean", "wt"))
-                x5[, dev := abs(survival_mean_sim - survival_mean_fb) * wt_fb]
+                s4[, dev := abs(survival_mean_sim - survival_mean_fb) * wt_fb]
 
                 # Reduce to summary statistics
-                x6 <- x5[, .(mad_all   = sum(dev),
+                s5 <- s4[, .(mad_all   = sum(dev),
                              mad_Tsign = sum(dev[variable == "Tsign"]),
                              mad_RP    = sum(dev[variable == "RP"]),
 
@@ -237,11 +227,11 @@ model_fit_dev <- function(dataset = "fb-test", scens = 0,
                     # .(family, trial)] |>
                     melt(measure.vars = measure(type, variable,
                                                 pattern = "(mad|rms)_(.*)"))
-                x6
+                s5
             }) |>
-                rbindlist(idcol = "id")
-            x8
-            # x8[, .(value = mean(value), sem = sem(value)), .(type, variable)]
+                rbindlist(idcol = "sample")
+            x4
+            # x4[, .(value = mean(value), sem = sem(value)), .(type, variable)]
         }
     }) |>
         rbindlist(idcol = "scen") # fit <- ...
