@@ -29,8 +29,6 @@ protocol <- rbind(
 # Setup
 protocol[, setup := str_split_i(d, ", ", 1) |> str_to_lower(), .I]
 
-protocol[, use_grm := get_part(d, "GRM"), .I]
-
 # Handle Genetic & Environmental Variance (IEs)
 protocol[, IEs := get_part(d, "IEs") |> str_to_lower(), .I]
 
@@ -40,8 +38,8 @@ protocol[, patch_name := get_part(d, "Fit") |>
 
 # Handle GRM
 protocol[, use_grm := get_part(d, "GRM"), .I]
-# protocol[, traits_source := fifelse(use_grm == "pedigree", "pedigree", "grm")]
-protocol[, traits_source := "posterior"]
+protocol[, traits_source := fifelse(use_grm == "pedigree", "pedigree", "grm")]
+# protocol[, traits_source := "posterior"]
 
 
 protocol[, weight_fe := get_part(d, "Weight") |> str_to_lower(), .I]
@@ -58,7 +56,7 @@ common <- list(sim_new_data = "bici",
                model_type = "SEIDR",
                # setup = "fb_12_rpw",
                inf_model = "S=pC",
-               traits_source = "none",
+               traits_source = "pedigree",
                # expand_priors = 4,
                group_effect = 0.05,
                patch_dataset = "fb-test",
