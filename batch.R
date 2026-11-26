@@ -22,8 +22,8 @@ if (run_from_script) {
     pname <- cmd_args[[1]]
     row_no <- as.integer(cmd_args[[2]])
 } else {
-    pname <- "sim-n-inf"
-    row_no <- 21L
+    pname <- "sim-n"
+    row_no <- 2L
 }
 
 {
