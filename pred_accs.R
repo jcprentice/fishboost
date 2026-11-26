@@ -8,12 +8,12 @@
     library(pipebind)
 }
 
-pred_accs_plot <- function(dataset = "sim-test-inf", scen = 2, rep = 1, parents_only = TRUE) {
+pred_accs_plot <- function(dataset = "sim-test-inf", scen = 2, rep = 1, sdp = "sire") {
     if (FALSE) {
         dataset <- "sim-test-inf1"
         scen <- 2
         rep <- 1
-        parents_only <- TRUE
+        sdp <- c("all", "sire", "progeny")[2]
     }
 
     name <- str_glue("scen-{scen}-{rep}")
@@ -34,8 +34,15 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 2, rep = 1, parents_
     results <- readRDS(str_glue("{res_dir}/{name}.rds"))
     params <- results$params
 
-    x <- results$popn[, .SD, .SDcols = patterns("(^id$|sdp|_g$)")]
-    if (parents_only) x <- x[sdp != "progeny"]
+    sdp_ <- if (length(sdp) == 0 || "all" %in% sdp) {
+        c("sire", "dam", "progeny")
+    } else if ("parents" %in% sdp) {
+        c("sire", "dam")
+    } else {
+        intersect(sdp, c("sire", "dam", "progeny"))
+    }
+
+    x <- results$popn[sdp %in% sdp_, .SD, .SDcols = patterns("(^id$|_g$)")]
     setnames(x, str_replace_all(names(x),
                                 c("susceptibility" = "sus",
                                   "infectivity"    = "inf",
@@ -44,7 +51,7 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 2, rep = 1, parents_
                                   "tolerance"      = "tol",
                                   "endurance"      = "end",
                                   "BV" = "g", "GV" = "g")))
-    cols <- c("id", "sdp", "sus_g", "inf_g", "tol_g")
+    cols <- c("id", "sus_g", "inf_g", "tol_g")
     setcolorder(x, cols, skip_absent = TRUE)
 
     if (any(cols %notin% names(x))) {
@@ -57,16 +64,15 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 2, rep = 1, parents_
         message(str_glue("Warning: missing '{rf}'"))
         return(c(sus = 0, inf = 0, tol = 0))
     }
-    y <- readRDS(rf)$popn[, .SD, .SDcols = patterns("(^id$|sdp|_g$)")]
-    if (parents_only) y <- y[sdp != "progeny"]
+    y <- readRDS(rf)$popn[sdp %in% sdp_, .SD, .SDcols = patterns("(^id$|_g$)")]
 
-    y <- y[, map(.SD, median), .(id, sdp), .SDcols = patterns("_g$")]
+    y <- y[, map(.SD, median), id, .SDcols = patterns("_g$")]
     setcolorder(y, cols, skip_absent = TRUE)
 
-    xy <- merge(melt(x[, .SD, .SDcols = patterns("id|sdp|_g$")],
-                     id.vars = c("id", "sdp"), value.name = "x"),
-                melt(y[, .SD, .SDcols = patterns("id|sdp|_g$")],
-                     id.vars = c("id", "sdp"), value.name = "y"))
+    xy <- merge(melt(x[, .SD, .SDcols = patterns("id|_g$")],
+                     id.vars = "id", value.name = "x"),
+                melt(y[, .SD, .SDcols = patterns("id|_g$")],
+                     id.vars = "id", value.name = "y"))
 
     qx <- xy[, quantile(x, 0.8) |> as.numeric()]
     qy <- xy[, quantile(y, 0.8) |> as.numeric()]
@@ -122,7 +128,7 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 2, rep = 1, parents_
                      ncol = 1, rel_heights = c(0.5, 3))
 
     ggsave(str_glue("{pa_dir}/{name}-pa{parents}.pdf",
-                    parents = if (parents_only) "_parents" else ""),
+                    parents = if (any("sire", "dam") %in% sdp_) "_parents" else ""),
            plt, width = 15, height = 5)
     plt
 }
@@ -130,13 +136,13 @@ pred_accs_plot <- function(dataset = "sim-test-inf", scen = 2, rep = 1, parents_
 pred_accs <- function(dataset = "sim-test-inf1",
                       scen = 2,
                       rep = 1,
-                      parents_only = TRUE,
+                      sdp = "all",
                       method = "pearson") {
     if (FALSE) {
-        dataset <- "sim-test-inf1"
-        scen <- 2
+        dataset <- "sim-n-inf"
+        scen <- 1
         rep <- 1
-        parents_only <- TRUE
+        sdp <- c("all", "sire", "progeny")[2]
         method <- "pearson"
     }
 
@@ -148,11 +154,16 @@ pred_accs <- function(dataset = "sim-test-inf1",
         res_dir  <- str_glue("{base_dir}/results")
     }
 
+    sdp_ <- if (length(sdp) == 0 || "all" %in% sdp) {
+        c("sire", "dam", "progeny")
+    } else if ("parents" %in% sdp) {
+        c("sire", "dam")
+    } else {
+        intersect(sdp, c("sire", "dam", "progeny"))
+    }
 
-    x <- readRDS(str_glue("{res_dir}/{name}.rds"))$popn
-    x[, names(.SD) := NULL, .SDcols = !patterns("(^id$|sdp|_g$)")]
-    if (parents_only) x <- x[sdp != "progeny"]
-    x[, sdp := NULL]
+    x <- readRDS(str_glue("{res_dir}/{name}.rds"))$popn |>
+        _[sdp %in% sdp_, .SD, .SDcols = patterns("(^id$|_g$)")]
 
     setnames(x, str_replace_all(names(x),
                                 c("susceptibility" = "sus",
@@ -160,26 +171,29 @@ pred_accs <- function(dataset = "sim-test-inf1",
                                   "latency"        = "lat",
                                   "detectability"  = "det",
                                   "tolerance"      = "tol",
-                                  "endurance"      = "end",
+                                  "endurance"      = "tol",
                                   "BV" = "g", "GV" = "g")))
     cols <- c("id", "sus_g", "inf_g", "tol_g")
     setcolorder(x, cols, skip_absent = TRUE)
 
+    x[, r0 := sus_g + inf_g + tol_g]
+
     if (any(cols %notin% names(x))) {
-        return(c(sus = 0, inf = 0, tol = 0))
+        return(c(sus = 0, inf = 0, tol = 0, r0 = 0))
     }
 
     rf <- str_glue("{data_dir}/{name}-out/summary_inf.rds")
     if (!file.exists(rf)) {
         message(str_glue("Warning: missing '{rf}'"))
-        return(c(sus = 0, inf = 0, tol = 0))
+        return(c(sus = 0, inf = 0, tol = 0, r0 = 0))
     }
-    y <- readRDS(rf)$popn[, .SD, .SDcols = patterns("(^id$|sdp|_g$)")]
-    if (parents_only) y <- y[sdp != "progeny"]
-    y[, sdp := NULL]
+    y <- readRDS(rf)$popn[sdp %in% sdp_, .SD,
+                          .SDcols = patterns("(^id$|_g$)")]
 
     y <- y[, map(.SD, mean), id, .SDcols = patterns("_g$")]
     setcolorder(y, cols, skip_absent = TRUE)
+
+    y[, r0 := sus_g + inf_g + tol_g]
 
     if (str_detect(method, "top")) {
         pc2p <- function(x) 1 - x / 100
@@ -192,21 +206,25 @@ pred_accs <- function(dataset = "sim-test-inf1",
         }
         c(sus = cor.test(x$sus_g, y$sus_g, method = method)$estimate |> unname(),
           inf = cor.test(x$inf_g, y$inf_g, method = method)$estimate |> unname(),
-          tol = cor.test(x$tol_g, y$tol_g, method = method)$estimate |> unname())
+          tol = cor.test(x$tol_g, y$tol_g, method = method)$estimate |> unname(),
+          r0  = cor.test(x$r0,    y$r0,    method = method)$estimate |> unname())
     } else if (is.numeric(method)) {
         p <- method |> max(0.001) |> min(0.999)
 
         x[, `:=`(top_sus = sus_g >= quantile(sus_g, p),
                  top_inf = inf_g >= quantile(inf_g, p),
-                 top_tol = tol_g >= quantile(tol_g, p))]
+                 top_tol = tol_g >= quantile(tol_g, p),
+                 top_r0  = r0    >= quantile(r0,    p))]
 
         y[, `:=`(top_sus = sus_g >= quantile(sus_g, p),
                  top_inf = inf_g >= quantile(inf_g, p),
-                 top_tol = tol_g >= quantile(tol_g, p))]
+                 top_tol = tol_g >= quantile(tol_g, p),
+                 top_r0  = r0    >= quantile(r0,    p))]
 
         c(sus = mean(x$top_sus & y$top_sus) / (1 - p),
           inf = mean(x$top_inf & y$top_inf) / (1 - p),
-          tol = mean(x$top_tol & y$top_tol) / (1 - p))
+          tol = mean(x$top_tol & y$top_tol) / (1 - p),
+          r0  = mean(x$top_r0  & y$top_r0)  / (1 - p))
     }
 }
 
@@ -226,12 +244,12 @@ if (FALSE) {
     scens <- map_int(sr, 1)
     reps  <- map_int(sr, 2)
 
-    methods <- c("pearson", "kendall", "spearman", "top20")
-    parents_only <- TRUE
+    methods <- c("pearson", "kendall", "spearman", "top20")[1]
+    sdp <- c("sire", "dam", "progeny")[3]
 
     PAs <- map(methods, \(method) {
-        map2(scens, reps, possibly(
-            ~ pred_accs(dataset, .x, .y, parents_only, method)
+        PAs <- map2(scens, reps, possibly(
+            ~ pred_accs(dataset, .x, .y, sdp, method)
         )) |>
             map(as.list) |> rbindlist(idcol = "id")
     }) |>
@@ -240,11 +258,11 @@ if (FALSE) {
                 setcolorder(c("id", "scen", "rep"))
             .x[, map(.SD, ~ round(100 * mean(.x), 1)),
                .(scen = str_c("s", scen)),
-               .SDcols = patterns("sus|inf|tol")]
+               .SDcols = patterns("sus|inf|tol|r0")]
         }) |>
         setNames(methods)
 
     saveRDS(PAs, str_glue("{meta_dir}/PAs{parents}.rds",
-                          parents = if (parents_only) "-parents" else ""))
+                          parents = if (any("parents", "sire", "dam") %in% sdp) "-parents" else ""))
 }
 
